@@ -1,0 +1,11 @@
+[entryPoints]
+  [entryPoints.http]
+    address = ":80"
+
+[api]
+  dashboard = true
+
+[providers.docker]
+  endpoint = "unix:///var/run/docker.sock"
+  network = "infinity-travel-network"
+  exposedByDefault = false

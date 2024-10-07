@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: node:16
+    build: ./frontend
+    labels:
+      - "traefik.http.routers.frontend.rule=Host(`localhost`)"
+    ports:
+      - 3000:3000 # Expose the port where the frontend runs
+    networks:
+      - infinity-travel-network
+
+  backend:
+    image: python:3.12.2-slim
+    build: ./backend
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    ports:
+      - "9001:9001" # Expose the port where the backend runs
+    labels:
+      - "traefik.http.routers.backend.rule=Host(`localhost`) && PathPrefix(`/api`)"
+    networks:
+      - infinity-travel-network
+
+  traefik:
+    image: traefik:v2.4
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker"
+      - "--entrypoints.http.address=:80"
+    ports:
+      - "80:80"
+      - "8081:8081"  # Changed to avoid conflict with port 8080
+    networks:
+      - infinity-travel-network
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+networks:
+  infinity-travel-network:
+    driver: bridge
