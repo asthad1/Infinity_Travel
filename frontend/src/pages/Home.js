@@ -1,5 +1,6 @@
 import React from 'react';
 import './Home.css';  // Import styles
+import FlightSearchForm from '../components/FlightSearchForm';
 
 function Home() {
   return (
@@ -10,10 +11,10 @@ function Home() {
         <p className="lead">
           Plan your next adventure with us and explore the world!
         </p>
-        <a href="#search" className="btn btn-primary btn-lg">
-          <i className="fas fa-search"></i> Start Your Journey
-        </a>
       </div>
+
+      {/* Flight Search Section */}
+      <FlightSearchForm />
 
       {/* Features Section */}
       <div className="container mt-5">
