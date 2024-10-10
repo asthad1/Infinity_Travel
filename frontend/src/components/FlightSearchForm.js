@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Select from 'react-select';
 import './FlightSearchForm.css';
 import { airports } from '../data/airports';
-import { flights } from '../data/flights';  // Import flight database
+import { flights } from '../data/flights'; // Import flight database
 
 function FlightSearchForm() {
   const [departureAirport, setDepartureAirport] = useState(null);
@@ -12,13 +12,18 @@ function FlightSearchForm() {
   const [filteredFlights, setFilteredFlights] = useState([]); // To store filtered flights
   const [errorMessage, setErrorMessage] = useState(''); // To store error message
 
+  // Additional filter states
+  const [numStops, setNumStops] = useState('');
+  const [selectedAirline, setSelectedAirline] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+
   const handleSearch = (e) => {
     e.preventDefault();
-    
+
     // Get the current date and the date 6 months from now
     const currentDate = new Date();
     const maxDate = new Date();
-    maxDate.setMonth(currentDate.getMonth() + 6);  // Add 6 months to the current date
+    maxDate.setMonth(currentDate.getMonth() + 6); // Add 6 months to the current date
 
     // Convert the departureDate to a Date object
     const selectedDepartureDate = new Date(departureDate);
@@ -30,14 +35,18 @@ function FlightSearchForm() {
     }
 
     // If date is valid, proceed with the search
-    setErrorMessage('');  // Clear any existing error message
+    setErrorMessage(''); // Clear any existing error message
 
-    // Filter flights based on search parameters
-    const results = flights.filter(flight => {
+    // Filter flights based on search parameters and additional filters
+    const results = flights.filter((flight) => {
       return (
-        flight.departureAirport === departureAirport.value &&
-        flight.destinationAirport === destinationAirport.value &&
-        flight.departureTime.startsWith(departureDate)  // Matches date
+        flight.departureAirport === departureAirport?.value &&
+        flight.destinationAirport === destinationAirport?.value &&
+        flight.departureTime.startsWith(departureDate) && // Matches date
+        (!numStops || (numStops === '2' && flight.stops >= 2) || flight.stops === parseInt(numStops)) &&
+        (!selectedAirline || flight.airline === selectedAirline) &&
+        (!maxPrice || flight.price <= parseFloat(maxPrice)) &&
+        flight.availableSeats >= travelers // Check if there are enough available seats
       );
     });
 
@@ -46,10 +55,11 @@ function FlightSearchForm() {
 
   return (
     <div className="container mt-5">
-      <h2 className="text-center mb-4">Search Flights</h2>
+      <h2 className="mb-4">Search Flights</h2>
       <form onSubmit={handleSearch}>
+        {/* Search Parameters */}
         <div className="row g-3 align-items-center">
-          <div className="col-md-3">
+          <div className="col-md-6 col-lg-3">
             <label htmlFor="departureAirport" className="form-label">
               Departure Airport
             </label>
@@ -62,7 +72,7 @@ function FlightSearchForm() {
             />
           </div>
 
-          <div className="col-md-3">
+          <div className="col-md-6 col-lg-3">
             <label htmlFor="destinationAirport" className="form-label">
               Destination Airport
             </label>
@@ -75,7 +85,7 @@ function FlightSearchForm() {
             />
           </div>
 
-          <div className="col-md-3">
+          <div className="col-md-6 col-lg-3">
             <label htmlFor="departureDate" className="form-label">
               Departure Date
             </label>
@@ -88,13 +98,13 @@ function FlightSearchForm() {
             />
           </div>
 
-          <div className="col-md-2">
+          <div className="col-md-6 col-lg-2">
             <label htmlFor="travelers" className="form-label">
               Travelers
             </label>
             <input
               type="number"
-              className="form-control"
+              className="form-control travelers-input"
               value={travelers}
               onChange={(e) => setTravelers(e.target.value)}
               min="1"
@@ -102,10 +112,63 @@ function FlightSearchForm() {
               required
             />
           </div>
+        </div>
 
-          <div className="col-md-1 d-flex align-items-end">
-            <button type="submit" className="btn btn-primary w-100">
-              Search
+        {/* Additional Filters */}
+        <div className="row g-3 align-items-center mt-4">
+          <div className="col-sm-4 col-lg-2">
+            <label htmlFor="numStops" className="form-label">
+              Stops <span className="optional">(Optional)</span>
+            </label>
+            <select
+              className="form-control filter-input"
+              value={numStops}
+              onChange={(e) => setNumStops(e.target.value)}
+            >
+              <option value="">Any</option>
+              <option value="0">Non-stop</option>
+              <option value="1">1 Stop</option>
+              <option value="2">2+ Stops</option>
+            </select>
+          </div>
+
+          <div className="col-sm-4 col-lg-2">
+            <label htmlFor="airline" className="form-label">
+              Airline <span className="optional">(Optional)</span>
+            </label>
+            <select
+              className="form-control filter-input"
+              value={selectedAirline}
+              onChange={(e) => setSelectedAirline(e.target.value)}
+            >
+              <option value="">Any</option>
+              {[...new Set(flights.map((flight) => flight.airline))].map((airline) => (
+                <option key={airline} value={airline}>
+                  {airline}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="col-sm-4 col-lg-2">
+            <label htmlFor="maxPrice" className="form-label">
+              Max ($) <span className="optional">(Optional)</span>
+            </label>
+            <input
+              type="number"
+              className="form-control filter-input"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              min="0"
+            />
+          </div>
+        </div>
+
+        {/* Search Button */}
+        <div className="row mt-4">
+          <div className="col text-start">
+            <button type="submit" className="btn btn-primary btn-lg">
+              Search Flights
             </button>
           </div>
         </div>
@@ -127,6 +190,8 @@ function FlightSearchForm() {
                   Departure: {flight.departureTime} | Arrival: {flight.arrivalTime}
                   <br />
                   Duration: {flight.duration} | Price: ${flight.price}
+                  <br />
+                  Number of Stops: {flight.stops} | Available Seats: {flight.availableSeats}
                 </li>
               ))}
             </ul>

@@ -7,7 +7,7 @@ function Home() {
   return (
     <div className="home">
       {/* Hero Section */}
-      <div className="jumbotron bg-light p-5 mt-5">  {/* Add margin-top to avoid overflow */}
+      <div className="jumbotron container bg-light p-5 mt-5">  {/* Add margin-top to avoid overflow */}
         <div className="row align-items-center">
           {/* Left Column: Image */}
           <div className="col-md-6">
@@ -35,9 +35,9 @@ function Home() {
 
       {/* Features Section */}
       <div className="container mt-5">
-        <div className="row">
-          <div className="col-md-4 mb-4">
-            <div className="card text-center">
+        <div className="row features-section">
+          <div className="col-md-4 mb-4 d-flex align-items-stretch">
+            <div className="card text-center feature-card">
               <div className="card-body">
                 <i className="fas fa-plane fa-3x mb-3"></i>
                 <h5 className="card-title">Best Prices on Flights</h5>
@@ -45,8 +45,8 @@ function Home() {
               </div>
             </div>
           </div>
-          <div className="col-md-4 mb-4">
-            <div className="card text-center">
+          <div className="col-md-4 mb-4 d-flex align-items-stretch">
+            <div className="card text-center feature-card">
               <div className="card-body">
                 <i className="fas fa-hotel fa-3x mb-3"></i>
                 <h5 className="card-title">Plan Your Trip</h5>
@@ -54,8 +54,8 @@ function Home() {
               </div>
             </div>
           </div>
-          <div className="col-md-4 mb-4">
-            <div className="card text-center">
+          <div className="col-md-4 mb-4 d-flex align-items-stretch">
+            <div className="card text-center feature-card">
               <div className="card-body">
                 <i className="fas fa-tags fa-3x mb-3"></i>
                 <h5 className="card-title">Exclusive Deals</h5>

@@ -7,7 +7,9 @@ export const flights = [
     departureTime: '2024-10-15T08:00',
     arrivalTime: '2024-10-15T16:00',
     duration: '8h',
-    price: 450
+    price: 450,
+    stops: 0,
+    availableSeats: 5
   },
   {
     flightNumber: 'DL456',
@@ -17,7 +19,9 @@ export const flights = [
     departureTime: '2024-10-15T10:00',
     arrivalTime: '2024-10-15T18:00',
     duration: '8h',
-    price: 500
+    price: 500,
+    stops: 1,
+    availableSeats: 3
   },
   {
     flightNumber: 'UA789',
@@ -27,7 +31,9 @@ export const flights = [
     departureTime: '2024-10-15T09:30',
     arrivalTime: '2024-10-15T17:30',
     duration: '8h',
-    price: 480
+    price: 480,
+    stops: 0,
+    availableSeats: 8
   },
   {
     flightNumber: 'AA101',
@@ -37,7 +43,9 @@ export const flights = [
     departureTime: '2024-10-15T13:00',
     arrivalTime: '2024-10-15T19:00',
     duration: '6h',
-    price: 350
+    price: 350,
+    stops: 1,
+    availableSeats: 10
   },
   {
     flightNumber: 'DL202',
@@ -47,7 +55,9 @@ export const flights = [
     departureTime: '2024-10-15T08:00',
     arrivalTime: '2024-10-15T09:30',
     duration: '1h 30m',
-    price: 220
+    price: 220,
+    stops: 0,
+    availableSeats: 2
   },
   {
     flightNumber: 'UA303',
@@ -57,7 +67,9 @@ export const flights = [
     departureTime: '2024-10-15T12:00',
     arrivalTime: '2024-10-15T16:00',
     duration: '4h',
-    price: 400
+    price: 400,
+    stops: 0,
+    availableSeats: 4
   },
   {
     flightNumber: 'EK404',
@@ -67,7 +79,9 @@ export const flights = [
     departureTime: '2024-10-16T02:00',
     arrivalTime: '2024-10-16T14:00',
     duration: '16h',
-    price: 1200
+    price: 1200,
+    stops: 1,
+    availableSeats: 6
   },
   {
     flightNumber: 'QR505',
@@ -77,7 +91,128 @@ export const flights = [
     departureTime: '2024-10-16T04:00',
     arrivalTime: '2024-10-16T11:00',
     duration: '7h',
-    price: 900
+    price: 900,
+    stops: 0,
+    availableSeats: 1
   },
-  // Add many more flight options
+  {
+    flightNumber: 'BA606',
+    airline: 'British Airways',
+    departureAirport: 'LHR',
+    destinationAirport: 'JFK',
+    departureTime: '2024-10-17T09:00',
+    arrivalTime: '2024-10-17T12:00',
+    duration: '8h',
+    price: 650,
+    stops: 1,
+    availableSeats: 5
+  },
+  {
+    flightNumber: 'LH707',
+    airline: 'Lufthansa',
+    departureAirport: 'FRA',
+    destinationAirport: 'ORD',
+    departureTime: '2024-10-17T11:00',
+    arrivalTime: '2024-10-17T18:00',
+    duration: '9h',
+    price: 700,
+    stops: 0,
+    availableSeats: 7
+  },
+  {
+    flightNumber: 'AF808',
+    airline: 'Air France',
+    departureAirport: 'CDG',
+    destinationAirport: 'JFK',
+    departureTime: '2024-10-18T13:00',
+    arrivalTime: '2024-10-18T21:00',
+    duration: '8h',
+    price: 600,
+    stops: 2,
+    availableSeats: 3
+  },
+  {
+    flightNumber: 'SQ909',
+    airline: 'Singapore Airlines',
+    departureAirport: 'SIN',
+    destinationAirport: 'SFO',
+    departureTime: '2024-10-18T17:00',
+    arrivalTime: '2024-10-19T07:00',
+    duration: '16h',
+    price: 1100,
+    stops: 0,
+    availableSeats: 9
+  },
+  {
+    flightNumber: 'CX010',
+    airline: 'Cathay Pacific',
+    departureAirport: 'HKG',
+    destinationAirport: 'LAX',
+    departureTime: '2024-10-19T21:00',
+    arrivalTime: '2024-10-20T07:00',
+    duration: '13h',
+    price: 950,
+    stops: 1,
+    availableSeats: 4
+  },
+  {
+    flightNumber: 'AA111',
+    airline: 'American Airlines',
+    departureAirport: 'LAX',
+    destinationAirport: 'JFK',
+    departureTime: '2024-10-19T06:00',
+    arrivalTime: '2024-10-19T14:00',
+    duration: '8h',
+    price: 470,
+    stops: 2,
+    availableSeats: 8
+  },
+  {
+    flightNumber: 'DL333',
+    airline: 'Delta Airlines',
+    departureAirport: 'ATL',
+    destinationAirport: 'ORD',
+    departureTime: '2024-10-19T09:00',
+    arrivalTime: '2024-10-19T11:00',
+    duration: '2h',
+    price: 300,
+    stops: 0,
+    availableSeats: 6
+  },
+  {
+    flightNumber: 'UA444',
+    airline: 'United Airlines',
+    departureAirport: 'LAX',
+    destinationAirport: 'MIA',
+    departureTime: '2024-10-20T07:00',
+    arrivalTime: '2024-10-20T15:00',
+    duration: '8h',
+    price: 490,
+    stops: 1,
+    availableSeats: 5
+  },
+  {
+    flightNumber: 'BA555',
+    airline: 'British Airways',
+    departureAirport: 'LHR',
+    destinationAirport: 'JFK',
+    departureTime: '2024-10-20T14:00',
+    arrivalTime: '2024-10-20T17:00',
+    duration: '8h',
+    price: 680,
+    stops: 0,
+    availableSeats: 4
+  },
+  {
+    flightNumber: 'AF666',
+    airline: 'Air France',
+    departureAirport: 'CDG',
+    destinationAirport: 'LAX',
+    departureTime: '2024-10-21T10:00',
+    arrivalTime: '2024-10-21T19:00',
+    duration: '11h',
+    price: 750,
+    stops: 2,
+    availableSeats: 3
+  }
 ];
