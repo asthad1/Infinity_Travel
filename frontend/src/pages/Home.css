@@ -1,0 +1,37 @@
+/* Home.css */
+.home {
+  text-align: center;
+  padding: 20px;
+}
+
+.hero {
+  background-image: url('../assets/images/ladyonboat.jpg');
+  /* Add your hero image */
+  background-size: cover;
+  padding: 60px 0;
+  color: white;
+}
+
+.hero h1 {
+  font-size: 36px;
+  margin-bottom: 20px;
+}
+
+.search-bar input {
+  padding: 10px;
+  margin: 5px;
+  font-size: 16px;
+}
+
+.search-bar button {
+  padding: 10px 20px;
+  background-color: #007BFF;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.search-bar button:hover {
+  background-color: #0056b3;
+}

@@ -1,0 +1,25 @@
+/* Support.css */
+.support {
+  padding: 20px;
+  text-align: center;
+}
+
+.support h1 {
+  font-size: 32px;
+  margin-bottom: 20px;
+}
+
+.support p {
+  font-size: 18px;
+  color: #666;
+  margin-bottom: 40px;
+}
+
+.category-card {
+  padding: 15px;
+  margin: 10px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  display: inline-block;
+  min-width: 150px;
+}

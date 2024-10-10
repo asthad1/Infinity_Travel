@@ -1,16 +1,24 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate, useNavigate } from 'react-router-dom';
+import Home from './pages/Home';
+import Support from './pages/Support';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 
 function App() {
   const [user, setUser] = useState(null);
 
   return (
     <Router>
+      <Navbar />
       <Routes>
+        <Route path="/" element={<Home />} />
         <Route path="/login" element={user ? <Navigate to="/welcome" /> : <Login setUser={setUser} />} />
         <Route path="/welcome" element={user ? <Welcome user={user} /> : <Navigate to="/login" />} />
-        <Route path="*" element={<Navigate to="/login" />} />
+        <Route path="/support" element={<Support />} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
+      <Footer />
     </Router>
   );
 }
