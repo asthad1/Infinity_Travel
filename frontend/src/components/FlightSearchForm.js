@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; 
 import Select from 'react-select';
 import './FlightSearchForm.css';
 import { airports } from '../data/airports';
@@ -11,6 +11,17 @@ function FlightSearchForm() {
   const [travelers, setTravelers] = useState(1);
   const [filteredFlights, setFilteredFlights] = useState([]); // To store filtered flights
   const [errorMessage, setErrorMessage] = useState(''); // To store error message
+
+  const [minDate, setMinDate] = useState(''); // To store today's date as minDate
+
+  // Use effect to set today's date in yyyy-mm-dd format
+  useEffect(() => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are zero-based, so add 1
+    const dd = String(today.getDate()).padStart(2, '0');
+    setMinDate(`${yyyy}-${mm}-${dd}`);
+  }, []);
 
   // Additional filter states
   const [numStops, setNumStops] = useState('');
@@ -94,6 +105,7 @@ function FlightSearchForm() {
               className="form-control"
               value={departureDate}
               onChange={(e) => setDepartureDate(e.target.value)}
+              min={minDate}  // Set the minimum date to today's date
               required
             />
           </div>
