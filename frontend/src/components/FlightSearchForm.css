@@ -1,0 +1,13 @@
+.flight-search {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.flight-search input,
+.flight-search select,
+.flight-search button {
+  margin-bottom: 1rem;
+  width: 100%;
+}

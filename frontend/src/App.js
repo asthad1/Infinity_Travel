@@ -9,17 +9,21 @@ function App() {
   const [user, setUser] = useState(null);
 
   return (
-    <Router>
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={user ? <Navigate to="/welcome" /> : <Login setUser={setUser} />} />
-        <Route path="/welcome" element={user ? <Welcome user={user} /> : <Navigate to="/login" />} />
-        <Route path="/support" element={<Support />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-      <Footer />
-    </Router>
+    <div className="d-flex flex-column min-vh-100">
+      <Router>
+        <Navbar />
+        <div className="flex-grow-1 my-4"> {/* Add space with 'my-4' class */}
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={user ? <Navigate to="/welcome" /> : <Login setUser={setUser} />} />
+            <Route path="/welcome" element={user ? <Welcome user={user} /> : <Navigate to="/login" />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </div>
+        <Footer />
+      </Router>
+    </div>
   );
 }
 
@@ -29,22 +33,22 @@ function Login({ setUser }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Simulate login success, we can add API calls here
     setUser(username);
     navigate('/welcome');
   };
 
   return (
-    <div>
+    <div className="container mt-5">
       <h2>Login</h2>
       <form onSubmit={handleSubmit}>
         <input
           type="text"
+          className="form-control mb-3"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           placeholder="Enter your username"
         />
-        <button type="submit">Login</button>
+        <button type="submit" className="btn btn-primary">Login</button>
       </form>
     </div>
   );
@@ -52,7 +56,7 @@ function Login({ setUser }) {
 
 function Welcome({ user }) {
   return (
-    <div>
+    <div className="container mt-5">
       <h2>Welcome, {user}!</h2>
     </div>
   );

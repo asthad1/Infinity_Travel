@@ -1,14 +1,28 @@
-/* Home.css */
-.home {
-  padding: 20px;
-}
-
 .jumbotron {
-  background-image: url('../assets/images/ladyonboat.jpg');
-  background-size: cover;
-  color: white;
+  background-color: #f8f9fa;
+  padding: 2rem 1rem;
 }
 
-.card-title {
-  font-size: 1.5rem;
+.jumbotron h1 {
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+.container .card-body i {
+  color: #007bff;
+  /* Icon color */
+}
+
+.container h2 {
+  font-weight: 700;
+}
+
+.card {
+  transition: transform 0.3s ease;
+  /* Adds hover effect */
+}
+
+.card:hover {
+  transform: translateY(-10px);
+  /* Lifts card slightly on hover */
 }

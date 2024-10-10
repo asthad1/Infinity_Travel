@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Select from 'react-select';
+import './FlightSearchForm.css';
 import { airports } from '../data/airports';
 import { flights } from '../data/flights';  // Import flight database
 

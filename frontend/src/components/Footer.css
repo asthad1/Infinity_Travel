@@ -1,1 +1,15 @@
 /* Footer.css */
+footer {
+  position: relative;
+  bottom: 0;
+  width: 100%;
+  padding: 1rem 0;
+}
+
+footer a {
+  text-decoration: none;
+}
+
+footer i {
+  margin-right: 10px;
+}

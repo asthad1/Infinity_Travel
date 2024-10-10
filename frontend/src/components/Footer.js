@@ -3,7 +3,7 @@ import './Footer.css';  // Import styles
 
 function Footer() {
   return (
-    <footer className="bg-dark text-light text-center p-4">
+    <footer className="bg-dark text-light text-center p-4 mt-auto">
       <div className="container">
         <p>Follow us on social media</p>
         <a href="https://facebook.com" className="text-light mx-2">
