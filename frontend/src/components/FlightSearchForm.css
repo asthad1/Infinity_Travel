@@ -46,3 +46,7 @@
   }
 
 }
+
+.w-75 {
+  width: fit-content !important
+}

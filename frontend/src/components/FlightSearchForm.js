@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'; 
+import React, { useState, useEffect } from 'react';
 import Select from 'react-select';
 import './FlightSearchForm.css';
 import { airports } from '../data/airports';
@@ -11,8 +11,8 @@ function FlightSearchForm() {
   const [travelers, setTravelers] = useState(1);
   const [filteredFlights, setFilteredFlights] = useState([]); // To store filtered flights
   const [errorMessage, setErrorMessage] = useState(''); // To store error message
-
   const [minDate, setMinDate] = useState(''); // To store today's date as minDate
+  const [showFilters, setShowFilters] = useState(false); // State to show/hide filters
 
   // Use effect to set today's date in yyyy-mm-dd format
   useEffect(() => {
@@ -27,6 +27,13 @@ function FlightSearchForm() {
   const [numStops, setNumStops] = useState('');
   const [selectedAirline, setSelectedAirline] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+
+  // Function to swap departure and destination
+  const handleSwap = () => {
+    const temp = departureAirport;
+    setDepartureAirport(destinationAirport);
+    setDestinationAirport(temp);
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -69,10 +76,10 @@ function FlightSearchForm() {
       <h2 className="mb-4">Search Flights</h2>
       <form onSubmit={handleSearch}>
         {/* Search Parameters */}
-        <div className="row g-3 align-items-center">
-          <div className="col-md-6 col-lg-3">
+        <div className="row g-3">
+          <div className="col-md-6 col-lg-3 position-relative">
             <label htmlFor="departureAirport" className="form-label">
-              Departure Airport
+              <i className="fas fa-map-marker-alt me-2"></i> Leaving from
             </label>
             <Select
               options={airports}
@@ -83,9 +90,21 @@ function FlightSearchForm() {
             />
           </div>
 
-          <div className="col-md-6 col-lg-3">
+          {/* Swap Button */}
+          <div className="col-md-auto d-flex align-items-end">
+            <button
+              type="button"
+              className="btn btn-outline-primary swap-button"
+              onClick={handleSwap}
+              style={{ height: '40px' }} // Adjust the height to match the input fields
+            >
+              <i className="fas fa-exchange-alt"></i> {/* Swap arrows icon */}
+            </button>
+          </div>
+
+          <div className="col-md-6 col-lg-3 position-relative">
             <label htmlFor="destinationAirport" className="form-label">
-              Destination Airport
+              <i className="fas fa-map-marker-alt me-2"></i> Going to
             </label>
             <Select
               options={airports}
@@ -110,71 +129,83 @@ function FlightSearchForm() {
             />
           </div>
 
-          <div className="col-md-6 col-lg-2">
-            <label htmlFor="travelers" className="form-label">
-              Travelers
-            </label>
-            <input
-              type="number"
-              className="form-control travelers-input"
-              value={travelers}
-              onChange={(e) => setTravelers(e.target.value)}
-              min="1"
-              max="10"
-              required
-            />
+          <div className="col-md-6 col-lg-2 d-flex align-items-end">
+            <div className="w-75">
+              <label htmlFor="travelers" className="form-label">
+                Travelers
+              </label>
+              <input
+                type="number"
+                className="form-control travelers-input"
+                value={travelers}
+                onChange={(e) => setTravelers(e.target.value)}
+                min="1"
+                max="10"
+                required
+              />
+            </div>
+            <button
+              type="button"
+              className="btn btn-outline-primary ms-3"
+              onClick={() => setShowFilters((prev) => !prev)}
+              style={{ height: '40px' }} // Adjust the height to match the input field
+            >
+              <i className="fas fa-filter"></i> {/* Filter icon */}
+            </button>
           </div>
         </div>
 
-        {/* Additional Filters */}
-        <div className="row g-3 align-items-center mt-4">
-          <div className="col-sm-4 col-lg-2">
-            <label htmlFor="numStops" className="form-label">
-              Stops <span className="optional">(Optional)</span>
-            </label>
-            <select
-              className="form-control filter-input"
-              value={numStops}
-              onChange={(e) => setNumStops(e.target.value)}
-            >
-              <option value="">Any</option>
-              <option value="0">Non-stop</option>
-              <option value="1">1 Stop</option>
-              <option value="2">2+ Stops</option>
-            </select>
-          </div>
+        {/* Additional Filters Section */}
+        {showFilters && (
+          <div className="row g-3 align-items-center mt-4">
+            <div className="col-sm-4 col-lg-2">
+              <label htmlFor="numStops" className="form-label">
+                Stops <span className="optional">(Optional)</span>
+              </label>
+              <select
+                className="form-control filter-input"
+                value={numStops}
+                onChange={(e) => setNumStops(e.target.value)}
+              >
+                <option value="">Any</option>
+                <option value="0">Non-stop</option>
+                <option value="1">1 Stop</option>
+                <option value="2">2+ Stops</option>
+              </select>
+            </div>
 
-          <div className="col-sm-4 col-lg-2">
-            <label htmlFor="airline" className="form-label">
-              Airline <span className="optional">(Optional)</span>
-            </label>
-            <select
-              className="form-control filter-input"
-              value={selectedAirline}
-              onChange={(e) => setSelectedAirline(e.target.value)}
-            >
-              <option value="">Any</option>
-              {[...new Set(flights.map((flight) => flight.airline))].map((airline) => (
-                <option key={airline} value={airline}>
-                  {airline}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div className="col-sm-4 col-lg-2">
+              <label htmlFor="airline" className="form-label">
+                Airline <span className="optional">(Optional)</span>
+              </label>
+              <select
+                className="form-control filter-input"
+                value={selectedAirline}
+                onChange={(e) => setSelectedAirline(e.target.value)}
+              >
+                <option value="">Any</option>
+                {[...new Set(flights.map((flight) => flight.airline))].map((airline) => (
+                  <option key={airline} value={airline}>
+                    {airline}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div className="col-sm-4 col-lg-2">
-            <label htmlFor="maxPrice" className="form-label">
-              Max ($) <span className="optional">(Optional)</span>
-            </label>
-            <input
-              type="number"
-              className="form-control filter-input"
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
-              min="0"
-            />
+            <div className="col-sm-4 col-lg-2">
+              <label htmlFor="maxPrice" className="form-label">
+                Max ($) <span className="optional">(Optional)</span>
+              </label>
+              <input
+                type="number"
+                className="form-control filter-input"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+                min="0"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Search Button */}
         <div className="row mt-4">
