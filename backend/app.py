@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import text  # Import the text function
+from sqlalchemy import text, cast, Date  # Import the text, cast function and Date attribute
+from sqlalchemy.orm import aliased
 # from dotenv import load_dotenv
 import os
 from models import *
@@ -235,6 +236,46 @@ def delete_airport(id):
     db.session.delete(airport)
     db.session.commit()
     return jsonify({'message': 'Airport deleted'}), 200
+
+# Search Flights
+@app.route('/search/flights/<from_airport_code>/<to_airport_code>/<date>/<int:travellers>', methods=['GET'])
+def search_flights(from_airport_code, to_airport_code, date, travellers):
+    # Parse the date in YYMMDD format and convert to datetime
+    try:
+        # Convert YYMMDD to YYYY-MM-DD
+        parsed_date = datetime.strptime(date, '%y%m%d').date()  # Get only the date part
+    except ValueError:
+        return jsonify({'error': 'Invalid date format. Use YYMMDD.'}), 400
+
+    # Get optional query parameters
+    no_of_stops = request.args.get('stops', default=None)
+    airlines = request.args.get('airlines', default=None)
+    price_limit = request.args.get('price_limit', default=None)
+
+    from_airport = aliased(Airport)
+    to_airport = aliased(Airport)
+
+    # Updated query using aliases
+    flights = Flight.query \
+        .join(from_airport, Flight.from_airport == from_airport.id) \
+        .join(to_airport, Flight.to_airport == to_airport.id) \
+        .filter(from_airport.airport_code == from_airport_code) \
+        .filter(to_airport.airport_code == to_airport_code) \
+        .filter(cast(Flight.departure, Date) == parsed_date) \
+        .filter(Flight.available_seats >= travellers)
+
+    # Apply filters for optional parameters
+    if no_of_stops is not None:
+        flights = flights.filter(Flight.stops == int(no_of_stops))
+    if airlines is not None:
+        flights = flights.filter(Flight.airline == airlines)
+    if price_limit is not None:
+        flights = flights.filter(Flight.fare <= float(price_limit))
+
+    # Execute the query and get the results
+    result_flights = flights.all()
+
+    return jsonify([flight.to_dict() for flight in result_flights]), 200
 
 
 if __name__ == '__main__':
