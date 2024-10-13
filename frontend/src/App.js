@@ -5,6 +5,7 @@ import Support from './pages/Support';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import FlightSearchResults from './components/FlightSearchResults';
+import UserFavoriteFlights from './components/UserFavoriteFlights';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -20,6 +21,7 @@ function App() {
             <Route path="/welcome" element={user ? <Welcome user={user} /> : <Navigate to="/login" />} />
             <Route path="/support" element={<Support />} />
             <Route path="/flightsearchresults" element={<><FlightSearchResults /></>} />
+            <Route path="/savedflights" element={<><UserFavoriteFlights /></>} />
             <Route path="*" element={<Navigate to="/" />} />
             
           </Routes>
