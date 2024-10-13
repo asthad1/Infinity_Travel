@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './FlightFilter.css'; // Import custom CSS for styling
 
 function FlightFilter({ airlines, onFilterChange }) {
   const [numStops, setNumStops] = useState('');
   const [selectedAirline, setSelectedAirline] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [debounceTimeout, setDebounceTimeout] = useState(null);
 
   const handleFilterChange = () => {
     onFilterChange({
@@ -14,6 +15,25 @@ function FlightFilter({ airlines, onFilterChange }) {
     });
   };
 
+  // Debounce function to limit filter updates
+  useEffect(() => {
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout);
+    }
+    
+    const timeout = setTimeout(handleFilterChange, 300); // Adjust time as necessary
+    setDebounceTimeout(timeout);
+
+    return () => clearTimeout(timeout);
+  }, [numStops, selectedAirline, maxPrice]);
+
+  const resetFilters = () => {
+    setNumStops('');
+    setSelectedAirline('');
+    setMaxPrice('');
+    onFilterChange({ numStops: null, airline: null, maxPrice: null });
+  };
+
   return (
     <div className="flight-filter p-4 mb-4">
       <h3>Filter Flights</h3>
@@ -21,12 +41,13 @@ function FlightFilter({ airlines, onFilterChange }) {
         {/* Number of Stops */}
         <div className="col-md-4">
           <label htmlFor="numStops" className="form-label">
+          <i className="fas fa-stop-circle"></i>
             Number of Stops
           </label>
           <select
             className="form-control"
             value={numStops}
-            onChange={(e) => { setNumStops(e.target.value); handleFilterChange(); }}
+            onChange={(e) => setNumStops(e.target.value)}
           >
             <option value="">Any</option>
             <option value="0">Non-stop</option>
@@ -43,7 +64,7 @@ function FlightFilter({ airlines, onFilterChange }) {
           <select
             className="form-control"
             value={selectedAirline}
-            onChange={(e) => { setSelectedAirline(e.target.value); handleFilterChange(); }}
+            onChange={(e) => setSelectedAirline(e.target.value)}
           >
             <option value="">Any</option>
             {airlines.map((airline) => (
@@ -63,11 +84,16 @@ function FlightFilter({ airlines, onFilterChange }) {
             type="number"
             className="form-control"
             value={maxPrice}
-            onChange={(e) => { setMaxPrice(e.target.value); handleFilterChange(); }}
+            onChange={(e) => setMaxPrice(e.target.value)}
             min="0"
           />
         </div>
       </div>
+
+      {/* Reset Filters Button */}
+      <button className="btn btn-secondary mt-3" onClick={resetFilters}>
+        Reset Filters
+      </button>
     </div>
   );
 }
