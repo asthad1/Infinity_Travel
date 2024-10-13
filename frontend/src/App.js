@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import Support from './pages/Support';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import FlightSearchResults from './components/FlightSearchResults';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -18,7 +19,9 @@ function App() {
             <Route path="/login" element={user ? <Navigate to="/welcome" /> : <Login setUser={setUser} />} />
             <Route path="/welcome" element={user ? <Welcome user={user} /> : <Navigate to="/login" />} />
             <Route path="/support" element={<Support />} />
+            <Route path="/flightsearchresults" element={<><FlightSearchResults /></>} />
             <Route path="*" element={<Navigate to="/" />} />
+            
           </Routes>
         </div>
         <Footer />
