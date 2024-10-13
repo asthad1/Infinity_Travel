@@ -20,7 +20,7 @@ class User(BaseModel, db.Model):
     lastname = Column(String(50), nullable=False)
     address = Column(String(255), nullable=False)
     zipcode = Column(String(10), nullable=False)
-    phone_number = Column(String(15), nullable=False)
+    phone_number = Column(String(50), nullable=False)
     email = Column(String(100), unique=True, nullable=False)
     is_active = Column(Boolean, default=True)
     created = Column(DateTime, default=datetime.utcnow)
@@ -44,6 +44,8 @@ class Flight(BaseModel, db.Model):
     fare = Column(Float, nullable=False)
     flight_number = Column(String(20), nullable=False)
     duration = Column(String(10), nullable=False)  # In hours or minutes
+    stops = Column(Integer, nullable=False)
+    available_seats = Column(Integer, nullable=False)
     created = Column(DateTime, default=datetime.utcnow)
     modified = Column(DateTime, onupdate=datetime.utcnow)
 
@@ -81,6 +83,7 @@ class Airport(BaseModel, db.Model):
     
     id = Column(Integer, primary_key=True)
     airport = Column(String(100), nullable=False)
+    airport_code = Column(String(5), unique=True, nullable=False)
     city_id = Column(Integer, ForeignKey('cities.id'), nullable=False)
     created = Column(DateTime, default=datetime.utcnow)
     modified = Column(DateTime, onupdate=datetime.utcnow)
