@@ -2,6 +2,8 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text, cast, Date  # Import the text, cast function and Date attribute
 from sqlalchemy.orm import aliased
+import random
+import string
 # from dotenv import load_dotenv
 import os
 import re
@@ -9,6 +11,7 @@ import uuid
 from flask_cors import CORS
 from models import *
 from extensions import db
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 # Load environment variables
@@ -16,7 +19,7 @@ from extensions import db
 
 app = Flask(__name__)
 CORS(app)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://infinity_travel_owner:xxxxxx@ep-spring-frost-a4siuz5k.us-east-1.aws.neon.tech/infinity_travel?sslmode=require'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize SQLAlchemy
@@ -46,15 +49,23 @@ def validate_password(password):
         errors.append("At least one special character (! @ # ? $)")
     return errors
 
+def generate_membership_number():
+    return ''.join(random.choices(string.digits, k=16))
+
+
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.get_json()
     name = data.get('name')
     email = data.get('email')
     phone = data.get('phone')
+    role = data.get('role')
     password = data.get('password')
 
-    if not all([name, email, phone, password]):
+    # Generate membership number
+    membership_number = generate_membership_number()
+
+    if not all([name, email, phone, role, password]):
         return jsonify({'message': 'All fields are required'}), 400
 
     password_errors = validate_password(password)
@@ -69,30 +80,46 @@ def register():
         return jsonify({'message': 'Email already registered'}), 400
 
     # Generate a unique membership number
-    membership_number = str(uuid.uuid4())
+    # membership_number = str(uuid.uuid4())
 
     # Store user information
-    accounts[email] = {
-        'name': name,
-        'phone': phone,
-        'membership_number': membership_number,
-        'password': password  # Note: NEVER store plain text passwords in a real application
-    }
+    # accounts[email] = {
+    #     'name': name,
+    #     'phone': phone,
+    #     'membership_number': membership_number,
+    #     'password': password  # Note: NEVER store plain text passwords in a real application
+    # }
 
-    return jsonify({'message': 'Account created successfully', 'membership_number': membership_number}), 201
+    # return jsonify({'message': 'Account created successfully', 'membership_number': membership_number}), 201
+    user = User(name=name, email=email, phone=phone, role = role, password=password, membership_number=membership_number)
+    db.session.add(user)
+    db.session.commit()
+
+    # Return membership number in the response
+    return jsonify({'message': 'User registered successfully', 'membership_number': membership_number}), 201
+
 
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
-
-    # Check if user exists and password matches
-    user = accounts.get(username)
-    if user and user['password'] == password:
-        return jsonify({'message': 'Login successful', 'user': username}), 200
+    
+    # Print the received data
+    print(f"Data is: {data}", flush=True)  # Use flush=True to force printing immediately
+    
+    # Fetch the user by email
+    user = User.query.filter_by(email=username).first()  # Use .first() to fetch the user instance
+    
+    # Print the user object (or None if not found)
+    print(f"User is : {user}", flush=True)
+    
+    # Check if user exists and compare passwords
+    if user and user.password == password:
+        return jsonify({'message': 'Login successful'}), 200
     else:
-        return jsonify({'message': 'Login failed'}), 401
+        return jsonify({'message': 'Invalid credentials'}), 401
+
 
 # ===================== CRUD FOR USER MODEL ===================== #
 

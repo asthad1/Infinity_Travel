@@ -5,6 +5,7 @@ function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [role, setRole] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [requirements, setRequirements] = useState([]);
@@ -18,7 +19,7 @@ function Register() {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ name, email, phone, password }),
+      body: JSON.stringify({ name, email, phone, role, password }),
     })
       .then((response) =>
         response.json().then((data) => ({ status: response.status, body: data }))
@@ -63,6 +64,13 @@ function Register() {
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           placeholder="Enter your phone number"
+          required
+        />
+        <input
+          type="role"
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+          placeholder="Enter your role"
           required
         />
         <input

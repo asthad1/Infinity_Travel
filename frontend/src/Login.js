@@ -55,6 +55,8 @@ function Login({ setUser }) {
         <button type="submit">Login</button>
       </form>
       {message && <p>{message}</p>}
+      {/* Register button */}
+      <p>Don't have an account? <button onClick={() => navigate('/register')}>Register here</button></p>
     </div>
   );
 }

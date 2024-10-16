@@ -16,18 +16,19 @@ class User(BaseModel, db.Model):
     __tablename__ = 'users'
     
     id = Column(Integer, primary_key=True)
-    firstname = Column(String(50), nullable=False)
-    lastname = Column(String(50), nullable=False)
-    address = Column(String(255), nullable=False)
-    zipcode = Column(String(10), nullable=False)
-    phone_number = Column(String(50), nullable=False)
+    name = Column(String(50), nullable=False)
+    # lastname = Column(String(50), nullable=False)
+    address = Column(String(255), nullable=True)
+    zipcode = Column(String(10), nullable=True)
+    phone = Column(String(50), nullable=False)
     email = Column(String(100), unique=True, nullable=False)
     is_active = Column(Boolean, default=True)
     created = Column(DateTime, default=datetime.utcnow)
     modified = Column(DateTime, onupdate=datetime.utcnow)
-    password = Column(String(100), nullable=False)
+    password = Column(String(255), nullable=False)
     role = Column(String(50), nullable=False)  # To denote user type
-
+    membership_number = db.Column(db.String(45), unique=True, nullable=False)
+    
     # Relationships
     favorites = relationship('Favorite', back_populates='user')
 
