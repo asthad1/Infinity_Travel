@@ -6,6 +6,9 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import FlightSearchResults from './components/FlightSearchResults';
 import UserFavoriteFlights from './components/UserFavoriteFlights';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import Register from './Register';
+import Login from './Login';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -17,13 +20,13 @@ function App() {
         <div className="flex-grow-1 my-4"> {/* Add space with 'my-4' class */}
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/register" element={<Register />} />
             <Route path="/login" element={user ? <Navigate to="/welcome" /> : <Login setUser={setUser} />} />
-            <Route path="/welcome" element={user ? <Welcome user={user} /> : <Navigate to="/login" />} />
+            <Route path="/welcome" element={user ? <Welcome user={user} /> : <Navigate to="/" />} />
             <Route path="/support" element={<Support />} />
             <Route path="/flightsearchresults" element={<><FlightSearchResults /></>} />
             <Route path="/savedflights" element={<><UserFavoriteFlights /></>} />
-            <Route path="*" element={<Navigate to="/" />} />
-            
+            <Route path="*" element={<Navigate to="/" />} />  
           </Routes>
         </div>
         <Footer />
