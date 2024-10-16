@@ -6,7 +6,6 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import FlightSearchResults from './components/FlightSearchResults';
 import UserFavoriteFlights from './components/UserFavoriteFlights';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Register from './Register';
 import Login from './Login';
 
@@ -35,40 +34,40 @@ function App() {
   );
 }
 
-function Login({ setUser }) {
-  const [username, setUsername] = useState('');
-  const navigate = useNavigate();
+// function Login({ setUser }) {
+//   const [username, setUsername] = useState('');
+//   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setUser(username);
-    navigate('/welcome');
-  };
+//   const handleSubmit = (e) => {
+//     e.preventDefault();
+//     setUser(username);
+//     navigate('/welcome');
+//   };
 
-  return (
-    <div className="container mt-5">
-      <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          className="form-control mb-3"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="Enter your username"
-        />
-        <button type="submit" className="btn btn-primary">Login</button>
-      </form>
-    </div>
-  );
-}
+//   return (
+//     <div className="container mt-5">
+//       <h2>Login</h2>
+//       <form onSubmit={handleSubmit}>
+//         <input
+//           type="text"
+//           className="form-control mb-3"
+//           value={username}
+//           onChange={(e) => setUsername(e.target.value)}
+//           placeholder="Enter your username"
+//         />
+//         <button type="submit" className="btn btn-primary">Login</button>
+//       </form>
+//     </div>
+//   );
+// }
 
-function Welcome({ user }) {
-  return (
-    <div className="container mt-5">
-      <h2>Welcome, {user}!</h2>
-    </div>
-  );
-}
+// function Welcome({ user }) {
+//   return (
+//     <div className="container mt-5">
+//       <h2>Welcome, {user}!</h2>
+//     </div>
+//   );
+// }
 
 
 export default App;
