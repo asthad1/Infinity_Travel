@@ -13,7 +13,7 @@ function Register() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    fetch('http://localhost:5000/api/register', {
+    fetch('http://localhost:9001/api/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

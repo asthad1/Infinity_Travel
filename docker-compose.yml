@@ -3,8 +3,10 @@ version: '3'
 services:
   backend:
     build: ./backend
+    environment:
+      - DATABASE_URL=postgresql://infinity_travel_owner:xxxxx@ep-spring-frost-a4siuz5k.us-east-1.aws.neon.tech/infinity_travel?sslmode=require
     ports:
-      - '5000:5000'
+      - '9001:9001'
     labels:
       - 'traefik.enable=true'
       - 'traefik.http.routers.backend.rule=PathPrefix(`/api`)'
