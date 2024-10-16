@@ -2,6 +2,7 @@ from faker import Faker
 from app import db, app
 from models import User, Flight, City, State, Airport  # Import your models
 import random
+import re
 from datetime import datetime, timedelta
 
 fake = Faker()
@@ -22,11 +23,33 @@ def create_cities(num=10):
     db.session.commit()
 
 # Create fake data for airports
+def generate_unique_airport_code(airport_name):
+    # Function to generate airport code based on first letters
+    airport_code = ''.join(word[0].upper() for word in re.split(r'[\s,-]+', airport_name) if word)
+    
+    # Check if the generated code already exists
+    existing_airport = Airport.query.filter_by(airport_code=airport_code).first()
+
+    # If it exists, add a number at the end or regenerate until it's unique
+    suffix = 1
+    while existing_airport:
+        # Add or increment a numeric suffix to make it unique
+        new_code = airport_code + str(suffix)
+        existing_airport = Airport.query.filter_by(airport_code=new_code).first()
+        suffix += 1
+    
+    return new_code if suffix > 1 else airport_code
+
 def create_airports(num=10):
     cities = City.query.all()
     for _ in range(num):
-        airport = Airport(airport=fake.company(), city_id=random.choice(cities).id)
+        airport_name = fake.company()
+        
+        airport_code = generate_unique_airport_code(airport_name)
+        
+        airport = Airport(airport=airport_name, city_id=random.choice(cities).id, airport_code=airport_code)
         db.session.add(airport)
+    
     db.session.commit()
 
 # Create fake data for users
@@ -59,7 +82,9 @@ def create_flights(num=10):
             flight_class=random.choice(['Economy', 'Business', 'First']),
             fare=random.uniform(100.0, 1500.0),
             flight_number=fake.unique.ean8(),
-            duration=f"{random.randint(1, 10)}h {random.randint(0, 59)}m"
+            duration=f"{random.randint(1, 10)}h {random.randint(0, 59)}m",
+            stops=random.randint(0,3),
+            available_seats=random.randint(0,100)
         )
         db.session.add(flight)
     db.session.commit()
