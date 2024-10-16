@@ -229,9 +229,9 @@ function FlightSearchForm() {
         {/* Search Button */}
         <div className="row mt-4">
           <div className="col text-start">
-            <button type="submit" className="btn btn-primary btn-lg">
+            <button type="submit" className="btn btn-primary btn-lg" onClick={handleSearch}>
               Search Flights
-            </button>
+          </button>
           </div>
         </div>
       </form>
