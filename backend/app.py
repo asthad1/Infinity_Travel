@@ -237,7 +237,77 @@ def delete_airport(id):
     db.session.commit()
     return jsonify({'message': 'Airport deleted'}), 200
 
-# Search Flights
+# ===================== CRUD FOR FAVORITE MODEL ===================== #
+
+@app.route('/favorites', methods=['GET'])
+def get_favorites():
+    favorites = Favorite.query.all()
+    return jsonify([favorite.to_dict() for favorite in favorites]), 200
+
+@app.route('/favorites/<int:id>', methods=['GET'])
+def get_favorite(id):
+    favorite = Favorite.query.get_or_404(id)
+    return jsonify(favorite.to_dict()), 200
+
+@app.route('/favorites', methods=['POST'])
+def create_favorite():
+    data = request.json
+    # Validate that user and flight exist
+    user = User.query.get_or_404(data['user_id'])
+    flight = Flight.query.get_or_404(data['flight_id'])
+    
+    new_favorite = Favorite(
+        flight_id=flight.id,
+        user_id=user.id,
+        airport_name=data.get('airport_name'),
+        state_name=data.get('state_name'),
+        city_name=data.get('city_name')
+    )
+    db.session.add(new_favorite)
+    db.session.commit()
+    return jsonify(new_favorite.to_dict()), 201
+
+@app.route('/favorites/<int:id>', methods=['PUT'])
+def update_favorite(id):
+    data = request.json
+    favorite = Favorite.query.get_or_404(id)
+    
+    # Update foreign key relationships
+    if 'flight_id' in data:
+        flight = Flight.query.get_or_404(data['flight_id'])
+        favorite.flight_id = flight.id
+
+    if 'user_id' in data:
+        user = User.query.get_or_404(data['user_id'])
+        favorite.user_id = user.id
+
+    # Update optional fields
+    favorite.airport_name = data.get('airport_name', favorite.airport_name)
+    favorite.state_name = data.get('state_name', favorite.state_name)
+    favorite.city_name = data.get('city_name', favorite.city_name)
+
+    db.session.commit()
+    return jsonify(favorite.to_dict()), 200
+
+@app.route('/favorites/<int:id>', methods=['DELETE'])
+def delete_favorite(id):
+    favorite = Favorite.query.get_or_404(id)
+    db.session.delete(favorite)
+    db.session.commit()
+    return jsonify({'message': 'Favorite deleted'}), 200
+
+
+@app.route('/favorites/user/<int:user_id>', methods=['GET'])
+def get_favorites_by_user(user_id):
+    # Check if the user exists
+    user = User.query.get_or_404(user_id)
+    
+    # Query all favorites for the given user
+    favorites = Favorite.query.filter_by(user_id=user.id).all()
+    
+    return jsonify([favorite.to_dict() for favorite in favorites]), 200
+
+  # Search Flights
 @app.route('/search/flights/<from_airport_code>/<to_airport_code>/<date>/<int:travellers>', methods=['GET'])
 def search_flights(from_airport_code, to_airport_code, date, travellers):
     # Parse the date in YYMMDD format and convert to datetime
@@ -276,7 +346,6 @@ def search_flights(from_airport_code, to_airport_code, date, travellers):
     result_flights = flights.all()
 
     return jsonify([flight.to_dict() for flight in result_flights]), 200
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9001)
