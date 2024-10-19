@@ -469,7 +469,7 @@ def delete_coupon(coupon_id):
     return jsonify({'message': 'Coupon deleted'}), 200
 
 # ===================== SEARCH FLIGHTS API ===================== #
-@app.route('/search/flights/<from_airport_code>/<to_airport_code>/<date>/<int:travellers>', methods=['GET'])
+@app.route('/api/search/flights/<from_airport_code>/<to_airport_code>/<date>/<int:travellers>', methods=['GET'])
 def search_flights(from_airport_code, to_airport_code, date, travellers):
     # Parse the date in YYMMDD format and convert to datetime
     try:
@@ -507,6 +507,38 @@ def search_flights(from_airport_code, to_airport_code, date, travellers):
     result_flights = flights.all()
 
     return jsonify([flight.to_dict() for flight in result_flights]), 200
+
+@app.route('/api/validate_coupon', methods=['POST'])
+def validate_coupon():
+    data = request.json
+    discount_code = data.get('discount_code')
+    
+    # Validate if the coupon code was provided
+    if not discount_code:
+        return jsonify({'error': 'No discount code provided'}), 400
+
+    # Query the coupon from the database
+    coupon = Coupon.query.filter_by(coupon_code=discount_code).first()
+
+    if not coupon:
+        # If the coupon does not exist
+        return jsonify({'error': 'Invalid discount code'}), 404
+
+    # Check if the coupon is expired
+    current_time = datetime.utcnow()
+    print(coupon.end_date, current_time)
+    if coupon.end_date < current_time:
+        return jsonify({'error': 'Coupon has expired'}), 400
+
+    # Coupon is valid, calculate the discount percentage or amount
+    discount = coupon.discount_percentage if coupon.discount_percentage else 0
+
+    return jsonify({
+        'success': 'Coupon applied successfully!',
+        'discount_percentage': discount,
+        'discount_amount': coupon.discount_amount,
+        'message': f'You get a {discount}% discount with this coupon!'
+    }), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9001)

@@ -15,17 +15,34 @@ function Checkout() {
     return <div>No flight information available.</div>;
   }
 
-  const handleDiscountSubmit = () => {
-    if (discountCode === 'SAVE10') {
-      setDiscount(0.1); // 10% discount
-      setMessage('Discount code applied successfully!');
-      setIsError(false);
-    } else {
-      setMessage('Invalid discount code');
+  const handleDiscountSubmit = async () => {
+    try {
+      const response = await fetch('http://localhost:9001/api/validate_coupon', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ discount_code: discountCode }),
+      });
+  
+      const data = await response.json();
+  
+      if (!response.ok) {
+        setMessage(data.error || 'Failed to apply discount');
+        setDiscount(0);
+        setIsError(true);
+      } else {
+        setDiscount(data.discount_percentage / 100);  // Assuming discount percentage
+        setMessage(data.success);
+        setIsError(false);
+      }
+    } catch (error) {
+      setMessage('An error occurred while applying the discount.');
       setDiscount(0);
       setIsError(true);
     }
   };
+  
 
   const totalPrice = (flight.price * travelers * (1 - discount)).toFixed(2);
   const originalPrice = (flight.price * travelers).toFixed(2);
