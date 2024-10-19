@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { setUser } from '../store/userSlice'; // Import the setUser action
 
-function Login({ setUser }) {
+function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
+  const dispatch = useDispatch(); // Create dispatch function
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -22,7 +25,7 @@ function Login({ setUser }) {
       )
       .then(({ status, body }) => {
         if (status === 200) {
-          setUser(username);
+          dispatch(setUser({ username })); // Update the Redux store with the user's information
           navigate('/welcome');
         } else {
           setMessage(body.message || 'Login failed');
