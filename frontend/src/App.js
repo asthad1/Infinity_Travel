@@ -6,6 +6,8 @@ import Support from './pages/Support';
 import Footer from './components/Footer';
 import FlightSearches from './pages/FlightSearches';
 import SavedFlights from './components/SavedFlights';
+import SharedFlightDetails from './components/SharedFlightDetails';
+import MyFlights from './components/MyFlights';
 import Register from './components/Register';
 import Login from './components/Login';
 import Navbar from './components/Navbar';
@@ -29,6 +31,8 @@ function App() {
             <Route path="/support" element={<Support />} />
             <Route path="/flightsearches" element={<FlightSearches />} />
             <Route path="/savedflights" element={<SavedFlights />} />
+            <Route path="/my-flights" element={<MyFlights />} />
+            <Route path="/shared-flights/:flightId" element={<SharedFlightDetails />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </div>
