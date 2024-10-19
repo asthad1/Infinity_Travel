@@ -8,7 +8,7 @@ import UserFavoriteFlights from './components/UserFavoriteFlights';
 import Register from './Register';
 import Login from './Login';
 import FlightSearchForm from './components/FlightSearchForm';
-import Checkout from './components/Checkout';
+import Checkout from './pages/Checkout';
 
 function App() {
   const [user, setUser] = useState(null);  // State to store logged-in user

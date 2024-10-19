@@ -47,21 +47,21 @@ function FlightSearchForm() {
    //  const apiUrl = `http://localhost/api/search/flights/${departureAirport?.value}/${destinationAirport?.value}/${departureDate.replaceAll('-', '')}/${travelers}?stops=${numStops || ''}&price_limit=${maxPrice || ''}`;
 
 
-   try {
-     // Dummy API request using fetch
-     const response = fetch('http://localhost:9001/search/flights/INAP/MSAO/241111/1?stops=2&price_limit=244');
+  //  try {
+  //    // Dummy API request using fetch
+  //    const response = fetch('http://localhost:9001/search/flights/INAP/MSAO/241111/1?stops=2&price_limit=244');
     
-     if (!response.ok) {
-       throw new Error('Failed to fetch flights');
-     }
-      const data = response.json();
+  //    if (!response.ok) {
+  //      throw new Error('Failed to fetch flights');
+  //    }
+  //     const data = response.json();
     
-     // Assuming the response contains an array of flight details
-     setFilteredFlights(data); // Update state with the response data
-     setErrorMessage(''); // Clear any existing error messages
-   } catch (error) {
-     setErrorMessage(error.message); // Show error message if request fails
-   }
+  //    // Assuming the response contains an array of flight details
+  //    setFilteredFlights(data); // Update state with the response data
+  //    setErrorMessage(''); // Clear any existing error messages
+  //  } catch (error) {
+  //    setErrorMessage(error.message); // Show error message if request fails
+  //  }
 
 
    // Get the current date and the date 6 months from now
