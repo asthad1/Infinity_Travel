@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Select from 'react-select';
 import './FlightSearchForm.css';
+import FlightSearchResults from './FlightSearchResults';
 import { airports } from '../data/airports';
 import { flights } from '../data/flights'; // Import flight database
 
@@ -229,7 +230,7 @@ function FlightSearchForm() {
         {/* Search Button */}
         <div className="row mt-4">
           <div className="col text-start">
-            <button type="submit" className="btn btn-primary btn-lg" onClick={handleSearch}>
+            <button id='SearchFlightsButton' type="submit" className="btn btn-primary btn-lg" onClick={handleSearch}>
               Search Flights
           </button>
           </div>
@@ -240,28 +241,7 @@ function FlightSearchForm() {
       {errorMessage && <div className="alert alert-danger mt-3">{errorMessage}</div>}
 
       {/* Display filtered flights */}
-      <div className="mt-5">
-        {filteredFlights.length > 0 ? (
-          <div>
-            <h3>Available Flights:</h3>
-            <ul className="list-group">
-              {filteredFlights.map((flight, index) => (
-                <li key={index} className="list-group-item">
-                  <strong>{flight.airline}</strong> | Flight {flight.flightNumber}
-                  <br />
-                  Departure: {flight.departureTime} | Arrival: {flight.arrivalTime}
-                  <br />
-                  Duration: {flight.duration} | Price: ${flight.price}
-                  <br />
-                  Number of Stops: {flight.stops} | Available Seats: {flight.availableSeats}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : (
-          <h3>No flights found for the selected criteria</h3>
-        )}
-      </div>
+      <FlightSearchResults flights={filteredFlights} />
     </div>
   );
 }

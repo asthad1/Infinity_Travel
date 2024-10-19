@@ -50,3 +50,7 @@
 .w-75 {
   width: fit-content !important
 }
+
+#SearchFlightsButton {
+  margin-bottom: 1rem;
+}
