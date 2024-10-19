@@ -1,19 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Select from 'react-select';
 import './FlightSearchForm.css';
 import FlightSearchResults from './FlightSearchResults';
 import { airports } from '../data/airports';
-import { flights } from '../data/flights'; // Import flight database
+import { useDispatch, useSelector } from 'react-redux';
+import { setFilteredFlights, setErrorMessage } from '../store/flightsSlice';
+import { setDepartureAirport, setDestinationAirport, setDepartureDate, setTravelers } from '../store/searchSlice';
 
 function FlightSearchForm() {
-  const [departureAirport, setDepartureAirport] = useState(null);
-  const [destinationAirport, setDestinationAirport] = useState(null);
-  const [departureDate, setDepartureDate] = useState('');
-  const [travelers, setTravelers] = useState(1);
-  const [filteredFlights, setFilteredFlights] = useState([]); // To store filtered flights
-  const [errorMessage, setErrorMessage] = useState(''); // To store error message
+  const dispatch = useDispatch();
+  
+  // State from Redux
+  const departureAirport = useSelector((state) => state.search.departureAirport);
+  const destinationAirport = useSelector((state) => state.search.destinationAirport);
+  const departureDate = useSelector((state) => state.search.departureDate);
+  const travelers = useSelector((state) => state.search.travelers);
+  const filteredFlights = useSelector((state) => state.flights.filteredFlights);
+  const errorMessage = useSelector((state) => state.flights.errorMessage);
+  const flights = useSelector((state) => state.flights.flights); // Assuming `flights` is stored in Redux
+
+  const [showFilters, setShowFilters] = useState(false);
   const [minDate, setMinDate] = useState(''); // To store today's date as minDate
-  const [showFilters, setShowFilters] = useState(false); // State to show/hide filters
 
   // Use effect to set today's date in yyyy-mm-dd format
   useEffect(() => {
@@ -31,49 +38,32 @@ function FlightSearchForm() {
 
   // Function to swap departure and destination
   const handleSwap = () => {
-    const temp = departureAirport;
-    setDepartureAirport(destinationAirport);
-    setDestinationAirport(temp);
+    dispatch(setDepartureAirport(destinationAirport));
+    dispatch(setDestinationAirport(departureAirport));
   };
 
   const handleSearch = (e) => {
     e.preventDefault();
-    
-    //  const apiUrl = `http://localhost/api/search/flights/${departureAirport?.value}/${destinationAirport?.value}/${departureDate.replaceAll('-', '')}/${travelers}?stops=${numStops || ''}&price_limit=${maxPrice || ''}`;
 
-    try {
-      // Dummy API request using fetch
-      const response = fetch('http://localhost:9001/search/flights/INAP/MSAO/241111/1?stops=2&price_limit=244');
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch flights');
-      }
-  
-      const data = response.json();
-      
-      // Assuming the response contains an array of flight details
-      setFilteredFlights(data); // Update state with the response data
-      setErrorMessage(''); // Clear any existing error messages
-    } catch (error) {
-      setErrorMessage(error.message); // Show error message if request fails
+    // Ensure flights is defined
+    if (!flights) {
+      dispatch(setErrorMessage('Flights data is not available.'));
+      return;
     }
 
-    // Get the current date and the date 6 months from now
+    // Validate if the selected date is within the next 6 months
     const currentDate = new Date();
     const maxDate = new Date();
     maxDate.setMonth(currentDate.getMonth() + 6); // Add 6 months to the current date
-
-    // Convert the departureDate to a Date object
     const selectedDepartureDate = new Date(departureDate);
 
-    // Validate if the selected date is within the next 6 months
     if (selectedDepartureDate > maxDate) {
-      setErrorMessage('You can only search for flights up to 6 months in advance.');
+      dispatch(setErrorMessage('You can only search for flights up to 6 months in advance.'));
       return;
     }
 
     // If date is valid, proceed with the search
-    setErrorMessage(''); // Clear any existing error message
+    dispatch(setErrorMessage('')); // Clear any existing error message
 
     // Filter flights based on search parameters and additional filters
     const results = flights.filter((flight) => {
@@ -88,7 +78,7 @@ function FlightSearchForm() {
       );
     });
 
-    setFilteredFlights(results); // Set the filtered flights
+    dispatch(setFilteredFlights(results)); // Set the filtered flights in Redux
   };
 
   return (
@@ -104,7 +94,7 @@ function FlightSearchForm() {
             <Select
               options={airports}
               value={departureAirport}
-              onChange={(option) => setDepartureAirport(option)}
+              onChange={(option) => dispatch(setDepartureAirport(option))}
               placeholder="Select Departure"
               isClearable={true}
             />
@@ -129,7 +119,7 @@ function FlightSearchForm() {
             <Select
               options={airports}
               value={destinationAirport}
-              onChange={(option) => setDestinationAirport(option)}
+              onChange={(option) => dispatch(setDestinationAirport(option))}
               placeholder="Select Destination"
               isClearable={true}
             />
@@ -143,8 +133,8 @@ function FlightSearchForm() {
               type="date"
               className="form-control"
               value={departureDate}
-              onChange={(e) => setDepartureDate(e.target.value)}
-              min={minDate}  // Set the minimum date to today's date
+              onChange={(e) => dispatch(setDepartureDate(e.target.value))}
+              min={minDate} // Set the minimum date to today's date
               required
             />
           </div>
@@ -158,7 +148,7 @@ function FlightSearchForm() {
                 type="number"
                 className="form-control travelers-input"
                 value={travelers}
-                onChange={(e) => setTravelers(e.target.value)}
+                onChange={(e) => dispatch(setTravelers(e.target.value))}
                 min="1"
                 max="10"
                 required
@@ -230,9 +220,9 @@ function FlightSearchForm() {
         {/* Search Button */}
         <div className="row mt-4">
           <div className="col text-start">
-            <button id='SearchFlightsButton' type="submit" className="btn btn-primary btn-lg" onClick={handleSearch}>
+            <button id="SearchFlightsButton" type="submit" className="btn btn-primary btn-lg">
               Search Flights
-          </button>
+            </button>
           </div>
         </div>
       </form>

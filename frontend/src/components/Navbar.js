@@ -37,6 +37,9 @@ function Navbar({ user, setUser }) {
                 Search Flights
               </Link>
             </li>
+            <li className="nav-item">
+              <Link className="nav-link" to="/my-flights">My Flights</Link>
+            </li>
           </ul>
           <ul className="navbar-nav ms-auto">
             {user ? (
