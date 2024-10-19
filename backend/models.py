@@ -105,3 +105,19 @@ class Favorite(BaseModel, db.Model):
     # Relationships
     user = relationship('User', back_populates='favorites')
     flight = relationship('Flight', back_populates='favorites')
+
+class Coupon(BaseModel, db.Model):
+    __tablename__ = 'coupons'
+    
+    coupon_id = Column(Integer, primary_key=True)
+    coupon_code = Column(String(50), nullable=False, unique=True)
+    discount_percentage = Column(Float, nullable=True)
+    discount_amount = Column(Float, nullable=True)
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=False)
+    minimum_order_amount = Column(Float, nullable=True)
+    admin_id = Column(Integer, nullable=False)  # ForeignKey can be added if needed
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, onupdate=datetime.utcnow)
+    user_roles = Column(String(50), nullable=True)  # Customer, Vendor, etc.
+    discount_type = Column(String(50), nullable=True)  # Holiday, First-time User, etc.

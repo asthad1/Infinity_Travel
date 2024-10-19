@@ -408,7 +408,67 @@ def get_favorites_by_user(user_id):
     
     return jsonify([favorite.to_dict() for favorite in favorites]), 200
 
-  # Search Flights
+# ===================== CRUD FOR COUPON MODEL ===================== #
+
+# GET all coupons
+@app.route('/coupons', methods=['GET'])
+def get_coupons():
+    coupons = Coupon.query.all()
+    return jsonify([coupon.to_dict() for coupon in coupons]), 200
+
+# GET a single coupon by ID
+@app.route('/coupons/<int:coupon_id>', methods=['GET'])
+def get_coupon(coupon_id):
+    coupon = Coupon.query.get_or_404(coupon_id)
+    return jsonify(coupon.to_dict()), 200
+
+# CREATE a new coupon
+@app.route('/coupons', methods=['POST'])
+def create_coupon():
+    data = request.json
+    new_coupon = Coupon(
+        coupon_code=data['coupon_code'],
+        discount_percentage=data.get('discount_percentage'),
+        discount_amount=data.get('discount_amount'),
+        start_date=datetime.strptime(data['start_date'], '%Y-%m-%d %H:%M:%S'),
+        end_date=datetime.strptime(data['end_date'], '%Y-%m-%d %H:%M:%S'),
+        minimum_order_amount=data.get('minimum_order_amount'),
+        admin_id=data['admin_id'],
+        user_roles=data.get('user_roles'),
+        discount_type=data.get('discount_type')
+    )
+    db.session.add(new_coupon)
+    db.session.commit()
+    return jsonify(new_coupon.to_dict()), 201
+
+# UPDATE an existing coupon by ID
+@app.route('/coupons/<int:coupon_id>', methods=['PUT'])
+def update_coupon(coupon_id):
+    data = request.json
+    coupon = Coupon.query.get_or_404(coupon_id)
+    
+    coupon.coupon_code = data.get('coupon_code', coupon.coupon_code)
+    coupon.discount_percentage = data.get('discount_percentage', coupon.discount_percentage)
+    coupon.discount_amount = data.get('discount_amount', coupon.discount_amount)
+    coupon.start_date = datetime.strptime(data['start_date'], '%Y-%m-%d %H:%M:%S')
+    coupon.end_date = datetime.strptime(data['end_date'], '%Y-%m-%d %H:%M:%S')
+    coupon.minimum_order_amount = data.get('minimum_order_amount', coupon.minimum_order_amount)
+    coupon.admin_id = data.get('admin_id', coupon.admin_id)
+    coupon.user_roles = data.get('user_roles', coupon.user_roles)
+    coupon.discount_type = data.get('discount_type', coupon.discount_type)
+    
+    db.session.commit()
+    return jsonify(coupon.to_dict()), 200
+
+# DELETE a coupon by ID
+@app.route('/coupons/<int:coupon_id>', methods=['DELETE'])
+def delete_coupon(coupon_id):
+    coupon = Coupon.query.get_or_404(coupon_id)
+    db.session.delete(coupon)
+    db.session.commit()
+    return jsonify({'message': 'Coupon deleted'}), 200
+
+# ===================== SEARCH FLIGHTS API ===================== #
 @app.route('/search/flights/<from_airport_code>/<to_airport_code>/<date>/<int:travellers>', methods=['GET'])
 def search_flights(from_airport_code, to_airport_code, date, travellers):
     # Parse the date in YYMMDD format and convert to datetime
