@@ -1,1 +1,8 @@
 /* Navbar.css */
+.ms-auto {
+  align-items: center;
+}
+
+.ms-auto li {
+  margin-right: 0.5rem;
+}

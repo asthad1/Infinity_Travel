@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import text, cast, Date  # Import the text, cast function and Date attribute
+# Import the text, cast function and Date attribute
+from sqlalchemy import text, cast, Date
 from sqlalchemy.orm import aliased
 import random
 import string
@@ -19,7 +20,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 CORS(app)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://infinity_travel_owner:xxxxxx@ep-spring-frost-a4siuz5k.us-east-1.aws.neon.tech/infinity_travel?sslmode=require'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://infinity_travel_owner:q9urkfXI7nGg@ep-spring-frost-a4siuz5k.us-east-1.aws.neon.tech/infinity_travel?sslmode=require'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize SQLAlchemy
@@ -30,10 +31,9 @@ db.init_app(app)
 # ===================== LOGIN ================================== #
 
 
-
-
 # In-memory store for accounts (for example purposes; ideally use a database)
 accounts = {}
+
 
 def validate_password(password):
     errors = []
@@ -48,6 +48,7 @@ def validate_password(password):
     if not re.search(r'[!@#?$]', password):
         errors.append("At least one special character (! @ # ? $)")
     return errors
+
 
 def generate_membership_number():
     return ''.join(random.choices(string.digits, k=16))
@@ -91,7 +92,8 @@ def register():
     # }
 
     # return jsonify({'message': 'Account created successfully', 'membership_number': membership_number}), 201
-    user = User(name=name, email=email, phone=phone, role = role, password=password, membership_number=membership_number)
+    user = User(name=name, email=email, phone=phone, role=role,
+                password=password, membership_number=membership_number)
     db.session.add(user)
     db.session.commit()
 
@@ -104,16 +106,18 @@ def login():
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
-    
+
     # Print the received data
-    print(f"Data is: {data}", flush=True)  # Use flush=True to force printing immediately
-    
+    # Use flush=True to force printing immediately
+    print(f"Data is: {data}", flush=True)
+
     # Fetch the user by email
-    user = User.query.filter_by(email=username).first()  # Use .first() to fetch the user instance
-    
+    # Use .first() to fetch the user instance
+    user = User.query.filter_by(email=username).first()
+
     # Print the user object (or None if not found)
     print(f"User is : {user}", flush=True)
-    
+
     # Check if user exists and compare passwords
     if user and user.password == password:
         return jsonify({'message': 'Login successful'}), 200
@@ -128,10 +132,12 @@ def get_users():
     users = User.query.all()
     return jsonify([user.to_dict() for user in users]), 200
 
+
 @app.route('/users/<int:id>', methods=['GET'])
 def get_user(id):
     user = User.query.get_or_404(id)
     return jsonify(user.to_dict()), 200
+
 
 @app.route('/users', methods=['POST'])
 def create_user():
@@ -151,6 +157,7 @@ def create_user():
     db.session.commit()
     return jsonify(new_user.to_dict()), 201
 
+
 @app.route('/users/<int:id>', methods=['PUT'])
 def update_user(id):
     data = request.json
@@ -167,6 +174,7 @@ def update_user(id):
     db.session.commit()
     return jsonify(user.to_dict()), 200
 
+
 @app.route('/users/<int:id>', methods=['DELETE'])
 def delete_user(id):
     user = User.query.get_or_404(id)
@@ -182,10 +190,12 @@ def get_flights():
     flights = Flight.query.all()
     return jsonify([flight.to_dict() for flight in flights]), 200
 
+
 @app.route('/flights/<int:id>', methods=['GET'])
 def get_flight(id):
     flight = Flight.query.get_or_404(id)
     return jsonify(flight.to_dict()), 200
+
 
 @app.route('/flights', methods=['POST'])
 def create_flight():
@@ -205,6 +215,7 @@ def create_flight():
     db.session.commit()
     return jsonify(new_flight.to_dict()), 201
 
+
 @app.route('/flights/<int:id>', methods=['PUT'])
 def update_flight(id):
     data = request.json
@@ -221,6 +232,7 @@ def update_flight(id):
     db.session.commit()
     return jsonify(flight.to_dict()), 200
 
+
 @app.route('/flights/<int:id>', methods=['DELETE'])
 def delete_flight(id):
     flight = Flight.query.get_or_404(id)
@@ -236,10 +248,12 @@ def get_cities():
     cities = City.query.all()
     return jsonify([city.to_dict() for city in cities]), 200
 
+
 @app.route('/cities/<int:id>', methods=['GET'])
 def get_city(id):
     city = City.query.get_or_404(id)
     return jsonify(city.to_dict()), 200
+
 
 @app.route('/cities', methods=['POST'])
 def create_city():
@@ -249,6 +263,7 @@ def create_city():
     db.session.commit()
     return jsonify(new_city.to_dict()), 201
 
+
 @app.route('/cities/<int:id>', methods=['PUT'])
 def update_city(id):
     data = request.json
@@ -257,6 +272,7 @@ def update_city(id):
     city.state_id = data.get('state_id', city.state_id)
     db.session.commit()
     return jsonify(city.to_dict()), 200
+
 
 @app.route('/cities/<int:id>', methods=['DELETE'])
 def delete_city(id):
@@ -273,10 +289,12 @@ def get_states():
     states = State.query.all()
     return jsonify([state.to_dict() for state in states]), 200
 
+
 @app.route('/states/<int:id>', methods=['GET'])
 def get_state(id):
     state = State.query.get_or_404(id)
     return jsonify(state.to_dict()), 200
+
 
 @app.route('/states', methods=['POST'])
 def create_state():
@@ -286,6 +304,7 @@ def create_state():
     db.session.commit()
     return jsonify(new_state.to_dict()), 201
 
+
 @app.route('/states/<int:id>', methods=['PUT'])
 def update_state(id):
     data = request.json
@@ -293,6 +312,7 @@ def update_state(id):
     state.state_name = data.get('state_name', state.state_name)
     db.session.commit()
     return jsonify(state.to_dict()), 200
+
 
 @app.route('/states/<int:id>', methods=['DELETE'])
 def delete_state(id):
@@ -309,10 +329,12 @@ def get_airports():
     airports = Airport.query.all()
     return jsonify([airport.to_dict() for airport in airports]), 200
 
+
 @app.route('/airports/<int:id>', methods=['GET'])
 def get_airport(id):
     airport = Airport.query.get_or_404(id)
     return jsonify(airport.to_dict()), 200
+
 
 @app.route('/airports', methods=['POST'])
 def create_airport():
@@ -321,6 +343,7 @@ def create_airport():
     db.session.add(new_airport)
     db.session.commit()
     return jsonify(new_airport.to_dict()), 201
+
 
 @app.route('/airports/<int:id>', methods=['PUT'])
 def update_airport(id):
@@ -331,6 +354,7 @@ def update_airport(id):
     db.session.commit()
     return jsonify(airport.to_dict()), 200
 
+
 @app.route('/airports/<int:id>', methods=['DELETE'])
 def delete_airport(id):
     airport = Airport.query.get_or_404(id)
@@ -340,15 +364,18 @@ def delete_airport(id):
 
 # ===================== CRUD FOR FAVORITE MODEL ===================== #
 
+
 @app.route('/favorites', methods=['GET'])
 def get_favorites():
     favorites = Favorite.query.all()
     return jsonify([favorite.to_dict() for favorite in favorites]), 200
 
+
 @app.route('/favorites/<int:id>', methods=['GET'])
 def get_favorite(id):
     favorite = Favorite.query.get_or_404(id)
     return jsonify(favorite.to_dict()), 200
+
 
 @app.route('/favorites', methods=['POST'])
 def create_favorite():
@@ -356,7 +383,7 @@ def create_favorite():
     # Validate that user and flight exist
     user = User.query.get_or_404(data['user_id'])
     flight = Flight.query.get_or_404(data['flight_id'])
-    
+
     new_favorite = Favorite(
         flight_id=flight.id,
         user_id=user.id,
@@ -368,11 +395,12 @@ def create_favorite():
     db.session.commit()
     return jsonify(new_favorite.to_dict()), 201
 
+
 @app.route('/favorites/<int:id>', methods=['PUT'])
 def update_favorite(id):
     data = request.json
     favorite = Favorite.query.get_or_404(id)
-    
+
     # Update foreign key relationships
     if 'flight_id' in data:
         flight = Flight.query.get_or_404(data['flight_id'])
@@ -390,6 +418,7 @@ def update_favorite(id):
     db.session.commit()
     return jsonify(favorite.to_dict()), 200
 
+
 @app.route('/favorites/<int:id>', methods=['DELETE'])
 def delete_favorite(id):
     favorite = Favorite.query.get_or_404(id)
@@ -402,19 +431,54 @@ def delete_favorite(id):
 def get_favorites_by_user(user_id):
     # Check if the user exists
     user = User.query.get_or_404(user_id)
-    
+
     # Query all favorites for the given user
     favorites = Favorite.query.filter_by(user_id=user.id).all()
-    
+
     return jsonify([favorite.to_dict() for favorite in favorites]), 200
 
   # Search Flights
+
+# Route to generate and share a favorite search
+
+
+@app.route('/favorites/<int:id>/share', methods=['POST'])
+def share_favorite(id):
+    favorite = Favorite.query.get_or_404(id)
+
+    # Generate the shareable URL if it doesn't exist
+    if not favorite.shared_url:
+        favorite.generate_shareable_url()
+
+    # Generate full shareable link
+    shareable_link = url_for('view_shared_search',
+                             url=favorite.shared_url, _external=True)
+
+    return jsonify({'shareable_link': shareable_link}), 200
+
+# Route to view shared favorite search via URL
+
+
+@app.route('/favorites/shared/<url>', methods=['GET'])
+def view_shared_search(url):
+    favorite = Favorite.query.filter_by(shared_url=url).first_or_404()
+
+    # Return favorite search details, excluding sensitive user info
+    return jsonify({
+        'flight_id': favorite.flight_id,
+        'airport_name': favorite.airport_name,
+        'state_name': favorite.state_name,
+        'city_name': favorite.city_name
+    }), 200
+
+
 @app.route('/search/flights/<from_airport_code>/<to_airport_code>/<date>/<int:travellers>', methods=['GET'])
 def search_flights(from_airport_code, to_airport_code, date, travellers):
     # Parse the date in YYMMDD format and convert to datetime
     try:
         # Convert YYMMDD to YYYY-MM-DD
-        parsed_date = datetime.strptime(date, '%y%m%d').date()  # Get only the date part
+        parsed_date = datetime.strptime(
+            date, '%y%m%d').date()  # Get only the date part
     except ValueError:
         return jsonify({'error': 'Invalid date format. Use YYMMDD.'}), 400
 
@@ -447,6 +511,7 @@ def search_flights(from_airport_code, to_airport_code, date, travellers):
     result_flights = flights.all()
 
     return jsonify([flight.to_dict() for flight in result_flights]), 200
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9001)

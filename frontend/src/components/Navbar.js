@@ -2,9 +2,9 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import './Navbar.css';  // Import styles
 
-function Navbar() {
+function Navbar({ user, setUser }) {
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav className="navbar navbar-expand-lg navbar-light bg-light">
       <div className="container-fluid">
         <Link className="navbar-brand" to="/">
           Infinity Travel
@@ -21,7 +21,7 @@ function Navbar() {
           <span className="navbar-toggler-icon"></span>
         </button>
         <div className="collapse navbar-collapse" id="navbarNav">
-          <ul className="navbar-nav ms-auto">
+          <ul className="navbar-nav">
             <li className="nav-item">
               <Link className="nav-link" to="/">
                 Home
@@ -29,19 +29,50 @@ function Navbar() {
             </li>
             <li className="nav-item">
               <Link className="nav-link" to="/support">
-                Customer Support
+                Support
               </Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="/login">
-                Login
+              <Link className="nav-link" to="/flightsearchresults">
+                Search Flights
               </Link>
             </li>
+          </ul>
+          <ul className="navbar-nav ms-auto">
+            {user ? (
+              <>
+                <li className="nav-item">
+                  <span className="navbar-text">Welcome, {user}!</span>  {/* Display user's name */}
+                </li>
+                <li className="nav-item">
+                  <LogoutButton setUser={setUser} />  {/* Logout button when user is logged in */}
+                </li>
+              </>
+            ) : (
+              <>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/login">Login</Link>
+                </li>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/register">Register</Link>
+                </li>
+              </>
+            )}
           </ul>
         </div>
       </div>
     </nav>
   );
+}
+
+// Logout button component
+function LogoutButton({ setUser }) {
+  const handleLogout = () => {
+    setUser(null);  // Reset user state
+    window.location.href = '/login';  // Redirect to login after logout
+  };
+
+  return <button className="btn btn-outline-danger" onClick={handleLogout}>Logout</button>;
 }
 
 export default Navbar;
