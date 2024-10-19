@@ -33,7 +33,7 @@ function Navbar({ user, setUser }) {
               </Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="/flightsearchresults">
+              <Link className="nav-link" to="/flightsearches">
                 Search Flights
               </Link>
             </li>

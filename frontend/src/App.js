@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
+import FlightSearches from './pages/FlightSearches';
 import Support from './pages/Support';
 import Footer from './components/Footer';
-import FlightSearchResults from './components/FlightSearchResults';
 import UserFavoriteFlights from './components/UserFavoriteFlights';
-import Register from './Register';
-import Login from './Login';
+import Register from './components/Register';
+import Login from './components/Login';
 import Navbar from './components/Navbar'; 
 
 function App() {
@@ -25,7 +25,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={user ? <Navigate to="/" /> : <Login setUser={setUser} />} />
             <Route path="/support" element={<Support />} />
-            <Route path="/flightsearchresults" element={<FlightSearchResults />} />
+            <Route path="/flightsearches" element={<FlightSearches />} />
             <Route path="/savedflights" element={<UserFavoriteFlights />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
