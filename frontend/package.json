@@ -1,18 +1,30 @@
 {
-    "name": "infinity-travel",
-    "version": "1.0.0",
-    "scripts": {
-        "start": "react-scripts start",
-        "build": "react-scripts build"
-    },
-    "dependencies": {
-        "react": "^18.0.0",
-        "react-dom": "^18.0.0",
-        "react-router-dom": "^6.0.0",
-        "react-scripts": "^5.0.1",
-        "react-select": "^5.2.2"
-    },
-    "devDependencies": {
-        "@babel/plugin-proposal-private-property-in-object": "^7.21.11"
-    }
+  "name": "infinity-travel",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build"
+  },
+  "dependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "react-router-dom": "^6.0.0",
+    "react-scripts": "^5.0.1",
+    "react-select": "^5.2.2"
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
 }

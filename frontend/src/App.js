@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate, Link, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, Link, useNavigate} from 'react-router-dom';
 import Home from './pages/Home';
 import Support from './pages/Support';
 import Footer from './components/Footer';
@@ -7,6 +7,8 @@ import FlightSearchResults from './components/FlightSearchResults';
 import UserFavoriteFlights from './components/UserFavoriteFlights';
 import Register from './Register';
 import Login from './Login';
+import FlightSearchForm from './components/FlightSearchForm';
+import Checkout from './pages/Checkout';
 
 function App() {
   const [user, setUser] = useState(null);  // State to store logged-in user
@@ -67,6 +69,8 @@ function App() {
             <Route path="/support" element={<Support />} />
             <Route path="/flightsearchresults" element={<FlightSearchResults />} />
             <Route path="/savedflights" element={<UserFavoriteFlights />} />
+            <Route path="/flights" element={<FlightSearchForm />} />
+            <Route path="/checkout" element={<Checkout />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </div>
