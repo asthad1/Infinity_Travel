@@ -91,11 +91,22 @@ function FlightSearchForm() {
     }
   };
 
-  const calculateTotalCost = () => {
-    const departureFlight = filteredDepartureFlights[0]; // Assuming selecting the first flight for simplicity
-    const returnFlight = filteredReturnFlights[0]; // Assuming selecting the first return flight
-    return (departureFlight?.price || 0) + (returnFlight?.price || 0);
+  const calculateTotalCostAndAirline = () => {
+    const departureFlight = filteredDepartureFlights[0]; 
+    const returnFlight = filteredReturnFlights[0]; 
+
+    const totalCost = (departureFlight?.price || 0) + (returnFlight?.price || 0);
+    const cheapestAirline = departureFlight?.price < returnFlight?.price 
+      ? departureFlight?.airline 
+      : returnFlight?.airline;
+
+    return { totalCost, cheapestAirline };
   };
+
+  // Calculate total cost and airline if roundtrip is selected
+  const { totalCost, cheapestAirline } = isRoundtrip && filteredReturnFlights.length > 0
+    ? calculateTotalCostAndAirline()
+    : { totalCost: 0, cheapestAirline: '' }; // default values if no roundtrip
 
   return (
     <div className="container mt-5">
@@ -330,9 +341,12 @@ function FlightSearchForm() {
                 </li>
               ))}
             </ul>
+
             {isRoundtrip && filteredReturnFlights.length > 0 && (
               <div className="mt-3">
-                <strong>Total Cost for Roundtrip:</strong> ${calculateTotalCost() * travelers}
+                <strong>Cheapest Cost for Roundtrip:</strong> ${totalCost * travelers}
+                <br />
+                <strong>Cheapest Airline:</strong> {cheapestAirline}
               </div>
             )}
           </div>

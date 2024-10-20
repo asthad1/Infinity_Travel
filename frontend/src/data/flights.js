@@ -304,5 +304,29 @@ export const flights = [
     price: 550,
     stops: 0,
     availableSeats: 10
-  }
+  },
+  {
+    flightNumber: 'DL888',
+    airline: 'Delta Airlines',
+    departureAirport: 'SFO',
+    destinationAirport: 'JFK',
+    departureTime: '2024-10-22T14:00',
+    arrivalTime: '2024-10-22T22:00',
+    duration: '8h',
+    price: 600,
+    stops: 1,
+    availableSeats: 8
+  },
+  {
+    flightNumber: 'DL888',
+    airline: 'Delta Airlines',
+    departureAirport: 'JFK',
+    destinationAirport: 'SFO',
+    departureTime: '2024-10-29T10:00',
+    arrivalTime: '2024-10-29T18:00',
+    duration: '8h',
+    price: 600,
+    stops: 1,
+    availableSeats: 8
+  }  
 ];
