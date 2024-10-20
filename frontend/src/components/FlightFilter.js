@@ -1,11 +1,25 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios'; // Import axios for API call
 import './FlightFilter.css'; // Import custom CSS for styling
 
-function FlightFilter({ airlines, onFilterChange }) {
+function FlightFilter({ onFilterChange }) {
   const [numStops, setNumStops] = useState('');
   const [selectedAirline, setSelectedAirline] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [airlines, setAirlines] = useState([]);
   const [debounceTimeout, setDebounceTimeout] = useState(null);
+
+  // Fetch airlines from backend when the component loads
+  useEffect(() => {
+    axios
+      .get('http://localhost:9001/api/airlines') // Replace with the correct API endpoint for fetching airlines
+      .then((response) => {
+        setAirlines(response.data); // Assume backend returns a list of airline names
+      })
+      .catch((error) => {
+        console.error('Error fetching airlines:', error);
+      });
+  }, []);
 
   const handleFilterChange = () => {
     onFilterChange({
@@ -15,13 +29,13 @@ function FlightFilter({ airlines, onFilterChange }) {
     });
   };
 
-  // Debounce function to limit filter updates
+  // Debounce filter updates
   useEffect(() => {
     if (debounceTimeout) {
       clearTimeout(debounceTimeout);
     }
-    
-    const timeout = setTimeout(handleFilterChange, 300); // Adjust time as necessary
+
+    const timeout = setTimeout(handleFilterChange, 300);
     setDebounceTimeout(timeout);
 
     return () => clearTimeout(timeout);
@@ -41,8 +55,7 @@ function FlightFilter({ airlines, onFilterChange }) {
         {/* Number of Stops */}
         <div className="col-md-4">
           <label htmlFor="numStops" className="form-label">
-          <i className="fas fa-stop-circle"></i>
-            Number of Stops
+            <i className="fas fa-stop-circle"></i> Number of Stops
           </label>
           <select
             className="form-control"
@@ -58,9 +71,7 @@ function FlightFilter({ airlines, onFilterChange }) {
 
         {/* Airline */}
         <div className="col-md-4">
-          <label htmlFor="airline" className="form-label">
-            Airline
-          </label>
+          <label htmlFor="airline" className="form-label">Airline</label>
           <select
             className="form-control"
             value={selectedAirline}
@@ -77,9 +88,7 @@ function FlightFilter({ airlines, onFilterChange }) {
 
         {/* Max Price */}
         <div className="col-md-4">
-          <label htmlFor="maxPrice" className="form-label">
-            Max Price ($)
-          </label>
+          <label htmlFor="maxPrice" className="form-label">Max Price ($)</label>
           <input
             type="number"
             className="form-control"

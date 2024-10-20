@@ -1,117 +1,70 @@
+/* FlightSearchResults.css */
+
 .flight-search-results {
-  font-family: Arial, sans-serif;
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.sort-options {
   display: flex;
-  justify-content: space-between;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 15px;
-  margin-bottom: 20px;
-}
-
-.sort-option {
-  text-align: center;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.sort-option.active {
-  font-weight: bold;
-  border-bottom: 3px solid #0077cc;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 2rem;
 }
 
 .flight-card {
-  display: flex;
-  flex-direction: column;
-  background-color: white;
+  border: 1px solid #ddd;
   border-radius: 8px;
+  padding: 1.5rem;
+  background-color: #fff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  margin-bottom: 20px;
-  border: 1px solid #e6e6e6;
 }
 
-.flight-tags {
-  margin-bottom: 10px;
-}
-
-.flight-tags .tag {
-  display: inline-block;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 12px;
+.flight-card-header {
+  font-size: 1.25rem;
   font-weight: bold;
-  margin-right: 5px;
+  margin-bottom: 1rem;
 }
 
-.tag.best {
-  background-color: #d4edda;
-  color: #155724;
+.flight-card-header span {
+  font-weight: normal;
+  margin: 0 0.5rem;
 }
 
-.tag.cheapest {
-  background-color: #cce5ff;
-  color: #004085;
-}
-
-.flight-details {
+.flight-card-body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.airline-logo img {
-  width: 40px;
-  height: 40px;
-  margin-right: 10px;
+  gap: 1rem;
 }
 
 .flight-info {
-  flex: 1;
-  padding-left: 10px;
-}
-
-.flight-time {
-  font-weight: bold;
-  font-size: 16px;
-}
-
-.flight-duration, .flight-route {
-  color: #666;
-  font-size: 14px;
-}
-
-.flight-price-section {
-  text-align: right;
+  flex: 3;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
-.price {
-  font-size: 24px;
+.flight-info p {
+  margin: 0;
+  width: 45%;
+  font-size: 0.95rem;
+}
+
+.flight-price {
+  flex: 1;
+  text-align: right;
+}
+
+.flight-price p {
+  font-size: 1.2rem;
   font-weight: bold;
-  color: #0077cc;
 }
 
-.price-subtitle {
-  color: #666;
-  font-size: 14px;
-}
-
-.view-deal-button {
+.btn-primary {
   background-color: #007bff;
-  color: white;
   border: none;
-  padding: 10px 20px;
+  padding: 0.5rem 1rem;
+  color: white;
   border-radius: 4px;
   cursor: pointer;
-  margin-top: 10px;
-  font-size: 14px;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
 }

@@ -16,6 +16,9 @@ import singapore from '../assets/images/airlines/singapore.png';
 import united from '../assets/images/airlines/united.png';
 import defaultLogo from '../assets/images/airlines/default-logo.png';
 
+
+const BASE_URL = "https://infinity-travel.com"
+
 // Define an object to store airline images by airline name
 const airlineImages = {
   'Air France': airFrance,
@@ -37,7 +40,7 @@ function MyFlights() {
   const [shareLink, setShareLink] = useState('');
 
   const handleShare = (flight) => {
-    const uniqueURL = `http://localhost:3000/shared-flights/${flight.id}`;
+    const uniqueURL = `$http://localhost:3000/shared-flights/${flight.id}`;
     setSelectedFlight(flight);
     setShareLink(uniqueURL);
     setShareModal(true);

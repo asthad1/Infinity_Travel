@@ -1,46 +1,36 @@
 import React from 'react';
-import { useSelector } from 'react-redux';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import Home from './pages/Home';
-import Support from './pages/Support';
-import Footer from './components/Footer';
-import FlightSearches from './pages/FlightSearches';
-import SavedFlights from './components/SavedFlights';
-import SharedFlightDetails from './components/SharedFlightDetails';
-import MyFlights from './components/MyFlights';
-import Register from './components/Register';
-import Login from './components/Login';
 import Navbar from './components/Navbar';
+import Login from './components/Login';
+import Register from './components/Register';
+import Home from './pages/Home';
+import MyFlights from './components/MyFlights';
+import Profile from './components/Profile';
+import FlightSearches from './pages/FlightSearches';
+import Support from './pages/Support';
+import MyFavorites from './components/MyFavorites';
 
 function App() {
-  // Correctly access currentUser from Redux store
-  const currentUser = useSelector((state) => state.user?.currentUser);
+  // Use localStorage to get the user
+  const currentUser = JSON.parse(localStorage.getItem('user'));
+
+  // Debugging: Print the current user from localStorage
+  console.log('Current User from LocalStorage:', currentUser);
+  console.log('User ID from LocalStorage:', localStorage.getItem('user_id'));
 
   return (
-    <div className="d-flex flex-column min-vh-100">
-      <Router>
-        {/* Navbar */}
-        <Navbar user={currentUser} /> {/* Pass user prop to Navbar */}
-
-        {/* Main content and routes */}
-        <div className="flex-grow-1 my-4">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/login" element={currentUser ? <Navigate to="/" /> : <Login />} />
-            <Route path="/support" element={<Support />} />
-            <Route path="/flightsearches" element={<FlightSearches />} />
-            <Route path="/savedflights" element={<SavedFlights />} />
-            <Route path="/my-flights" element={<MyFlights />} />
-            <Route path="/shared-flights/:flightId" element={<SharedFlightDetails />} />
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </div>
-
-        {/* Footer */}
-        <Footer />
-      </Router>
-    </div>
+    <Router>
+      <Navbar user={currentUser} />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={currentUser ? <Navigate to="/" /> : <Login />} />
+        <Route path="/my-flights" element={currentUser ? <MyFlights /> : <Navigate to="/login" />} />
+        <Route path="/profile" element={currentUser ? <Profile /> : <Navigate to="/login" />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/support" element={<Support />} />
+        <Route path="/my-favorites" element={currentUser ? <MyFavorites /> : <Navigate to="/login" />} />
+      </Routes>
+    </Router>
   );
 }
 

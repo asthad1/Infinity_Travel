@@ -1,39 +1,39 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { setUser } from '../store/userSlice'; // Import the setUser action
+import { setUser } from '../store/userSlice'; // Redux action to set user data
 
 function Login() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');  // Use 'email' instead of 'username'
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const dispatch = useDispatch(); // Create dispatch function
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
+  
     fetch('http://localhost:9001/api/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ email, password }),
     })
-      .then((response) =>
-        response.json().then((data) => ({ status: response.status, body: data }))
-      )
-      .then(({ status, body }) => {
-        if (status === 200) {
-          dispatch(setUser({ username })); // Update the Redux store with the user's information
-          navigate('/welcome');
+      .then(response => response.json())
+      .then((data) => {
+        if (data.user_id) {
+          dispatch(setUser({ user_id: data.user_id, email: data.email }));
+          localStorage.setItem('user_id', data.user_id);
+          localStorage.setItem('user', JSON.stringify({ user_id: data.user_id, email: data.email }));
+          navigate('/profile');
         } else {
-          setMessage(body.message || 'Login failed');
+          setMessage('Login failed. Please try again.');
         }
       })
       .catch((error) => {
         console.error('Error:', error);
-        setMessage('An error occurred during login');
+        setMessage('An error occurred during login.');
       });
   };
 
@@ -43,8 +43,8 @@ function Login() {
       <form onSubmit={handleSubmit}>
         <input
           type="email"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          value={email}  // Use 'email' instead of 'username'
+          onChange={(e) => setEmail(e.target.value)}  // Update state for email
           placeholder="Enter your email"
           required
         />
@@ -58,8 +58,11 @@ function Login() {
         <button type="submit">Login</button>
       </form>
       {message && <p>{message}</p>}
-      {/* Register button */}
-      <p>Don't have an account? <button onClick={() => navigate('/register')}>Register here</button></p>
+      <br />
+      <p>
+        Don't have an account?
+        <Link to="/register">Register here</Link>
+      </p>
     </div>
   );
 }

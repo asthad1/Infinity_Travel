@@ -1,95 +1,95 @@
 import React, { useEffect, useState } from 'react';
 import Select from 'react-select';
 import './FlightSearchForm.css';
-import FlightSearchResults from './FlightSearchResults';
-import { airports } from '../data/airports';
+import FlightFilter from './FlightFilter';
+import FlightSearchResults from './FlightSearchResults'; // Import FlightSearchResults
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilteredFlights, setErrorMessage } from '../store/flightsSlice';
 import { setDepartureAirport, setDestinationAirport, setDepartureDate, setTravelers } from '../store/searchSlice';
+import axios from 'axios'; // Import axios for API calls
 
 function FlightSearchForm() {
   const dispatch = useDispatch();
-  
-  // State from Redux
+
+  // Redux state
   const departureAirport = useSelector((state) => state.search.departureAirport);
   const destinationAirport = useSelector((state) => state.search.destinationAirport);
   const departureDate = useSelector((state) => state.search.departureDate);
   const travelers = useSelector((state) => state.search.travelers);
-  const filteredFlights = useSelector((state) => state.flights.filteredFlights);
-  const errorMessage = useSelector((state) => state.flights.errorMessage);
-  const flights = useSelector((state) => state.flights.flights); // Assuming `flights` is stored in Redux
+  const filteredFlights = useSelector((state) => state.flights.filteredFlights); // Get filtered flights
 
+  // Local state
   const [showFilters, setShowFilters] = useState(false);
-  const [minDate, setMinDate] = useState(''); // To store today's date as minDate
-
-  // Use effect to set today's date in yyyy-mm-dd format
-  useEffect(() => {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are zero-based, so add 1
-    const dd = String(today.getDate()).padStart(2, '0');
-    setMinDate(`${yyyy}-${mm}-${dd}`);
-  }, []);
-
-  // Additional filter states
+  const [minDate, setMinDate] = useState('');
+  const [airports, setAirports] = useState([]); // State for storing airport options
   const [numStops, setNumStops] = useState('');
   const [selectedAirline, setSelectedAirline] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
 
-  // Function to swap departure and destination
-  const handleSwap = () => {
-    dispatch(setDepartureAirport(destinationAirport));
-    dispatch(setDestinationAirport(departureAirport));
-  };
+  // Fetch airports on component load
+  useEffect(() => {
+    axios
+      .get('http://localhost:9001/api/airports') // Replace with the correct airport endpoint
+      .then((response) => {
+        const airportOptions = response.data.map((airport) => ({
+          value: airport.code,
+          label: `${airport.name} (${airport.code})`,
+        }));
+        setAirports(airportOptions); // Populate airports dynamically from API
+      })
+      .catch((error) => {
+        console.error('Error fetching airports:', error);
+        dispatch(setErrorMessage('Error fetching airport data. Please try again.'));
+      });
+  }, [dispatch]);
 
   const handleSearch = (e) => {
     e.preventDefault();
 
-    // Ensure flights is defined
-    if (!flights) {
-      dispatch(setErrorMessage('Flights data is not available.'));
+    // Check if required fields are filled
+    if (!departureAirport || !destinationAirport || !departureDate || travelers < 1) {
+      dispatch(setErrorMessage('Please fill all the required fields.'));
       return;
     }
 
-    // Validate if the selected date is within the next 6 months
-    const currentDate = new Date();
-    const maxDate = new Date();
-    maxDate.setMonth(currentDate.getMonth() + 6); // Add 6 months to the current date
-    const selectedDepartureDate = new Date(departureDate);
+    // Prepare search criteria
+    const searchCriteria = {
+      departureAirport: departureAirport?.value,
+      destinationAirport: destinationAirport?.value,
+      departureDate,
+      numTravellers: travelers,
+      numStops,
+      selectedAirline,
+      maxPrice,
+    };
 
-    if (selectedDepartureDate > maxDate) {
-      dispatch(setErrorMessage('You can only search for flights up to 6 months in advance.'));
-      return;
-    }
-
-    // If date is valid, proceed with the search
-    dispatch(setErrorMessage('')); // Clear any existing error message
-
-    // Filter flights based on search parameters and additional filters
-    const results = flights.filter((flight) => {
-      return (
-        flight.departureAirport === departureAirport?.value &&
-        flight.destinationAirport === destinationAirport?.value &&
-        flight.departureTime.startsWith(departureDate) && // Matches date
-        (!numStops || (numStops === '2' && flight.stops >= 2) || flight.stops === parseInt(numStops)) &&
-        (!selectedAirline || flight.airline === selectedAirline) &&
-        (!maxPrice || flight.price <= parseFloat(maxPrice)) &&
-        flight.availableSeats >= travelers // Check if there are enough available seats
-      );
-    });
-
-    dispatch(setFilteredFlights(results)); // Set the filtered flights in Redux
+    // Send search request to the backend
+    axios
+      .post('http://localhost:9001/api/flights/search', searchCriteria) // Replace with correct search endpoint
+      .then((response) => {
+        const flights = response.data;
+        if (flights.length === 0) {
+          dispatch(setErrorMessage('No flights found matching the criteria.'));
+        } else {
+          dispatch(setErrorMessage('')); // Clear any error message
+          dispatch(setFilteredFlights(flights)); // Update filtered flights in Redux
+        }
+      })
+      .catch((error) => {
+        console.error('Error searching flights:', error);
+        dispatch(setErrorMessage('Error searching flights. Please try again.'));
+      });
   };
 
   return (
     <div className="container mt-5">
       <h2 className="mb-4">Search Flights</h2>
       <form onSubmit={handleSearch}>
-        {/* Search Parameters */}
         <div className="row g-3">
-          <div className="col-md-6 col-lg-3 position-relative">
+          {/* Departure Airport Field */}
+          <div className="col-md-6 col-lg-3">
             <label htmlFor="departureAirport" className="form-label">
-              <i className="fas fa-map-marker-alt me-2"></i> Leaving from
+              Leaving from <span className="text-danger">*</span>
             </label>
             <Select
               options={airports}
@@ -97,24 +97,14 @@ function FlightSearchForm() {
               onChange={(option) => dispatch(setDepartureAirport(option))}
               placeholder="Select Departure"
               isClearable={true}
+              required
             />
           </div>
 
-          {/* Swap Button */}
-          <div className="col-md-auto d-flex align-items-end">
-            <button
-              type="button"
-              className="btn btn-outline-primary swap-button"
-              onClick={handleSwap}
-              style={{ height: '40px' }} // Adjust the height to match the input fields
-            >
-              <i className="fas fa-exchange-alt"></i> {/* Swap arrows icon */}
-            </button>
-          </div>
-
-          <div className="col-md-6 col-lg-3 position-relative">
+          {/* Destination Airport Field */}
+          <div className="col-md-6 col-lg-3">
             <label htmlFor="destinationAirport" className="form-label">
-              <i className="fas fa-map-marker-alt me-2"></i> Going to
+              Going to <span className="text-danger">*</span>
             </label>
             <Select
               options={airports}
@@ -122,116 +112,69 @@ function FlightSearchForm() {
               onChange={(option) => dispatch(setDestinationAirport(option))}
               placeholder="Select Destination"
               isClearable={true}
+              required
             />
           </div>
 
+          {/* Departure Date Field */}
           <div className="col-md-6 col-lg-3">
             <label htmlFor="departureDate" className="form-label">
-              Departure Date
+              Departure Date <span className="text-danger">*</span>
             </label>
             <input
               type="date"
               className="form-control"
               value={departureDate}
               onChange={(e) => dispatch(setDepartureDate(e.target.value))}
-              min={minDate} // Set the minimum date to today's date
+              min={minDate}
               required
             />
           </div>
 
-          <div className="col-md-6 col-lg-2 d-flex align-items-end">
-            <div className="w-75">
-              <label htmlFor="travelers" className="form-label">
-                Travelers
-              </label>
-              <input
-                type="number"
-                className="form-control travelers-input"
-                value={travelers}
-                onChange={(e) => dispatch(setTravelers(e.target.value))}
-                min="1"
-                max="10"
-                required
-              />
-            </div>
-            <button
-              type="button"
-              className="btn btn-outline-primary ms-3"
-              onClick={() => setShowFilters((prev) => !prev)}
-              style={{ height: '40px' }} // Adjust the height to match the input field
-            >
-              <i className="fas fa-filter"></i> {/* Filter icon */}
+          {/* Travelers Field */}
+          <div className="col-md-6 col-lg-2">
+            <label htmlFor="travelers" className="form-label">
+              Travelers <span className="text-danger">*</span>
+            </label>
+            <input
+              type="number"
+              className="form-control"
+              value={travelers}
+              onChange={(e) => dispatch(setTravelers(e.target.value))}
+              min="1"
+              max="10"
+              required
+            />
+          </div>
+
+          {/* Toggle Filters Button */}
+          <div className="col-md-auto d-flex align-items-end">
+            <button type="button" className="btn btn-outline-primary" onClick={() => setShowFilters(!showFilters)}>
+              <i className="fas fa-filter"></i> Filters
             </button>
           </div>
         </div>
 
-        {/* Additional Filters Section */}
+        {/* Filter Section */}
         {showFilters && (
-          <div className="row g-3 align-items-center mt-4">
-            <div className="col-sm-4 col-lg-2">
-              <label htmlFor="numStops" className="form-label">
-                Stops <span className="optional">(Optional)</span>
-              </label>
-              <select
-                className="form-control filter-input"
-                value={numStops}
-                onChange={(e) => setNumStops(e.target.value)}
-              >
-                <option value="">Any</option>
-                <option value="0">Non-stop</option>
-                <option value="1">1 Stop</option>
-                <option value="2">2+ Stops</option>
-              </select>
-            </div>
-
-            <div className="col-sm-4 col-lg-2">
-              <label htmlFor="airline" className="form-label">
-                Airline <span className="optional">(Optional)</span>
-              </label>
-              <select
-                className="form-control filter-input"
-                value={selectedAirline}
-                onChange={(e) => setSelectedAirline(e.target.value)}
-              >
-                <option value="">Any</option>
-                {[...new Set(flights.map((flight) => flight.airline))].map((airline) => (
-                  <option key={airline} value={airline}>
-                    {airline}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="col-sm-4 col-lg-2">
-              <label htmlFor="maxPrice" className="form-label">
-                Max ($) <span className="optional">(Optional)</span>
-              </label>
-              <input
-                type="number"
-                className="form-control filter-input"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
-                min="0"
-              />
-            </div>
-          </div>
+          <FlightFilter
+            onFilterChange={({ numStops, airline, maxPrice }) => {
+              setNumStops(numStops);
+              setSelectedAirline(airline);
+              setMaxPrice(maxPrice);
+            }}
+          />
         )}
 
-        {/* Search Button */}
-        <div className="row mt-4">
-          <div className="col text-start">
-            <button id="SearchFlightsButton" type="submit" className="btn btn-primary btn-lg">
-              Search Flights
-            </button>
-          </div>
-        </div>
+        <button type="submit" className="btn btn-primary btn-lg mt-3">Search Flights</button>
       </form>
 
-      {/* Display error message */}
-      {errorMessage && <div className="alert alert-danger mt-3">{errorMessage}</div>}
-
-      {/* Display filtered flights */}
-      <FlightSearchResults flights={filteredFlights} />
+      {/* Display Flight Search Results */}
+      {filteredFlights && filteredFlights.length > 0 ? (
+        <FlightSearchResults flights={filteredFlights} />
+      ) : (
+        <div className="mt-3 text-muted">No flights found</div>
+      )}
     </div>
   );
 }
