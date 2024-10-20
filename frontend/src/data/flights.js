@@ -214,5 +214,95 @@ export const flights = [
     price: 750,
     stops: 2,
     availableSeats: 3
+  },
+  {
+    flightNumber: 'AA123',
+    airline: 'American Airlines',
+    departureAirport: 'JFK',
+    destinationAirport: 'LAX',
+    departureTime: '2024-10-23T08:00',
+    arrivalTime: '2024-10-23T16:00',
+    duration: '8h',
+    price: 450,
+    stops: 0,
+    availableSeats: 5
+  },
+  {
+    flightNumber: 'DL456',
+    airline: 'Delta Airlines',
+    departureAirport: 'JFK',
+    destinationAirport: 'LAX',
+    departureTime: '2024-10-23T10:00',
+    arrivalTime: '2024-10-23T18:00',
+    duration: '8h',
+    price: 500,
+    stops: 1,
+    availableSeats: 3
+  },
+  
+  // Roundtrip examples
+  {
+    flightNumber: 'AA123',
+    airline: 'American Airlines',
+    departureAirport: 'JFK',
+    destinationAirport: 'LAX',
+    departureTime: '2024-10-23T08:00',
+    arrivalTime: '2024-10-23T16:00',
+    duration: '8h',
+    price: 450,
+    stops: 0,
+    availableSeats: 5
+  },
+  {
+    flightNumber: 'DL456',
+    airline: 'Delta Airlines',
+    departureAirport: 'JFK',
+    destinationAirport: 'LAX',
+    departureTime: '2024-10-23T10:00',
+    arrivalTime: '2024-10-23T18:00',
+    duration: '8h',
+    price: 500,
+    stops: 1,
+    availableSeats: 3
+  },
+  // Additional one-way flights for variety
+  {
+    flightNumber: 'UA789',
+    airline: 'United Airlines',
+    departureAirport: 'LAX',
+    destinationAirport: 'ORD',
+    departureTime: '2024-10-16T09:30',
+    arrivalTime: '2024-10-16T17:30',
+    duration: '8h',
+    price: 480,
+    stops: 0,
+    availableSeats: 8
+  },
+  // ... other flights remain unchanged
+
+  // Testing roundtrip example
+  {
+    flightNumber: 'UA999',
+    airline: 'United Airlines',
+    departureAirport: 'SFO',
+    destinationAirport: 'JFK',
+    departureTime: '2024-10-22T12:00',
+    arrivalTime: '2024-10-22T20:00',
+    duration: '8h',
+    price: 550,
+    stops: 0,
+    availableSeats: 10
+  },
+  {
+    flightNumber: 'UA999',
+    airline: 'United Airlines',
+    departureAirport: 'JFK',
+    destinationAirport: 'SFO',
+    departureTime: '2024-10-29T09:00',
+    arrivalTime: '2024-10-29T17:00',
+    duration: '8h',
+    price: 550,
+    stops: 0,
+    availableSeats: 10
   }
 ];
