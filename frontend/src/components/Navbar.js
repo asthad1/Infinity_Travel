@@ -1,14 +1,15 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-function Navbar() {
+function Navbar({ user }) {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user'));
 
   const handleLogout = () => {
+    // Clear localStorage and navigate to login
     localStorage.removeItem('user');
     localStorage.removeItem('user_id');
     navigate('/login');
+    window.location.reload();  // Force a page reload to reset state
   };
 
   return (
@@ -52,7 +53,7 @@ function Navbar() {
                   <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                     <li><Link className="dropdown-item" to="/profile">Change Password</Link></li>
                     <li><Link className="dropdown-item" to="/my-favorites">My Favorites</Link></li>
-                    <li><Link className="dropdown-item" to="/my-flights">My Flights</Link></li>
+                    {/* <li><Link className="dropdown-item" to="/my-flights">My Flights</Link></li> */}
                     <li><button className="dropdown-item" onClick={handleLogout}>Logout</button></li>
                   </ul>
                 </li>
