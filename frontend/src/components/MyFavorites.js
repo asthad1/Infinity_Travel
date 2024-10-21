@@ -5,17 +5,19 @@ import { useNavigate } from 'react-router-dom';
 function MyFavorites() {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
-  const user_id = localStorage.getItem('user_id');  // Get user_id from localStorage
+
+  // Get and parse the user object from localStorage
+  const user = JSON.parse(localStorage.getItem('user'));
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user_id) {
+    if (!user || !user.user_id) {
       console.log('No user found, redirecting to login...');
-      navigate('/login');  // Redirect to login if user_id is not available
+      navigate('/login');  // Redirect to login if user is not available
     } else {
       const fetchFavorites = async () => {
         try {
-          const response = await axios.get(`http://localhost:9001/api/favorites/${user_id}`);
+          const response = await axios.get(`http://localhost:9001/api/favorites/${user.user_id}`);
           console.log('Favorites response:', response.data);
           setFavorites(response.data);
         } catch (error) {
@@ -24,9 +26,11 @@ function MyFavorites() {
           setLoading(false);
         }
       };
+
       fetchFavorites();
     }
-  }, [user_id, navigate]);
+    // Only add user.user_id and navigate to the dependency array
+  }, [user?.user_id, navigate]);
 
   if (loading) {
     return <p>Loading favorites...</p>;
@@ -43,6 +47,7 @@ function MyFavorites() {
         <div key={index} className="card mb-3">
           <div className="card-body">
             <h5 className="card-title">Flight: {favorite.flight_number || 'N/A'}</h5>
+            <p className="card-text">Label: {favorite.label || 'No Label'}</p> {/* Display custom label */}
             <p className="card-text">Airline: {favorite.airline}</p>
             <p className="card-text">
               Departure: {favorite.departure_airport} at {new Date(favorite.departure_time).toLocaleString()}

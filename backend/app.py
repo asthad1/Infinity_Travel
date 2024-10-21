@@ -486,7 +486,7 @@ def add_favorite():
         departure_time=data.get('departure_time'),
         arrival_time=data.get('arrival_time'),
         price=data.get('price'),
-        label=data.get('label', '')
+        label=data.get('label', 'Favorite Flight')
     )
     
     db.session.add(favorite)

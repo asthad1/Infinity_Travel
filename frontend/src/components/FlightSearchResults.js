@@ -5,44 +5,44 @@ import { saveFavorite } from '../store/favoritesSlice';
 
 const FlightSearchResults = ({ flights }) => {
   const dispatch = useDispatch();
-  const user_id = useSelector((state) => state.user.user_id); // Get user_id from Redux
-  const [shareModal, setShareModal] = useState(false);  // State to control modal visibility
-  const [shareLink, setShareLink] = useState('');  // State to store the generated shareable link
+  const user_id = useSelector((state) => state.user.user_id);  // Get user_id from Redux
+  const [saveModal, setSaveModal] = useState(false);  // State to control save modal visibility
+  const [label, setLabel] = useState('');  // State to store the label entered by the user
   const [selectedFlight, setSelectedFlight] = useState(null);  // State to store the selected flight
 
-  const handleSaveFavorite = (flight) => {
+  // Function to handle "Save to Favorites" button click
+  const handleSaveFavoriteClick = (flight) => {
     if (!user_id) {
       alert('Please log in to save flights to favorites.');
       return;
     }
+    setSelectedFlight(flight);  // Set the selected flight
+    setSaveModal(true);  // Show the save modal
+  };
 
+  // Function to save the flight with a custom label
+  const handleSaveFavorite = () => {
     const favoriteData = {
-      flight_id: flight.flight_id,
+      flight_id: selectedFlight.flight_id,
       user_id: user_id,
-      departure_airport: flight.departure_airport,
-      arrival_airport: flight.destination_airport,
-      departure_time: flight.departure_time,
-      arrival_time: flight.arrival_time,
-      price: flight.price,
-      label: 'Favorite Flight',
+      departure_airport: selectedFlight.departure_airport,
+      arrival_airport: selectedFlight.destination_airport,
+      departure_time: selectedFlight.departure_time,
+      arrival_time: selectedFlight.arrival_time,
+      price: selectedFlight.price,
+      label: label || 'Favorite Flight',  // Use custom label or default label if empty
     };
 
     dispatch(saveFavorite(favoriteData));
+    setSaveModal(false);  // Close the modal
+    setLabel('');  // Clear the label
   };
 
-  const handleShare = (flight) => {
-    const uniqueURL = `http://localhost:3000/shared-flights/${flight.flight_id}`;
-    setShareLink(uniqueURL);
-    setSelectedFlight(flight);
-    setShareModal(true);  // Show the modal when the user clicks "Share"
+  // Function to handle closing the save modal
+  const handleSaveModalClose = () => {
+    setSaveModal(false);
+    setLabel('');
   };
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(shareLink);
-    alert('Link copied to clipboard!');
-  };
-
-  const handleClose = () => setShareModal(false);  // Close the modal
 
   return (
     <div className="flight-search-results mt-5">
@@ -61,7 +61,7 @@ const FlightSearchResults = ({ flights }) => {
             <p className="card-text">Price: ${flight.price}</p>
 
             {/* Save flight button */}
-            <button className="btn btn-secondary" onClick={() => handleSaveFavorite(flight)}>
+            <button className="btn btn-secondary" onClick={() => handleSaveFavoriteClick(flight)}>
               Add to Favorites
             </button>
 
@@ -73,32 +73,27 @@ const FlightSearchResults = ({ flights }) => {
         </div>
       ))}
 
-      {/* Modal for sharing */}
-      <Modal show={shareModal} onHide={handleClose} centered>
+      {/* Modal for saving the flight with a custom label */}
+      <Modal show={saveModal} onHide={handleSaveModalClose} centered>
         <Modal.Header closeButton>
-          <Modal.Title>Share Flight Search</Modal.Title>
+          <Modal.Title>Save Flight to Favorites</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>Share this flight search via the link below:</p>
+          <p>Enter a label for this flight:</p>
           <input
             type="text"
-            value={shareLink}
-            readOnly
-            className="form-control mb-3"
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            className="form-control"
+            placeholder="Enter a custom label"
           />
-          <Button variant="primary" onClick={handleCopyLink}>
-            Copy Link
-          </Button>
-          <hr />
-          <p>
-            <a href={`mailto:?subject=Flight Details&body=Check out this flight: ${shareLink}`}>
-              Share via Email
-            </a>
-          </p>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
-            Close
+          <Button variant="secondary" onClick={handleSaveModalClose}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSaveFavorite}>
+            Save to Favorites
           </Button>
         </Modal.Footer>
       </Modal>
