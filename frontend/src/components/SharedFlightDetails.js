@@ -11,7 +11,7 @@ function SharedFlightDetails() {
   useEffect(() => {
     const user = localStorage.getItem('user');
 
-    // Redirect to login if user_id is not found in localStorage
+    // Redirect to login if user is not found in localStorage
     if (!user) {
       navigate('/login');
       return;
@@ -28,6 +28,22 @@ function SharedFlightDetails() {
         setLoading(false);
       });
   }, [flightId, navigate]);
+
+  // Define the handleShare function
+  function handleShare() {
+    if (navigator.share) {
+      navigator.share({
+        title: 'Flight Details',
+        text: `Check out this flight: ${flight.flight_name} from ${flight.from_airport} to ${flight.to_airport}`,
+        url: window.location.href,
+      })
+      .then(() => console.log('Successful share'))
+      .catch((error) => console.error('Error sharing', error));
+    } else {
+      // Fallback for browsers that don’t support the Web Share API
+      alert('Sharing is not supported on this browser.');
+    }
+  }
 
   if (loading) {
     return <p>Loading flight details...</p>;
@@ -48,6 +64,7 @@ function SharedFlightDetails() {
         <p>Price: ${flight.fare}</p>
         <p>Stops: {flight.stops === 0 ? 'Non-stop' : `${flight.stops} stop(s)`}</p>
       </div>
+      <button onClick={handleShare} className="btn btn-primary">Share Flight</button>
     </div>
   );
 }
