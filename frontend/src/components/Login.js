@@ -1,39 +1,49 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { setUser } from '../store/userSlice'; // Import the setUser action
+import { setUser } from '../store/userSlice';  // Redux action to set user
 
-function Login() {
-  const [username, setUsername] = useState('');
+function Login({ setCurrentUser }) {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
-  const dispatch = useDispatch(); // Create dispatch function
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setLoading(true);
 
     fetch('http://localhost:9001/api/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ email, password }),
     })
-      .then((response) =>
-        response.json().then((data) => ({ status: response.status, body: data }))
-      )
-      .then(({ status, body }) => {
-        if (status === 200) {
-          dispatch(setUser({ username })); // Update the Redux store with the user's information
-          navigate('/welcome');
+      .then(response => response.json())
+      .then((data) => {
+        setLoading(false);
+        if (data.user_id) {
+          // Save user data to localStorage and update currentUser in state
+          const userData = { user_id: data.user_id, email: data.email };
+          localStorage.setItem('user', JSON.stringify(userData));
+          dispatch(setUser(userData));  // Redux action to set user
+
+          // Update currentUser state in App.js to trigger re-render
+          setCurrentUser(userData);
+
+          // Redirect to profile page
+          navigate('/');  
         } else {
-          setMessage(body.message || 'Login failed');
+          setMessage('Login failed. Please try again.');
         }
       })
       .catch((error) => {
         console.error('Error:', error);
-        setMessage('An error occurred during login');
+        setLoading(false);
+        setMessage('An error occurred during login.');
       });
   };
 
@@ -43,8 +53,8 @@ function Login() {
       <form onSubmit={handleSubmit}>
         <input
           type="email"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           placeholder="Enter your email"
           required
         />
@@ -55,11 +65,14 @@ function Login() {
           placeholder="Enter your password"
           required
         />
-        <button type="submit">Login</button>
+        <button type="submit" disabled={loading}>
+          {loading ? 'Logging in...' : 'Login'}
+        </button>
       </form>
       {message && <p>{message}</p>}
-      {/* Register button */}
-      <p>Don't have an account? <button onClick={() => navigate('/register')}>Register here</button></p>
+      <p>
+        Don't have an account? <Link to="/register">Register here</Link>
+      </p>
     </div>
   );
 }

@@ -6,3 +6,6 @@ backend/.python-version
 .env
 backend/venv
 backend/.env
+node_modules
+package-lock.json
+package.json

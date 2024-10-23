@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 # Import the text, cast function and Date attribute
 from sqlalchemy import text, cast, Date
@@ -13,6 +13,7 @@ from flask_cors import CORS
 from models import *
 from extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
+import logging
 
 
 # Load environment variables
@@ -20,9 +21,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 CORS(app)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://infinity_travel_owner:q9urkfXI7nGg@ep-spring-frost-a4siuz5k.us-east-1.aws.neon.tech/infinity_travel?sslmode=require'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://infinity_travel_owner:xxxx@ep-spring-frost-a4siuz5k.us-east-1.aws.neon.tech/infinity_travel?sslmode=require'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(message)s')
 # Initialize SQLAlchemy
 # db = SQLAlchemy(app)
 
@@ -103,26 +104,41 @@ def register():
 
 @app.route('/api/login', methods=['POST'])
 def login():
-    data = request.get_json()
-    username = data.get('username')
+    data = request.json
+    email = data.get('email')  # Use 'email' instead of 'username'
     password = data.get('password')
 
-    # Print the received data
-    # Use flush=True to force printing immediately
-    print(f"Data is: {data}", flush=True)
+    # Assuming you're checking the email and password against your database
+    user = User.query.filter_by(email=email).first()  # Query by email instead of username
 
-    # Fetch the user by email
-    # Use .first() to fetch the user instance
-    user = User.query.filter_by(email=username).first()
-
-    # Print the user object (or None if not found)
-    print(f"User is : {user}", flush=True)
-
-    # Check if user exists and compare passwords
-    if user and user.password == password:
-        return jsonify({'message': 'Login successful'}), 200
+    if user and user.password == password:  # Assuming check_password method exists
+        # Login successful, return user information including user_id
+        return jsonify({
+            'email': user.email,  # Return email instead of username
+            'user_id': user.id  # Return user_id
+        }), 200
     else:
+        # Login failed
         return jsonify({'message': 'Invalid credentials'}), 401
+
+
+
+# Route to change password
+@app.route('/api/change_password', methods=['POST'])
+def change_password():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    old_password = data.get('old_password')
+    new_password = data.get('new_password')
+
+    user = User.query.get(user_id)
+
+    if user and user.password == old_password:  # Replace this with proper password hashing
+        user.password = new_password
+        db.session.commit()
+        return jsonify({'message': 'Password updated successfully'}), 200
+    else:
+        return jsonify({'message': 'Incorrect old password'}), 400
 
 
 # ===================== CRUD FOR USER MODEL ===================== #
@@ -185,19 +201,37 @@ def delete_user(id):
 
 # ===================== CRUD FOR FLIGHT MODEL ===================== #
 
-@app.route('/flights', methods=['GET'])
+@app.route('/api/flights', methods=['GET'])
 def get_flights():
     flights = Flight.query.all()
-    return jsonify([flight.to_dict() for flight in flights]), 200
+    flight_list = [
+        {
+            'id': flight.id,  # Ensure flight ID is included here
+            'flight_number': flight.flight_name,
+            'airline': flight.airline,
+            'departure_airport': flight.from_airport,
+            'destination_airport': flight.to_airport,
+            'departure_time': flight.departure.strftime('%Y-%m-%d %H:%M:%S') if flight.departure else None,
+            'arrival_time': flight.arrival.strftime('%Y-%m-%d %H:%M:%S') if flight.arrival else None,
+            'duration': flight.duration,
+            'price': flight.fare,
+            'stops': flight.stops,
+            'available_seats': flight.available_seats
+        }
+        for flight in flights
+    ]
+    return jsonify(flight_list), 200
 
 
-@app.route('/flights/<int:id>', methods=['GET'])
+
+
+@app.route('/api/flights/<int:id>', methods=['GET'])
 def get_flight(id):
     flight = Flight.query.get_or_404(id)
     return jsonify(flight.to_dict()), 200
 
 
-@app.route('/flights', methods=['POST'])
+@app.route('/api/flights', methods=['POST'])
 def create_flight():
     data = request.json
     new_flight = Flight(
@@ -208,7 +242,7 @@ def create_flight():
         arrival=data['arrival'],
         flight_class=data['flight_class'],
         fare=data['fare'],
-        flight_number=data['flight_number'],
+        # flight_number=data['flight_number'],
         duration=data['duration']
     )
     db.session.add(new_flight)
@@ -216,7 +250,7 @@ def create_flight():
     return jsonify(new_flight.to_dict()), 201
 
 
-@app.route('/flights/<int:id>', methods=['PUT'])
+@app.route('/api/flights/<int:id>', methods=['PUT'])
 def update_flight(id):
     data = request.json
     flight = Flight.query.get_or_404(id)
@@ -227,13 +261,13 @@ def update_flight(id):
     flight.arrival = data.get('arrival', flight.arrival)
     flight.flight_class = data.get('flight_class', flight.flight_class)
     flight.fare = data.get('fare', flight.fare)
-    flight.flight_number = data.get('flight_number', flight.flight_number)
+    flight.flight_name = data.get('flight_number', flight.flight_name)
     flight.duration = data.get('duration', flight.duration)
     db.session.commit()
     return jsonify(flight.to_dict()), 200
 
 
-@app.route('/flights/<int:id>', methods=['DELETE'])
+@app.route('/api/flights/<int:id>', methods=['DELETE'])
 def delete_flight(id):
     flight = Flight.query.get_or_404(id)
     db.session.delete(flight)
@@ -241,21 +275,139 @@ def delete_flight(id):
     return jsonify({'message': 'Flight deleted'}), 200
 
 
+@app.route('/api/flights/search', methods=['POST'])
+def search_flights():
+    logging.debug(f"Headers: {request.headers}")
+    logging.debug(f"Request Data: {request.data}")
+    data = request.json
+
+    # Extract search parameters for departure and return flights
+    departure_airport = data.get('departureAirport')
+    destination_airport = data.get('destinationAirport')
+    departure_date = data.get('departureDate')
+    
+    return_date = data.get('returnDate') if 'returnDate' in data else None
+    num_travellers = data.get('numTravellers', 1)
+    num_stops = data.get('numStops') if data.get('numStops') != '' else None
+    selected_airline = data.get('selectedAirline') if data.get('selectedAirline') != '' else None
+    max_price = data.get('maxPrice') if data.get('maxPrice') != '' else None
+
+    # Start with base query for departure flights
+    flights_query = Flight.query
+    logging.debug(flights_query) 
+    # Apply filters based on input parameters for departure flights
+    if departure_airport:
+        flights_query = flights_query.filter(Flight.from_airport == departure_airport)
+
+    if destination_airport:
+        flights_query = flights_query.filter(Flight.to_airport == destination_airport)
+
+    if departure_date:
+        flights_query = flights_query.filter(Flight.departure_date == departure_date)
+
+    if num_stops is not None:
+        flights_query = flights_query.filter(Flight.stops == int(num_stops))
+
+    if selected_airline:
+        flights_query = flights_query.filter(Flight.airline == selected_airline)
+
+    if max_price:
+        flights_query = flights_query.filter(Flight.fare <= float(max_price))
+
+    # Fetch all matching departure flights
+    departure_flights = flights_query.all()
+
+    # Filter out departure flights that don't have enough available seats
+    available_departure_flights = [
+        flight for flight in departure_flights if int(flight.available_seats) >= int(num_travellers)
+    ]
+    logging.debug(f"Number of travelers: {num_travellers}")
+    # Search for return flights if round-trip is selected
+    available_return_flights = []
+    if return_date:
+        return_flights_query = Flight.query
+
+        # Apply filters for return flights
+        return_flights_query = return_flights_query.filter(Flight.from_airport == destination_airport)
+        return_flights_query = return_flights_query.filter(Flight.to_airport == departure_airport)
+        return_flights_query = return_flights_query.filter(Flight.departure_date == return_date)
+
+        if num_stops is not None:
+            return_flights_query = return_flights_query.filter(Flight.stops == int(num_stops))
+
+        if selected_airline:
+            return_flights_query = return_flights_query.filter(Flight.airline == selected_airline)
+
+        if max_price:
+            return_flights_query = return_flights_query.filter(Flight.fare <= float(max_price))
+
+        # Fetch all matching return flights
+        return_flights = return_flights_query.all()
+        
+        # Filter out return flights that don't have enough available seats
+        available_return_flights = [
+            flight for flight in return_flights if int(flight.available_seats) >= int(num_travellers)
+        ]
+
+    # Convert departure flights to a JSON-serializable format
+    departure_flight_list = [
+        {
+            'flight_id': flight.id,
+            'flight_number': flight.flight_name,
+            'airline': flight.airline,
+            'departure_airport': flight.from_airport,
+            'destination_airport': flight.to_airport,
+            'departure_time': flight.departure.strftime('%Y-%m-%d %H:%M'),
+            'arrival_time': flight.arrival.strftime('%Y-%m-%d %H:%M'),
+            'price': flight.fare,
+            'stops': flight.stops,
+            'duration': flight.duration,
+            'available_seats': flight.available_seats
+        }
+        for flight in available_departure_flights
+    ]
+
+    # Convert return flights to a JSON-serializable format
+    return_flight_list = [
+        {
+            'flight_id': flight.id,
+            'flight_number': flight.flight_name,
+            'airline': flight.airline,
+            'departure_airport': flight.from_airport,
+            'destination_airport': flight.to_airport,
+            'departure_time': flight.departure.strftime('%Y-%m-%d %H:%M'),
+            'arrival_time': flight.arrival.strftime('%Y-%m-%d %H:%M'),
+            'price': flight.fare,
+            'stops': flight.stops,
+            'duration': flight.duration,
+            'available_seats': flight.available_seats
+        }
+        for flight in available_return_flights
+    ]
+
+    # Return both departure and return flights if applicable
+    return jsonify({
+        'departureFlights': departure_flight_list,
+        'returnFlights': return_flight_list
+    }), 200
+
+
+
 # ===================== CRUD FOR CITY MODEL ===================== #
 
-@app.route('/cities', methods=['GET'])
+@app.route('/api/cities', methods=['GET'])
 def get_cities():
     cities = City.query.all()
     return jsonify([city.to_dict() for city in cities]), 200
 
 
-@app.route('/cities/<int:id>', methods=['GET'])
+@app.route('/api/cities/<int:id>', methods=['GET'])
 def get_city(id):
     city = City.query.get_or_404(id)
     return jsonify(city.to_dict()), 200
 
 
-@app.route('/cities', methods=['POST'])
+@app.route('/api/cities', methods=['POST'])
 def create_city():
     data = request.json
     new_city = City(city_name=data['city_name'], state_id=data['state_id'])
@@ -264,7 +416,7 @@ def create_city():
     return jsonify(new_city.to_dict()), 201
 
 
-@app.route('/cities/<int:id>', methods=['PUT'])
+@app.route('/api/cities/<int:id>', methods=['PUT'])
 def update_city(id):
     data = request.json
     city = City.query.get_or_404(id)
@@ -274,7 +426,7 @@ def update_city(id):
     return jsonify(city.to_dict()), 200
 
 
-@app.route('/cities/<int:id>', methods=['DELETE'])
+@app.route('/api/cities/<int:id>', methods=['DELETE'])
 def delete_city(id):
     city = City.query.get_or_404(id)
     db.session.delete(city)
@@ -284,19 +436,19 @@ def delete_city(id):
 
 # ===================== CRUD FOR STATE MODEL ===================== #
 
-@app.route('/states', methods=['GET'])
+@app.route('/api/states', methods=['GET'])
 def get_states():
     states = State.query.all()
     return jsonify([state.to_dict() for state in states]), 200
 
 
-@app.route('/states/<int:id>', methods=['GET'])
+@app.route('/api/states/<int:id>', methods=['GET'])
 def get_state(id):
     state = State.query.get_or_404(id)
     return jsonify(state.to_dict()), 200
 
 
-@app.route('/states', methods=['POST'])
+@app.route('/api/states', methods=['POST'])
 def create_state():
     data = request.json
     new_state = State(state_name=data['state_name'])
@@ -305,7 +457,7 @@ def create_state():
     return jsonify(new_state.to_dict()), 201
 
 
-@app.route('/states/<int:id>', methods=['PUT'])
+@app.route('/api/states/<int:id>', methods=['PUT'])
 def update_state(id):
     data = request.json
     state = State.query.get_or_404(id)
@@ -314,7 +466,7 @@ def update_state(id):
     return jsonify(state.to_dict()), 200
 
 
-@app.route('/states/<int:id>', methods=['DELETE'])
+@app.route('/api/states/<int:id>', methods=['DELETE'])
 def delete_state(id):
     state = State.query.get_or_404(id)
     db.session.delete(state)
@@ -324,19 +476,23 @@ def delete_state(id):
 
 # ===================== CRUD FOR AIRPORT MODEL ===================== #
 
-@app.route('/airports', methods=['GET'])
+@app.route('/api/airports', methods=['GET'])
 def get_airports():
     airports = Airport.query.all()
-    return jsonify([airport.to_dict() for airport in airports]), 200
+    airport_list = [
+        {'code': airport.airport_code, 'name': airport.airport}
+        for airport in airports
+    ]
+    return jsonify(airport_list), 200
 
 
-@app.route('/airports/<int:id>', methods=['GET'])
+@app.route('/api/airports/<int:id>', methods=['GET'])
 def get_airport(id):
     airport = Airport.query.get_or_404(id)
     return jsonify(airport.to_dict()), 200
 
 
-@app.route('/airports', methods=['POST'])
+@app.route('/api/airports', methods=['POST'])
 def create_airport():
     data = request.json
     new_airport = Airport(airport=data['airport'], city_id=data['city_id'])
@@ -345,7 +501,7 @@ def create_airport():
     return jsonify(new_airport.to_dict()), 201
 
 
-@app.route('/airports/<int:id>', methods=['PUT'])
+@app.route('/api/airports/<int:id>', methods=['PUT'])
 def update_airport(id):
     data = request.json
     airport = Airport.query.get_or_404(id)
@@ -355,111 +511,122 @@ def update_airport(id):
     return jsonify(airport.to_dict()), 200
 
 
-@app.route('/airports/<int:id>', methods=['DELETE'])
+@app.route('/api/airports/<int:id>', methods=['DELETE'])
 def delete_airport(id):
     airport = Airport.query.get_or_404(id)
     db.session.delete(airport)
     db.session.commit()
     return jsonify({'message': 'Airport deleted'}), 200
 
+
+@app.route('/api/airlines', methods=['GET'])
+def get_airlines():
+    # Fetch unique airline names from the flights table
+    airlines = db.session.query(Flight.airline).distinct().all()
+    airline_list = [airline[0] for airline in airlines]
+    return jsonify(airline_list), 200
+
 # ===================== CRUD FOR FAVORITE MODEL ===================== #
 
 
-@app.route('/favorites', methods=['GET'])
-def get_favorites():
-    favorites = Favorite.query.all()
-    return jsonify([favorite.to_dict() for favorite in favorites]), 200
-
-
-@app.route('/favorites/<int:id>', methods=['GET'])
-def get_favorite(id):
-    favorite = Favorite.query.get_or_404(id)
-    return jsonify(favorite.to_dict()), 200
-
-
-@app.route('/favorites', methods=['POST'])
-def create_favorite():
+@app.route('/api/favorites', methods=['POST'])
+def add_favorite():
     data = request.json
-    # Validate that user and flight exist
-    user = User.query.get_or_404(data['user_id'])
-    flight = Flight.query.get_or_404(data['flight_id'])
-
-    new_favorite = Favorite(
-        flight_id=flight.id,
-        user_id=user.id,
-        airport_name=data.get('airport_name'),
-        state_name=data.get('state_name'),
-        city_name=data.get('city_name')
+    user_id = data.get('user_id')
+    flight_id = data.get('flight_id')
+    
+    favorite = Favorite(
+        user_id=user_id,
+        flight_id=flight_id,
+        departure_airport=data.get('departure_airport'),
+        arrival_airport=data.get('arrival_airport'),
+        departure_time=data.get('departure_time'),
+        arrival_time=data.get('arrival_time'),
+        price=data.get('price'),
+        label=data.get('label', 'Favorite Flight')
     )
-    db.session.add(new_favorite)
+    
+    db.session.add(favorite)
     db.session.commit()
-    return jsonify(new_favorite.to_dict()), 201
+    
+    return jsonify({'message': 'Flight added to favorites'}), 201
 
+# Get all favorites for a user
+@app.route('/api/favorites/<int:user_id>', methods=['GET'])
+def get_favorites(user_id):
+    # Retrieve all favorites for the given user
+    favorites = Favorite.query.filter_by(user_id=user_id).all()
+    
+    # Build a response including flight details for each favorite
+    favorite_list = [
+        {
+            'favorite_id': fav.id,
+            'flight_id': fav.flight.id,
+            'flight_number': fav.flight.flight_name,
+            'airline': fav.flight.airline,
+            'departure_airport': fav.flight.from_airport,
+            'destination_airport': fav.flight.to_airport,
+            'departure_time': fav.flight.departure,
+            'arrival_time': fav.flight.arrival,
+            'duration': fav.flight.duration,
+            'price': fav.flight.fare,
+            'stops': fav.flight.stops,
+            'available_seats': fav.flight.available_seats,
+            'label': fav.label  # The custom label the user added
+        }
+        for fav in favorites
+    ]
 
-@app.route('/favorites/<int:id>', methods=['PUT'])
-def update_favorite(id):
+    return jsonify(favorite_list), 200
+
+# Update a favorite (label)
+@app.route('/api/favorites/<int:favorite_id>', methods=['PUT'])
+def update_favorite(favorite_id):
     data = request.json
-    favorite = Favorite.query.get_or_404(id)
+    favorite = Favorite.query.get(favorite_id)
+    
+    if not favorite:
+        return jsonify({'error': 'Favorite not found'}), 404
 
-    # Update foreign key relationships
-    if 'flight_id' in data:
-        flight = Flight.query.get_or_404(data['flight_id'])
-        favorite.flight_id = flight.id
-
-    if 'user_id' in data:
-        user = User.query.get_or_404(data['user_id'])
-        favorite.user_id = user.id
-
-    # Update optional fields
-    favorite.airport_name = data.get('airport_name', favorite.airport_name)
-    favorite.state_name = data.get('state_name', favorite.state_name)
-    favorite.city_name = data.get('city_name', favorite.city_name)
-
+    # Update the label if provided
+    favorite.label = data.get('label', favorite.label)
     db.session.commit()
-    return jsonify(favorite.to_dict()), 200
 
+    return jsonify({'message': 'Favorite updated successfully!'}), 200
 
-@app.route('/favorites/<int:id>', methods=['DELETE'])
-def delete_favorite(id):
-    favorite = Favorite.query.get_or_404(id)
+# Delete a favorite
+@app.route('/api/favorites/<int:favorite_id>', methods=['DELETE'])
+def delete_favorite(favorite_id):
+    favorite = Favorite.query.get(favorite_id)
+
+    if not favorite:
+        return jsonify({'error': 'Favorite not found'}), 404
+
     db.session.delete(favorite)
     db.session.commit()
-    return jsonify({'message': 'Favorite deleted'}), 200
-
-
-@app.route('/favorites/user/<int:user_id>', methods=['GET'])
-def get_favorites_by_user(user_id):
-    # Check if the user exists
-    user = User.query.get_or_404(user_id)
-
-    # Query all favorites for the given user
-    favorites = Favorite.query.filter_by(user_id=user.id).all()
-
-    return jsonify([favorite.to_dict() for favorite in favorites]), 200
-
-  # Search Flights
-
+    
+    return jsonify({'message': 'Favorite deleted successfully!'}), 200
 # Route to generate and share a favorite search
 
 
-@app.route('/favorites/<int:id>/share', methods=['POST'])
-def share_favorite(id):
-    favorite = Favorite.query.get_or_404(id)
+# @app.route('/api/favorites/<int:id>/share', methods=['POST'])
+# def share_favorite(id):
+#     favorite = Favorite.query.get_or_404(id)
 
-    # Generate the shareable URL if it doesn't exist
-    if not favorite.shared_url:
-        favorite.generate_shareable_url()
+#     # Generate the shareable URL if it doesn't exist
+#     if not favorite.shared_url:
+#         favorite.generate_shareable_url()
 
-    # Generate full shareable link
-    shareable_link = url_for('view_shared_search',
-                             url=favorite.shared_url, _external=True)
+#     # Generate full shareable link
+#     shareable_link = url_for('view_shared_search',
+#                              url=favorite.shared_url, _external=True)
 
-    return jsonify({'shareable_link': shareable_link}), 200
+#     return jsonify({'shareable_link': shareable_link}), 200
 
 # Route to view shared favorite search via URL
 
 
-@app.route('/favorites/shared/<url>', methods=['GET'])
+@app.route('/api/favorites/shared/<url>', methods=['GET'])
 def view_shared_search(url):
     favorite = Favorite.query.filter_by(shared_url=url).first_or_404()
 
@@ -472,9 +639,72 @@ def view_shared_search(url):
     }), 200
 
 
-@app.route('/search/flights/<from_airport_code>/<to_airport_code>/<date>/<int:travellers>', methods=['GET'])
-def search_flights(from_airport_code, to_airport_code, date, travellers):
+
+# ===================== CRUD FOR COUPON MODEL ===================== #
+
+# GET all coupons
+@app.route('/coupons', methods=['GET'])
+def get_coupons():
+    coupons = Coupon.query.all()
+    return jsonify([coupon.to_dict() for coupon in coupons]), 200
+
+# GET a single coupon by ID
+@app.route('/coupons/<int:coupon_id>', methods=['GET'])
+def get_coupon(coupon_id):
+    coupon = Coupon.query.get_or_404(coupon_id)
+    return jsonify(coupon.to_dict()), 200
+
+# CREATE a new coupon
+@app.route('/coupons', methods=['POST'])
+def create_coupon():
+    data = request.json
+    new_coupon = Coupon(
+        coupon_code=data['coupon_code'],
+        discount_percentage=data.get('discount_percentage'),
+        discount_amount=data.get('discount_amount'),
+        start_date=datetime.strptime(data['start_date'], '%Y-%m-%d %H:%M:%S'),
+        end_date=datetime.strptime(data['end_date'], '%Y-%m-%d %H:%M:%S'),
+        minimum_order_amount=data.get('minimum_order_amount'),
+        admin_id=data['admin_id'],
+        user_roles=data.get('user_roles'),
+        discount_type=data.get('discount_type')
+    )
+    db.session.add(new_coupon)
+    db.session.commit()
+    return jsonify(new_coupon.to_dict()), 201
+
+# UPDATE an existing coupon by ID
+@app.route('/coupons/<int:coupon_id>', methods=['PUT'])
+def update_coupon(coupon_id):
+    data = request.json
+    coupon = Coupon.query.get_or_404(coupon_id)
+    
+    coupon.coupon_code = data.get('coupon_code', coupon.coupon_code)
+    coupon.discount_percentage = data.get('discount_percentage', coupon.discount_percentage)
+    coupon.discount_amount = data.get('discount_amount', coupon.discount_amount)
+    coupon.start_date = datetime.strptime(data['start_date'], '%Y-%m-%d %H:%M:%S')
+    coupon.end_date = datetime.strptime(data['end_date'], '%Y-%m-%d %H:%M:%S')
+    coupon.minimum_order_amount = data.get('minimum_order_amount', coupon.minimum_order_amount)
+    coupon.admin_id = data.get('admin_id', coupon.admin_id)
+    coupon.user_roles = data.get('user_roles', coupon.user_roles)
+    coupon.discount_type = data.get('discount_type', coupon.discount_type)
+    
+    db.session.commit()
+    return jsonify(coupon.to_dict()), 200
+
+# DELETE a coupon by ID
+@app.route('/coupons/<int:coupon_id>', methods=['DELETE'])
+def delete_coupon(coupon_id):
+    coupon = Coupon.query.get_or_404(coupon_id)
+    db.session.delete(coupon)
+    db.session.commit()
+    return jsonify({'message': 'Coupon deleted'}), 200
+
+
+@app.route('/api/search/flights/<from_airport_code>/<to_airport_code>/<date>/<int:travellers>', methods=['GET'])
+def get_flights_by_airports(from_airport_code, to_airport_code, date, travellers):   
     # Parse the date in YYMMDD format and convert to datetime
+    
     try:
         # Convert YYMMDD to YYYY-MM-DD
         parsed_date = datetime.strptime(
@@ -512,6 +742,43 @@ def search_flights(from_airport_code, to_airport_code, date, travellers):
 
     return jsonify([flight.to_dict() for flight in result_flights]), 200
 
+# Redirect traffic to your frontend application (React)
+@app.route('/shared-flights/<flight_id>')
+def shared_flights(flight_id):
+    # Replace 'localhost:3000' with the production URL if necessary
+    return redirect(f"http://localhost:3000/shared-flights/{flight_id}")
+
+@app.route('/api/validate_coupon', methods=['POST'])
+def validate_coupon():
+    data = request.json
+    discount_code = data.get('discount_code')
+    
+    # Validate if the coupon code was provided
+    if not discount_code:
+        return jsonify({'error': 'No discount code provided'}), 400
+
+    # Query the coupon from the database
+    coupon = Coupon.query.filter_by(coupon_code=discount_code).first()
+
+    if not coupon:
+        # If the coupon does not exist
+        return jsonify({'error': 'Invalid discount code'}), 404
+
+    # Check if the coupon is expired
+    current_time = datetime.utcnow()
+    print(coupon.end_date, current_time)
+    if coupon.end_date < current_time:
+        return jsonify({'error': 'Coupon has expired'}), 400
+
+    # Coupon is valid, calculate the discount percentage or amount
+    discount = coupon.discount_percentage if coupon.discount_percentage else 0
+
+    return jsonify({
+        'success': 'Coupon applied successfully!',
+        'discount_percentage': discount,
+        'discount_amount': coupon.discount_amount,
+        'message': f'You get a {discount}% discount with this coupon!'
+    }), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=9001)
+    app.run(host='0.0.0.0', port=9001, debug=True)

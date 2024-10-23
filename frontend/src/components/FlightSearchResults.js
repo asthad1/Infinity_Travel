@@ -1,104 +1,172 @@
-// FlightSearchResults.js
-import React from 'react';
-import './FlightSearchResults.css'; // Ensure this CSS is linked
+import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { saveFlight } from '../store/flightsSlice'; // Import saveFlight action
+import { Modal, Button } from 'react-bootstrap';
+import { saveFavorite } from '../store/favoritesSlice';
+import { useNavigate } from 'react-router-dom';
+import { FaPlane, FaHeart, FaShareAlt } from 'react-icons/fa'; // Icons added for a modern look
 
-import airFrance from '../assets/images/airlines/air-france.jpg';
-import americanAirlines from '../assets/images/airlines/american-airlines.png';
-import british from '../assets/images/airlines/british.png';
-import cathay from '../assets/images/airlines/cathay.jpg';
-import delta from '../assets/images/airlines/delta.png';
-import emirates from '../assets/images/airlines/emirates.png';
-import lufthansa from '../assets/images/airlines/lufthansa.png';
-import qatar from '../assets/images/airlines/qatar.jpg';
-import singapore from '../assets/images/airlines/singapore.png';
-import united from '../assets/images/airlines/united.png';
-
-// Define an object to store airline images by airline name
-const airlineImages = {
-  'Air France': airFrance,
-  'American Airlines': americanAirlines,
-  'British Airways': british,
-  'Cathay Pacific': cathay,
-  'Delta Airlines': delta,
-  'Emirates': emirates,
-  'Lufthansa': lufthansa,
-  'Qatar Airways': qatar,
-  'Singapore Airlines': singapore,
-  'United Airlines': united,
-};
-
-// Functional component to render the flight search results
-const FlightSearchResults = () => {
+const FlightSearchResults = ({ flights, travelers }) => {
   const dispatch = useDispatch();
-  const flights = useSelector((state) => state.flights.filteredFlights); // Get filtered flights from the Redux store
+  const navigate = useNavigate();
+  const user_id = useSelector((state) => state.user.user_id); // Get user_id from Redux
+  const [labelModal, setLabelModal] = useState(false);  // State to control label modal visibility
+  const [label, setLabel] = useState('');  // State to store the label entered by the user
+  const [selectedFlight, setSelectedFlight] = useState(null);  // State to store the selected flight
+  const [shareModal, setShareModal] = useState(false);  // State to control share modal visibility
+  const [shareLink, setShareLink] = useState('');  // State to store the generated share link
 
-  // Handle empty flight results
-  if (!flights || flights.length === 0) {
-    return <h3>No flights found for the selected criteria</h3>;
-  }
+  // Function to handle "Save to Favorites" button click
+  const handleSaveFavoriteClick = (flight) => {
+    if (!user_id) {
+      alert('Please log in to save flights to favorites.');
+      return;
+    }
+    setSelectedFlight(flight);  // Set the selected flight
+    setLabelModal(true);  // Show the label modal
+  };
 
-  // Find the cheapest and quickest flights to display in sort options
-  const cheapestFlightPrice = Math.min(...flights.map(flight => flight.price));
-  const quickestFlight = flights.reduce((prev, curr) => (prev.duration < curr.duration ? prev : curr), flights[0]);
+  // Function to save the flight with a custom label
+  const handleSaveFavorite = () => {
+    const favoriteData = {
+      flight_id: selectedFlight.flight_id,
+      user_id: user_id,
+      departure_airport: selectedFlight.departure_airport,
+      arrival_airport: selectedFlight.destination_airport,
+      departure_time: selectedFlight.departure_time,
+      arrival_time: selectedFlight.arrival_time,
+      price: selectedFlight.price,
+      label: label || 'Favorite Flight',  // Use custom label or default label if empty
+    };
+
+    dispatch(saveFavorite(favoriteData));
+    setLabelModal(false);  // Close the modal
+    setLabel('');  // Clear the label
+  };
+
+  // Function to handle sharing the flight
+  const handleShare = (flight) => {
+    const uniqueURL = `http://localhost:3000/shared-flights/${flight.flight_id}`;  // Generate a shareable link
+    setShareLink(uniqueURL);
+    setSelectedFlight(flight);
+    setShareModal(true);  // Show the share modal
+  };
+
+  // Function to handle closing the share modal
+  const handleShareModalClose = () => {
+    setShareModal(false);
+    setShareLink('');
+  };
+
+  // Function to copy the share link to the clipboard
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(shareLink);
+    alert('Link copied to clipboard!');
+  };
+
+  // Function to handle closing the label modal
+  const handleLabelModalClose = () => {
+    setLabelModal(false);
+    setLabel('');
+  };
+
+  const handleCheckoutClick = (flight) => {
+    if (!user_id) {  // Check if user is logged in
+      alert('Please log in to purchase a flight.');
+      navigate('/login');  // Redirect to login page if not logged in
+      return;
+    }
+    navigate('/checkout', { state: { flight, travelers } });  // Proceed to checkout if logged in
+  };
 
   return (
-    <div className="flight-search-results">
-      {/* Sort Options Section */}
-      <div className="sort-options">
-        <div className="sort-option active">
-          Best <strong>${flights[0]?.price} • {flights[0]?.duration}</strong>
-        </div>
-        <div className="sort-option">
-          Cheapest <strong>${cheapestFlightPrice} • {flights[0]?.duration}</strong>
-        </div>
-        <div className="sort-option">
-          Quickest <strong>${quickestFlight.price} • {quickestFlight.duration}</strong>
-        </div>
-      </div>
-
-      {/* Render Flight Cards */}
+    <div className="flight-search-results mt-5">
+      <h3>Search Results <FaPlane /></h3>
       {flights.map((flight, index) => (
-        <div className="flight-card" key={index}>
-          <div className="flight-tags">
-            <span className="tag best">Best</span>
-            {flight.price === cheapestFlightPrice && <span className="tag cheapest">Cheapest</span>}
-          </div>
-          <div className="flight-details">
-            <div className="airline-logo">
-              <img
-                src={airlineImages[flight.airline] || 'default-logo.png'}
-                alt={flight.airline}
-              />
-            </div>
-            <div className="flight-info">
-              <div className="flight-time">
-                {flight.departureTime} – {flight.arrivalTime}
-              </div>
-              <div className="flight-duration">
-                {flight.stops === 0 ? 'nonstop' : `${flight.stops} stop(s)`} • {flight.duration}
-              </div>
-              <div className="flight-route">
-                {flight.departureAirport} – {flight.destinationAirport}
-              </div>
-            </div>
-            <div className="flight-price-section">
-              <div className="price">${flight.price}</div>
-              <div className="price-subtitle">
-                As low as ${(flight.price / 12).toFixed(2)}/mo
-              </div>
-              <button
-                className="view-deal-button"
-                onClick={() => dispatch(saveFlight(flight))} // Dispatch saveFlight action
-              >
-                Save Flight
-              </button>
-              <button className="view-deal-button">View Deal</button>
-            </div>
+        <div key={index} className="card mb-3 shadow-lg" style={{ borderRadius: '10px' }}>
+          <div className="card-body">
+            <h5 className="card-title">Flight: {flight.flight_number || 'N/A'}</h5>
+            <p className="card-text"><strong>Airline:</strong> {flight.airline}</p>
+            <p className="card-text">
+              <strong>Departure:</strong> {flight.departure_airport} at {new Date(flight.departure_time).toLocaleString()}
+            </p>
+            <p className="card-text">
+              <strong>Arrival:</strong> {flight.destination_airport} at {new Date(flight.arrival_time).toLocaleString()}
+            </p>
+            <p className="card-text"><strong>Price:</strong> ${flight.price}</p>
+
+            <button
+              className="btn btn-primary me-2"
+              onClick={() => handleCheckoutClick(flight)}
+            >
+              Purchase Flight
+            </button> &nbsp;
+            {/* Save flight button */}
+            <button className="btn btn-secondary" onClick={() => handleSaveFavoriteClick(flight)}>
+              <FaHeart /> Add to Favorites
+            </button>
+
+            {/* Share flight button */}
+            <button className="btn btn-outline-primary ms-2" onClick={() => handleShare(flight)}>
+              <FaShareAlt /> Share Flight
+            </button>
           </div>
         </div>
       ))}
+
+      {/* Modal for entering the label before saving to favorites */}
+      <Modal show={labelModal} onHide={handleLabelModalClose} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Enter Label for Favorite</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Please enter a label for this flight:</p>
+          <input
+            type="text"
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            className="form-control"
+            placeholder="Enter a custom label"
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleLabelModalClose}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSaveFavorite}>
+            Save to Favorites
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Modal for sharing the flight */}
+      <Modal show={shareModal} onHide={handleShareModalClose} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Share Flight</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Share this flight search via the link below:</p>
+          <input
+            type="text"
+            value={shareLink}
+            readOnly
+            className="form-control mb-3"
+          />
+          <Button variant="primary" onClick={handleCopyLink}>
+            Copy Link
+          </Button>
+          <hr />
+          <p>
+            <a href={`mailto:?subject=Flight Details&body=Check out this flight: ${shareLink}`}>
+              Share via Email
+            </a>
+          </p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleShareModalClose}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

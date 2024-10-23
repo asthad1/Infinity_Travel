@@ -1,22 +1,26 @@
-// Example userSlice.js
 import { createSlice } from '@reduxjs/toolkit';
 
+// Initial state
 const initialState = {
-  currentUser: null, // Initialize currentUser as null or empty
+  email: null,  // Use 'email' instead of 'username'
+  user_id: null,  
 };
 
+// Create user slice
 const userSlice = createSlice({
   name: 'user',
   initialState,
   reducers: {
     setUser: (state, action) => {
-      state.currentUser = action.payload;
+      state.email = action.payload.email;  // Store email instead of username
+      state.user_id = action.payload.user_id;  // Store user_id
     },
-    logout: (state) => {
-      state.currentUser = null;
+    clearUser: (state) => {
+      state.email = null;
+      state.user_id = null;  
     },
   },
 });
 
-export const { setUser, logout } = userSlice.actions;
+export const { setUser, clearUser } = userSlice.actions;
 export default userSlice.reducer;

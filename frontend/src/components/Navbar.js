@@ -1,14 +1,21 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import './Navbar.css';  // Import styles
+import { Link, useNavigate } from 'react-router-dom';
 
-function Navbar({ user, setUser }) {
+function Navbar({ user }) {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // Clear localStorage and navigate to login
+    localStorage.removeItem('user');
+    localStorage.removeItem('user_id');
+    navigate('/login');
+    window.location.reload();  // Force a page reload to reset state
+  };
+
   return (
     <nav className="navbar navbar-expand-lg navbar-light bg-light">
       <div className="container-fluid">
-        <Link className="navbar-brand" to="/">
-          Infinity Travel
-        </Link>
+        <Link className="navbar-brand" to="/">Infinity Travel</Link>
         <button
           className="navbar-toggler"
           type="button"
@@ -23,32 +30,32 @@ function Navbar({ user, setUser }) {
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav">
             <li className="nav-item">
-              <Link className="nav-link" to="/">
-                Home
-              </Link>
+              <Link className="nav-link" to="/">Home</Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="/support">
-                Support
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link" to="/flightsearches">
-                Search Flights
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link" to="/my-flights">My Flights</Link>
+              <Link className="nav-link" to="/support">Support</Link>
             </li>
           </ul>
           <ul className="navbar-nav ms-auto">
-            {user ? (
+            {user && user.email ? (
               <>
-                <li className="nav-item">
-                  <span className="navbar-text">Welcome, {user}!</span>  {/* Display user's name */}
-                </li>
-                <li className="nav-item">
-                  <LogoutButton setUser={setUser} />  {/* Logout button when user is logged in */}
+                <li className="nav-item dropdown">
+                  <a
+                    className="nav-link dropdown-toggle"
+                    href="#"
+                    id="navbarDropdown"
+                    role="button"
+                    data-bs-toggle="dropdown"
+                    aria-expanded="false"
+                  >
+                    <i className="fas fa-user-circle"></i> {user.email}
+                  </a>
+                  <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                    <li><Link className="dropdown-item" to="/profile">Change Password</Link></li>
+                    <li><Link className="dropdown-item" to="/my-favorites">My Favorites</Link></li>
+                    <li><Link className="dropdown-item" to="/my-flights">My Flights</Link></li>
+                    <li><button className="dropdown-item" onClick={handleLogout}>Logout</button></li>
+                  </ul>
                 </li>
               </>
             ) : (
@@ -66,16 +73,6 @@ function Navbar({ user, setUser }) {
       </div>
     </nav>
   );
-}
-
-// Logout button component
-function LogoutButton({ setUser }) {
-  const handleLogout = () => {
-    setUser(null);  // Reset user state
-    window.location.href = '/login';  // Redirect to login after logout
-  };
-
-  return <button className="btn btn-outline-danger" onClick={handleLogout}>Logout</button>;
 }
 
 export default Navbar;

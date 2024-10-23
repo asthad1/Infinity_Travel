@@ -1,46 +1,65 @@
-import React from 'react';
-import { useSelector } from 'react-redux';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import Login from './components/Login';
+import Register from './components/Register';
 import Home from './pages/Home';
-import Support from './pages/Support';
-import Footer from './components/Footer';
+import MyFlights from './components/MyFlights';
+import Profile from './components/Profile';
 import FlightSearches from './pages/FlightSearches';
+import Support from './pages/Support';
+import MyFavorites from './components/MyFavorites';
 import SavedFlights from './components/SavedFlights';
 import SharedFlightDetails from './components/SharedFlightDetails';
-import MyFlights from './components/MyFlights';
-import Register from './components/Register';
-import Login from './components/Login';
-import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import FlightSearchResults from './components/FlightSearchResults';
+// import UserFavoriteFlights from './components/UserFavoriteFlights';
+import FlightSearchForm from './components/FlightSearchForm';
+import Checkout from './pages/Checkout';
 
 function App() {
-  // Correctly access currentUser from Redux store
-  const currentUser = useSelector((state) => state.user?.currentUser);
+  const [currentUser, setCurrentUser] = useState(JSON.parse(localStorage.getItem('user')));
+
+  useEffect(() => {
+    // Listen for changes to localStorage, especially on login and logout
+    const handleStorageChange = () => {
+      setCurrentUser(JSON.parse(localStorage.getItem('user')));
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Re-check localStorage on app load to set the currentUser
+    const storedUser = JSON.parse(localStorage.getItem('user'));
+    if (storedUser) {
+      setCurrentUser(storedUser);
+    }
+  }, []);
 
   return (
-    <div className="d-flex flex-column min-vh-100">
-      <Router>
-        {/* Navbar */}
-        <Navbar user={currentUser} /> {/* Pass user prop to Navbar */}
-
-        {/* Main content and routes */}
-        <div className="flex-grow-1 my-4">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/login" element={currentUser ? <Navigate to="/" /> : <Login />} />
-            <Route path="/support" element={<Support />} />
-            <Route path="/flightsearches" element={<FlightSearches />} />
-            <Route path="/savedflights" element={<SavedFlights />} />
-            <Route path="/my-flights" element={<MyFlights />} />
-            <Route path="/shared-flights/:flightId" element={<SharedFlightDetails />} />
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </div>
-
-        {/* Footer */}
-        <Footer />
-      </Router>
-    </div>
+    <Router>
+      <Navbar user={currentUser} />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login setCurrentUser={setCurrentUser} />} />
+        <Route path="/my-flights" element={currentUser ? <MyFlights /> : <Navigate to="/login" />} />
+        <Route path="/profile" element={currentUser ? <Profile /> : <Navigate to="/login" />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/support" element={<Support />} />
+        <Route path="/my-favorites" element={currentUser ? <MyFavorites /> : <Navigate to="/login" />} />
+        <Route path="/savedflights" element={<SavedFlights />} />
+        <Route path="/shared-flights/:flightId" element={<SharedFlightDetails />} />
+        <Route path="/flightsearchresults" element={<FlightSearchResults />} />
+        {/* <Route path="/savedflights" element={<UserFavoriteFlights />} /> */}
+        <Route path="/flights" element={<FlightSearchForm />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </Router>
   );
 }
 

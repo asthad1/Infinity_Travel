@@ -1,37 +1,70 @@
-// SharedFlightDetails.js
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import axios from 'axios';
 
 function SharedFlightDetails() {
-  const { flightId } = useParams();
+  const { flightId } = useParams();  // Get flightId from the URL params
+  const [flight, setFlight] = useState(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const savedFlights = useSelector((state) => state.flights.savedFlights);
 
-  const flight = savedFlights.find((f) => f.id === flightId);
+  useEffect(() => {
+    const user = localStorage.getItem('user');
 
-  // Check if the user is logged in
-  const currentUser = useSelector((state) => state.user.currentUser);
-  if (!currentUser) {
-    alert('You must be logged in to view this page');
-    navigate('/login');
-    return null;
+    // Redirect to login if user is not found in localStorage
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    // Fetch flight details from the API
+    axios.get(`http://localhost:9001/api/flights/${flightId}`)
+      .then(response => {
+        setFlight(response.data);
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error('Error fetching flight details:', error);
+        setLoading(false);
+      });
+  }, [flightId, navigate]);
+
+  // Define the handleShare function
+  function handleShare() {
+    if (navigator.share) {
+      navigator.share({
+        title: 'Flight Details',
+        text: `Check out this flight: ${flight.flight_name} from ${flight.from_airport} to ${flight.to_airport}`,
+        url: window.location.href,
+      })
+      .then(() => console.log('Successful share'))
+      .catch((error) => console.error('Error sharing', error));
+    } else {
+      // Fallback for browsers that don’t support the Web Share API
+      alert('Sharing is not supported on this browser.');
+    }
+  }
+
+  if (loading) {
+    return <p>Loading flight details...</p>;
   }
 
   if (!flight) {
-    return <h3>Flight not found.</h3>;
+    return <p>Flight not found.</p>;
   }
 
   return (
     <div className="container mt-5">
       <h2>Flight Details</h2>
       <div className="flight-info">
-        <p>Departure Time: {flight.departureTime}</p>
-        <p>Arrival Time: {flight.arrivalTime}</p>
-        <p>Departure Airport: {flight.departureAirport}</p>
-        <p>Destination Airport: {flight.destinationAirport}</p>
-        <p>Price: ${flight.price}</p>
+        <p>Flight Number: {flight.flight_name}</p>
+        <p>Airline: {flight.airline}</p>
+        <p>Departure: {flight.from_airport} at {new Date(flight.departure).toLocaleString()}</p>
+        <p>Arrival: {flight.to_airport} at {new Date(flight.arrival).toLocaleString()}</p>
+        <p>Price: ${flight.fare}</p>
+        <p>Stops: {flight.stops === 0 ? 'Non-stop' : `${flight.stops} stop(s)`}</p>
       </div>
+      <button onClick={handleShare} className="btn btn-primary">Share Flight</button>
     </div>
   );
 }

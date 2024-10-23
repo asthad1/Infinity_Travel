@@ -1,15 +1,16 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Float
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Float, Date
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from extensions import db
 from utils import to_dict
+from sqlalchemy.inspection import inspect
 
-# db = SQLAlchemy()
 
 class BaseModel:
     def to_dict(self):
-        return to_dict(self)
+        return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
+
     
 
 class User(BaseModel, db.Model):
@@ -28,32 +29,27 @@ class User(BaseModel, db.Model):
     password = Column(String(255), nullable=False)
     role = Column(String(50), nullable=False)  # To denote user type
     membership_number = db.Column(db.String(45), unique=True, nullable=False)
-    
-    # Relationships
-    favorites = relationship('Favorite', back_populates='user')
+
 
 class Flight(BaseModel, db.Model):
     __tablename__ = 'flights'
-    
-    id = Column(Integer, primary_key=True)
-    flight_name = Column(String(100), nullable=False)
-    to_airport = Column(Integer, ForeignKey('airports.id'), nullable=False)
-    from_airport = Column(Integer, ForeignKey('airports.id'), nullable=False)
-    departure = Column(DateTime, nullable=False)
-    arrival = Column(DateTime, nullable=False)
-    flight_class = Column(String(50), nullable=False)  # First, Business, Economy
-    fare = Column(Float, nullable=False)
-    flight_number = Column(String(20), nullable=False)
-    duration = Column(String(10), nullable=False)  # In hours or minutes
-    stops = Column(Integer, nullable=False)
-    available_seats = Column(Integer, nullable=False)
-    created = Column(DateTime, default=datetime.utcnow)
-    modified = Column(DateTime, onupdate=datetime.utcnow)
 
-    # Relationships
-    to_airport_rel = relationship('Airport', foreign_keys=[to_airport])
-    from_airport_rel = relationship('Airport', foreign_keys=[from_airport])
-    favorites = relationship('Favorite', back_populates='flight')
+    id = Column(Integer, primary_key=True)
+    flight_name = Column(String(10), nullable=False)
+    airline = Column(String(100), nullable=False)  # Airline name
+    from_airport = Column(String(5), nullable=False)  # IATA code for departure airport (e.g., LAX)
+    to_airport = Column(String(5), nullable=False)  # IATA code for destination airport (e.g., JFK)
+    departure = Column(DateTime, nullable=False)  # Departure time and date
+    arrival = Column(DateTime, nullable=False)  # Arrival time and date
+    duration = Column(String(10), nullable=False)  # Flight duration
+    fare = Column(Integer, nullable=False)  # Flight price in USD
+    stops = Column(Integer, nullable=False)  # Number of stops
+    available_seats = Column(Integer, nullable=False)  # Available seats for the flight
+    departure_date = Column(Date, nullable=False)  # Departure date for search filtering
+
+    def __repr__(self):
+        return f'<Flight {self.flight_name} from {self.from_airport} to {self.to_airport}>'
+
 
 class City(BaseModel, db.Model):
     __tablename__ = 'cities'
@@ -64,9 +60,6 @@ class City(BaseModel, db.Model):
     created = Column(DateTime, default=datetime.utcnow)
     modified = Column(DateTime, onupdate=datetime.utcnow)
 
-    # Relationships
-    state = relationship('State', back_populates='cities')
-    airports = relationship('Airport', back_populates='city')
 
 class State(BaseModel, db.Model):
     __tablename__ = 'states'
@@ -76,8 +69,6 @@ class State(BaseModel, db.Model):
     created = Column(DateTime, default=datetime.utcnow)
     modified = Column(DateTime, onupdate=datetime.utcnow)
 
-    # Relationships
-    cities = relationship('City', back_populates='state')
 
 class Airport(BaseModel, db.Model):
     __tablename__ = 'airports'
@@ -89,19 +80,36 @@ class Airport(BaseModel, db.Model):
     created = Column(DateTime, default=datetime.utcnow)
     modified = Column(DateTime, onupdate=datetime.utcnow)
 
-    # Relationships
-    city = relationship('City', back_populates='airports')
+    def __repr__(self):
+        return f'<Airport {self.airport_code}>'
 
 class Favorite(BaseModel, db.Model):
     __tablename__ = 'favorites'
     
     id = Column(Integer, primary_key=True)
     flight_id = Column(Integer, ForeignKey('flights.id'), nullable=False)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    airport_name = Column(String(100), nullable=True)
-    state_name = Column(String(100), nullable=True)  # Optional
-    city_name = Column(String(100), nullable=True)   # Optional
+    user_id = db.Column(db.Integer, nullable=False)
+    departure_airport = Column(String(255), nullable=False)  # Use snake_case
+    arrival_airport = Column(String(255), nullable=False)    # Use snake_case
+    label = db.Column(db.String(255), nullable=True)
+    departure_time = Column(DateTime, default=datetime.utcnow)  # Correct: snake_case
+    arrival_time = Column(DateTime, default=datetime.utcnow) 
+    price = Column(Integer, nullable=False)
+
+    flight = db.relationship('Flight')
+
+class Coupon(BaseModel, db.Model):
+    __tablename__ = 'coupons'
     
-    # Relationships
-    user = relationship('User', back_populates='favorites')
-    flight = relationship('Flight', back_populates='favorites')
+    coupon_id = Column(Integer, primary_key=True)
+    coupon_code = Column(String(50), nullable=False, unique=True)
+    discount_percentage = Column(Float, nullable=True)
+    discount_amount = Column(Float, nullable=True)
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=False)
+    minimum_order_amount = Column(Float, nullable=True)
+    admin_id = Column(Integer, nullable=False)  # ForeignKey can be added if needed
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, onupdate=datetime.utcnow)
+    user_roles = Column(String(50), nullable=True)  # Customer, Vendor, etc.
+    discount_type = Column(String(50), nullable=True)  # Holiday, First-time User, etc.

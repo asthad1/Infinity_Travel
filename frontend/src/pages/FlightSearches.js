@@ -1,24 +1,36 @@
-import React from 'react';
-import './Home.css'; // Custom CSS for styling
+import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import FlightSearchForm from '../components/FlightSearchForm';
-import { useDispatch } from 'react-redux';
-import { saveFlight } from '../store/flightsSlice';
+import FlightSearchResults from '../components/FlightSearchResults';
+import { fetchFlights, setErrorMessage } from '../store/flightsSlice'; // Import fetchFlights
 
-function FlightSearches() {
+const FlightSearches = () => {
   const dispatch = useDispatch();
+  const loading = useSelector((state) => state.flights.loading);
+  const errorMessage = useSelector((state) => state.flights.errorMessage);
 
-  const handleSaveFlight = (flight) => {
-    dispatch(saveFlight(flight));
-  };
+  // Fetch flights when the component mounts
+  useEffect(() => {
+    dispatch(fetchFlights()); // Fetch flights using the thunk
+  }, [dispatch]);
 
   return (
-    <div className="home">
-      {/* Flight Search Section */}
-      <div className="container my-5">
-        <FlightSearchForm onSaveFlight={handleSaveFlight} /> {/* Pass handleSaveFlight correctly */}
-      </div>
+    <div className="container my-5">
+      {loading ? (
+        <div className="text-center">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      ) : (
+        <>
+          <FlightSearchForm />
+          {errorMessage && <div className="alert alert-danger mt-4">{errorMessage}</div>}
+          <FlightSearchResults />
+        </>
+      )}
     </div>
   );
-}
+};
 
 export default FlightSearches;
