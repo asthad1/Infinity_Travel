@@ -13,6 +13,7 @@ from flask_cors import CORS
 from models import *
 from extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
+import logging
 
 
 # Load environment variables
@@ -22,7 +23,7 @@ app = Flask(__name__)
 CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://infinity_travel_owner:xxxx@ep-spring-frost-a4siuz5k.us-east-1.aws.neon.tech/infinity_travel?sslmode=require'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(message)s')
 # Initialize SQLAlchemy
 # db = SQLAlchemy(app)
 
@@ -276,21 +277,25 @@ def delete_flight(id):
 
 @app.route('/api/flights/search', methods=['POST'])
 def search_flights():
+    logging.debug(f"Headers: {request.headers}")
+    logging.debug(f"Request Data: {request.data}")
     data = request.json
 
-    # Extract search parameters
+    # Extract search parameters for departure and return flights
     departure_airport = data.get('departureAirport')
     destination_airport = data.get('destinationAirport')
     departure_date = data.get('departureDate')
+    
+    return_date = data.get('returnDate') if 'returnDate' in data else None
     num_travellers = data.get('numTravellers', 1)
     num_stops = data.get('numStops') if data.get('numStops') != '' else None
     selected_airline = data.get('selectedAirline') if data.get('selectedAirline') != '' else None
     max_price = data.get('maxPrice') if data.get('maxPrice') != '' else None
 
-    # Start with base query
+    # Start with base query for departure flights
     flights_query = Flight.query
-
-    # Apply filters based on input parameters
+    logging.debug(flights_query) 
+    # Apply filters based on input parameters for departure flights
     if departure_airport:
         flights_query = flights_query.filter(Flight.from_airport == departure_airport)
 
@@ -309,14 +314,43 @@ def search_flights():
     if max_price:
         flights_query = flights_query.filter(Flight.fare <= float(max_price))
 
-    # Fetch all matching flights
-    flights = flights_query.all()
+    # Fetch all matching departure flights
+    departure_flights = flights_query.all()
 
-    # Filter out flights that don't have enough available seats
-    available_flights = [flight for flight in flights if flight.available_seats >= num_travellers]
+    # Filter out departure flights that don't have enough available seats
+    available_departure_flights = [
+        flight for flight in departure_flights if int(flight.available_seats) >= int(num_travellers)
+    ]
+    logging.debug(f"Number of travelers: {num_travellers}")
+    # Search for return flights if round-trip is selected
+    available_return_flights = []
+    if return_date:
+        return_flights_query = Flight.query
 
-    # Convert flights to a JSON-serializable format
-    flight_list = [
+        # Apply filters for return flights
+        return_flights_query = return_flights_query.filter(Flight.from_airport == destination_airport)
+        return_flights_query = return_flights_query.filter(Flight.to_airport == departure_airport)
+        return_flights_query = return_flights_query.filter(Flight.departure_date == return_date)
+
+        if num_stops is not None:
+            return_flights_query = return_flights_query.filter(Flight.stops == int(num_stops))
+
+        if selected_airline:
+            return_flights_query = return_flights_query.filter(Flight.airline == selected_airline)
+
+        if max_price:
+            return_flights_query = return_flights_query.filter(Flight.fare <= float(max_price))
+
+        # Fetch all matching return flights
+        return_flights = return_flights_query.all()
+        
+        # Filter out return flights that don't have enough available seats
+        available_return_flights = [
+            flight for flight in return_flights if int(flight.available_seats) >= int(num_travellers)
+        ]
+
+    # Convert departure flights to a JSON-serializable format
+    departure_flight_list = [
         {
             'flight_id': flight.id,
             'flight_number': flight.flight_name,
@@ -330,10 +364,33 @@ def search_flights():
             'duration': flight.duration,
             'available_seats': flight.available_seats
         }
-        for flight in available_flights
+        for flight in available_departure_flights
     ]
 
-    return jsonify(flight_list), 200
+    # Convert return flights to a JSON-serializable format
+    return_flight_list = [
+        {
+            'flight_id': flight.id,
+            'flight_number': flight.flight_name,
+            'airline': flight.airline,
+            'departure_airport': flight.from_airport,
+            'destination_airport': flight.to_airport,
+            'departure_time': flight.departure.strftime('%Y-%m-%d %H:%M'),
+            'arrival_time': flight.arrival.strftime('%Y-%m-%d %H:%M'),
+            'price': flight.fare,
+            'stops': flight.stops,
+            'duration': flight.duration,
+            'available_seats': flight.available_seats
+        }
+        for flight in available_return_flights
+    ]
+
+    # Return both departure and return flights if applicable
+    return jsonify({
+        'departureFlights': departure_flight_list,
+        'returnFlights': return_flight_list
+    }), 200
+
 
 
 # ===================== CRUD FOR CITY MODEL ===================== #
@@ -582,9 +639,72 @@ def view_shared_search(url):
     }), 200
 
 
+
+# ===================== CRUD FOR COUPON MODEL ===================== #
+
+# GET all coupons
+@app.route('/coupons', methods=['GET'])
+def get_coupons():
+    coupons = Coupon.query.all()
+    return jsonify([coupon.to_dict() for coupon in coupons]), 200
+
+# GET a single coupon by ID
+@app.route('/coupons/<int:coupon_id>', methods=['GET'])
+def get_coupon(coupon_id):
+    coupon = Coupon.query.get_or_404(coupon_id)
+    return jsonify(coupon.to_dict()), 200
+
+# CREATE a new coupon
+@app.route('/coupons', methods=['POST'])
+def create_coupon():
+    data = request.json
+    new_coupon = Coupon(
+        coupon_code=data['coupon_code'],
+        discount_percentage=data.get('discount_percentage'),
+        discount_amount=data.get('discount_amount'),
+        start_date=datetime.strptime(data['start_date'], '%Y-%m-%d %H:%M:%S'),
+        end_date=datetime.strptime(data['end_date'], '%Y-%m-%d %H:%M:%S'),
+        minimum_order_amount=data.get('minimum_order_amount'),
+        admin_id=data['admin_id'],
+        user_roles=data.get('user_roles'),
+        discount_type=data.get('discount_type')
+    )
+    db.session.add(new_coupon)
+    db.session.commit()
+    return jsonify(new_coupon.to_dict()), 201
+
+# UPDATE an existing coupon by ID
+@app.route('/coupons/<int:coupon_id>', methods=['PUT'])
+def update_coupon(coupon_id):
+    data = request.json
+    coupon = Coupon.query.get_or_404(coupon_id)
+    
+    coupon.coupon_code = data.get('coupon_code', coupon.coupon_code)
+    coupon.discount_percentage = data.get('discount_percentage', coupon.discount_percentage)
+    coupon.discount_amount = data.get('discount_amount', coupon.discount_amount)
+    coupon.start_date = datetime.strptime(data['start_date'], '%Y-%m-%d %H:%M:%S')
+    coupon.end_date = datetime.strptime(data['end_date'], '%Y-%m-%d %H:%M:%S')
+    coupon.minimum_order_amount = data.get('minimum_order_amount', coupon.minimum_order_amount)
+    coupon.admin_id = data.get('admin_id', coupon.admin_id)
+    coupon.user_roles = data.get('user_roles', coupon.user_roles)
+    coupon.discount_type = data.get('discount_type', coupon.discount_type)
+    
+    db.session.commit()
+    return jsonify(coupon.to_dict()), 200
+
+# DELETE a coupon by ID
+@app.route('/coupons/<int:coupon_id>', methods=['DELETE'])
+def delete_coupon(coupon_id):
+    coupon = Coupon.query.get_or_404(coupon_id)
+    db.session.delete(coupon)
+    db.session.commit()
+    return jsonify({'message': 'Coupon deleted'}), 200
+
+
 @app.route('/api/search/flights/<from_airport_code>/<to_airport_code>/<date>/<int:travellers>', methods=['GET'])
-def get_flights_by_airports(from_airport_code, to_airport_code, date, travellers):
+def get_flights_by_airports(from_airport_code, to_airport_code, date, travellers):   
     # Parse the date in YYMMDD format and convert to datetime
+    
     try:
         # Convert YYMMDD to YYYY-MM-DD
         parsed_date = datetime.strptime(
@@ -628,6 +748,37 @@ def shared_flights(flight_id):
     # Replace 'localhost:3000' with the production URL if necessary
     return redirect(f"http://localhost:3000/shared-flights/{flight_id}")
 
+@app.route('/api/validate_coupon', methods=['POST'])
+def validate_coupon():
+    data = request.json
+    discount_code = data.get('discount_code')
+    
+    # Validate if the coupon code was provided
+    if not discount_code:
+        return jsonify({'error': 'No discount code provided'}), 400
+
+    # Query the coupon from the database
+    coupon = Coupon.query.filter_by(coupon_code=discount_code).first()
+
+    if not coupon:
+        # If the coupon does not exist
+        return jsonify({'error': 'Invalid discount code'}), 404
+
+    # Check if the coupon is expired
+    current_time = datetime.utcnow()
+    print(coupon.end_date, current_time)
+    if coupon.end_date < current_time:
+        return jsonify({'error': 'Coupon has expired'}), 400
+
+    # Coupon is valid, calculate the discount percentage or amount
+    discount = coupon.discount_percentage if coupon.discount_percentage else 0
+
+    return jsonify({
+        'success': 'Coupon applied successfully!',
+        'discount_percentage': discount,
+        'discount_amount': coupon.discount_amount,
+        'message': f'You get a {discount}% discount with this coupon!'
+    }), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9001, debug=True)

@@ -11,6 +11,11 @@ import Support from './pages/Support';
 import MyFavorites from './components/MyFavorites';
 import SavedFlights from './components/SavedFlights';
 import SharedFlightDetails from './components/SharedFlightDetails';
+import Footer from './components/Footer';
+import FlightSearchResults from './components/FlightSearchResults';
+// import UserFavoriteFlights from './components/UserFavoriteFlights';
+import FlightSearchForm from './components/FlightSearchForm';
+import Checkout from './pages/Checkout';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(JSON.parse(localStorage.getItem('user')));
@@ -48,6 +53,11 @@ function App() {
         <Route path="/my-favorites" element={currentUser ? <MyFavorites /> : <Navigate to="/login" />} />
         <Route path="/savedflights" element={<SavedFlights />} />
         <Route path="/shared-flights/:flightId" element={<SharedFlightDetails />} />
+        <Route path="/flightsearchresults" element={<FlightSearchResults />} />
+        {/* <Route path="/savedflights" element={<UserFavoriteFlights />} /> */}
+        <Route path="/flights" element={<FlightSearchForm />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
   );

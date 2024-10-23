@@ -53,7 +53,7 @@ function Navbar({ user }) {
                   <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                     <li><Link className="dropdown-item" to="/profile">Change Password</Link></li>
                     <li><Link className="dropdown-item" to="/my-favorites">My Favorites</Link></li>
-                    {/* <li><Link className="dropdown-item" to="/my-flights">My Flights</Link></li> */}
+                    <li><Link className="dropdown-item" to="/my-flights">My Flights</Link></li>
                     <li><button className="dropdown-item" onClick={handleLogout}>Logout</button></li>
                   </ul>
                 </li>

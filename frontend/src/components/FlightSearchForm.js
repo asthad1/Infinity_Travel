@@ -7,6 +7,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setFilteredFlights, setErrorMessage } from '../store/flightsSlice';
 import { setDepartureAirport, setDestinationAirport, setDepartureDate, setTravelers } from '../store/searchSlice';
 import axios from 'axios'; // Import axios for API calls
+import { Form } from 'react-bootstrap'; // Import for slider
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlaneDeparture, faPlaneArrival, faCalendarAlt, faUser } from '@fortawesome/free-solid-svg-icons';
 
 function FlightSearchForm() {
   const dispatch = useDispatch();
@@ -25,6 +28,9 @@ function FlightSearchForm() {
   const [numStops, setNumStops] = useState('');
   const [selectedAirline, setSelectedAirline] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [returnDate, setReturnDate] = useState('');
+  const [filteredReturnFlights, setFilteredReturnFlights] = useState([]);
+  const [isRoundtrip, setIsRoundtrip] = useState(false);
 
   // Fetch airports on component load
   useEffect(() => {
@@ -41,6 +47,13 @@ function FlightSearchForm() {
         console.error('Error fetching airports:', error);
         dispatch(setErrorMessage('Error fetching airport data. Please try again.'));
       });
+
+    // Set min date
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    setMinDate(`${yyyy}-${mm}-${dd}`);
   }, [dispatch]);
 
   const handleSearch = (e) => {
@@ -52,11 +65,21 @@ function FlightSearchForm() {
       return;
     }
 
+    const selectedDepartureDate = new Date(departureDate);
+    const selectedReturnDate = new Date(returnDate);
+
+    // Check if return date is after the departure date for roundtrip
+    if (isRoundtrip && selectedReturnDate <= selectedDepartureDate) {
+      dispatch(setErrorMessage('Return date must be after departure date.'));
+      return;
+    }
+
     // Prepare search criteria
     const searchCriteria = {
       departureAirport: departureAirport?.value,
       destinationAirport: destinationAirport?.value,
       departureDate,
+      returnDate: isRoundtrip ? returnDate : null, // Include return date if roundtrip is selected
       numTravellers: travelers,
       numStops,
       selectedAirline,
@@ -65,14 +88,24 @@ function FlightSearchForm() {
 
     // Send search request to the backend
     axios
-      .post('http://localhost:9001/api/flights/search', searchCriteria) // Replace with correct search endpoint
+      .post('http://localhost:9001/api/flights/search', searchCriteria)
       .then((response) => {
-        const flights = response.data;
-        if (flights.length === 0) {
-          dispatch(setErrorMessage('No flights found matching the criteria.'));
+        const { departureFlights, returnFlights } = response.data;
+
+        if (departureFlights.length === 0) {
+          dispatch(setErrorMessage('No departure flights found matching the criteria.'));
         } else {
           dispatch(setErrorMessage('')); // Clear any error message
-          dispatch(setFilteredFlights(flights)); // Update filtered flights in Redux
+          dispatch(setFilteredFlights(departureFlights)); // Update filtered flights in Redux
+        }
+
+        // Filter return flights if roundtrip is checked
+        if (isRoundtrip) {
+          if (returnFlights.length === 0) {
+            dispatch(setErrorMessage('No return flights found matching the criteria.'));
+          } else {
+            setFilteredReturnFlights(returnFlights); // Set return flights in local state
+          }
         }
       })
       .catch((error) => {
@@ -82,13 +115,14 @@ function FlightSearchForm() {
   };
 
   return (
-    <div className="container mt-5">
-      <h2 className="mb-4">Search Flights</h2>
-      <form onSubmit={handleSearch}>
+    <div className="container mt-5 p-4 border rounded shadow-sm">
+      <h2 className="mb-4 text-center">Search Flights</h2>
+      <form onSubmit={handleSearch} className="p-3">
         <div className="row g-3">
           {/* Departure Airport Field */}
           <div className="col-md-6 col-lg-3">
             <label htmlFor="departureAirport" className="form-label">
+              <FontAwesomeIcon icon={faPlaneDeparture} className="me-2" />
               Leaving from <span className="text-danger">*</span>
             </label>
             <Select
@@ -104,6 +138,7 @@ function FlightSearchForm() {
           {/* Destination Airport Field */}
           <div className="col-md-6 col-lg-3">
             <label htmlFor="destinationAirport" className="form-label">
+              <FontAwesomeIcon icon={faPlaneArrival} className="me-2" />
               Going to <span className="text-danger">*</span>
             </label>
             <Select
@@ -119,6 +154,7 @@ function FlightSearchForm() {
           {/* Departure Date Field */}
           <div className="col-md-6 col-lg-3">
             <label htmlFor="departureDate" className="form-label">
+              <FontAwesomeIcon icon={faCalendarAlt} className="me-2" />
               Departure Date <span className="text-danger">*</span>
             </label>
             <input
@@ -131,9 +167,41 @@ function FlightSearchForm() {
             />
           </div>
 
+          {/* Roundtrip Toggle */}
+          <div className="col-md-6 col-lg-3 d-flex align-items-center justify-content-center">
+            <label className="form-check-label me-2" htmlFor="roundtrip">
+              <FontAwesomeIcon icon={faCalendarAlt} className="me-2" />
+              Roundtrip
+            </label>
+            <Form.Check 
+              type="switch" 
+              id="roundtrip-switch" 
+              checked={isRoundtrip} 
+              onChange={(e) => setIsRoundtrip(e.target.checked)} 
+            />
+          </div>
+
+          {isRoundtrip && (
+            <div className="col-md-6 col-lg-3">
+              <label htmlFor="returnDate" className="form-label">
+                <FontAwesomeIcon icon={faCalendarAlt} className="me-2" />
+                Return Date
+              </label>
+              <input
+                type="date"
+                className="form-control"
+                value={returnDate}
+                onChange={(e) => setReturnDate(e.target.value)}
+                min={minDate}
+                required={isRoundtrip}
+              />
+            </div>
+          )}
+
           {/* Travelers Field */}
           <div className="col-md-6 col-lg-2">
             <label htmlFor="travelers" className="form-label">
+              <FontAwesomeIcon icon={faUser} className="me-2" />
               Travelers <span className="text-danger">*</span>
             </label>
             <input
@@ -149,7 +217,11 @@ function FlightSearchForm() {
 
           {/* Toggle Filters Button */}
           <div className="col-md-auto d-flex align-items-end">
-            <button type="button" className="btn btn-outline-primary" onClick={() => setShowFilters(!showFilters)}>
+            <button
+              type="button"
+              className="btn btn-outline-primary"
+              onClick={() => setShowFilters(!showFilters)}
+            >
               <i className="fas fa-filter"></i> Filters
             </button>
           </div>
@@ -166,13 +238,27 @@ function FlightSearchForm() {
           />
         )}
 
-        <button type="submit" className="btn btn-primary btn-lg mt-3">Search Flights</button>
+        <button type="submit" className="btn btn-primary btn-lg mt-3">
+          Search Flights
+        </button>
       </form>
 
       {/* Display Flight Search Results */}
-      {filteredFlights && filteredFlights.length > 0 ? (
-        <FlightSearchResults flights={filteredFlights} />
-      ) : (
+      {filteredFlights && filteredFlights.length > 0 && (
+        <>
+          <h3>Available Departure Flights:</h3>
+          <FlightSearchResults flights={filteredFlights} travelers={travelers} />
+        </>
+      )}
+
+      {isRoundtrip && filteredReturnFlights.length > 0 && (
+        <>
+          <h3>Available Return Flights:</h3>
+          <FlightSearchResults flights={filteredReturnFlights} travelers={travelers} />
+        </>
+      )}
+
+      {!filteredFlights.length && !filteredReturnFlights.length && (
         <div className="mt-3 text-muted">No flights found</div>
       )}
     </div>

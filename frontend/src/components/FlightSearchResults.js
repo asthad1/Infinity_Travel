@@ -2,14 +2,16 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Modal, Button } from 'react-bootstrap';
 import { saveFavorite } from '../store/favoritesSlice';
+import { useNavigate } from 'react-router-dom';
+import { FaPlane, FaHeart, FaShareAlt } from 'react-icons/fa'; // Icons added for a modern look
 
-const FlightSearchResults = ({ flights }) => {
+const FlightSearchResults = ({ flights, travelers }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const user_id = useSelector((state) => state.user.user_id); // Get user_id from Redux
   const [labelModal, setLabelModal] = useState(false);  // State to control label modal visibility
   const [label, setLabel] = useState('');  // State to store the label entered by the user
   const [selectedFlight, setSelectedFlight] = useState(null);  // State to store the selected flight
-
   const [shareModal, setShareModal] = useState(false);  // State to control share modal visibility
   const [shareLink, setShareLink] = useState('');  // State to store the generated share link
 
@@ -67,30 +69,45 @@ const FlightSearchResults = ({ flights }) => {
     setLabel('');
   };
 
+  const handleCheckoutClick = (flight) => {
+    if (!user_id) {  // Check if user is logged in
+      alert('Please log in to purchase a flight.');
+      navigate('/login');  // Redirect to login page if not logged in
+      return;
+    }
+    navigate('/checkout', { state: { flight, travelers } });  // Proceed to checkout if logged in
+  };
+
   return (
     <div className="flight-search-results mt-5">
-      <h3>Search Results</h3>
+      <h3>Search Results <FaPlane /></h3>
       {flights.map((flight, index) => (
-        <div key={index} className="card mb-3">
+        <div key={index} className="card mb-3 shadow-lg" style={{ borderRadius: '10px' }}>
           <div className="card-body">
             <h5 className="card-title">Flight: {flight.flight_number || 'N/A'}</h5>
-            <p className="card-text">Airline: {flight.airline}</p>
+            <p className="card-text"><strong>Airline:</strong> {flight.airline}</p>
             <p className="card-text">
-              Departure: {flight.departure_airport} at {new Date(flight.departure_time).toLocaleString()}
+              <strong>Departure:</strong> {flight.departure_airport} at {new Date(flight.departure_time).toLocaleString()}
             </p>
             <p className="card-text">
-              Arrival: {flight.destination_airport} at {new Date(flight.arrival_time).toLocaleString()}
+              <strong>Arrival:</strong> {flight.destination_airport} at {new Date(flight.arrival_time).toLocaleString()}
             </p>
-            <p className="card-text">Price: ${flight.price}</p>
+            <p className="card-text"><strong>Price:</strong> ${flight.price}</p>
 
+            <button
+              className="btn btn-primary me-2"
+              onClick={() => handleCheckoutClick(flight)}
+            >
+              Purchase Flight
+            </button> &nbsp;
             {/* Save flight button */}
             <button className="btn btn-secondary" onClick={() => handleSaveFavoriteClick(flight)}>
-              Add to Favorites
+              <FaHeart /> Add to Favorites
             </button>
 
             {/* Share flight button */}
             <button className="btn btn-outline-primary ms-2" onClick={() => handleShare(flight)}>
-              Share Flight
+              <FaShareAlt /> Share Flight
             </button>
           </div>
         </div>

@@ -44,11 +44,10 @@
     flex: 0 0;
     /* Prevent it from growing */
   }
-
 }
 
 .w-75 {
-  width: fit-content !important
+  width: fit-content !important;
 }
 
 #SearchFlightsButton {

@@ -50,12 +50,12 @@ function FlightFilter({ onFilterChange }) {
 
   return (
     <div className="flight-filter p-4 mb-4">
-      <h3>Filter Flights</h3>
+      <h3 className="mb-3">Filter Flights <i className="fas fa-filter"></i></h3>
       <div className="row g-3">
         {/* Number of Stops */}
         <div className="col-md-4">
           <label htmlFor="numStops" className="form-label">
-            <i className="fas fa-stop-circle"></i> Number of Stops
+            <i className="fas fa-stop-circle me-2"></i> Number of Stops
           </label>
           <select
             className="form-control"
@@ -71,7 +71,7 @@ function FlightFilter({ onFilterChange }) {
 
         {/* Airline */}
         <div className="col-md-4">
-          <label htmlFor="airline" className="form-label">Airline</label>
+          <label htmlFor="airline" className="form-label"><i className="fas fa-plane-departure me-2"></i>Airline</label>
           <select
             className="form-control"
             value={selectedAirline}
@@ -88,7 +88,7 @@ function FlightFilter({ onFilterChange }) {
 
         {/* Max Price */}
         <div className="col-md-4">
-          <label htmlFor="maxPrice" className="form-label">Max Price ($)</label>
+          <label htmlFor="maxPrice" className="form-label"><i className="fas fa-dollar-sign me-2"></i>Max Price ($)</label>
           <input
             type="number"
             className="form-control"
@@ -101,7 +101,7 @@ function FlightFilter({ onFilterChange }) {
 
       {/* Reset Filters Button */}
       <button className="btn btn-secondary mt-3" onClick={resetFilters}>
-        Reset Filters
+        <i className="fas fa-redo me-2"></i>Reset Filters
       </button>
     </div>
   );

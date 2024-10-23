@@ -29,37 +29,38 @@ function MyFavorites() {
 
       fetchFavorites();
     }
-    // Only add user.user_id and navigate to the dependency array
   }, [user?.user_id, navigate]);
 
   if (loading) {
-    return <p>Loading favorites...</p>;
+    return <div className="spinner-border text-primary" role="status">
+      <span className="sr-only">Loading favorites...</span>
+    </div>;
   }
 
   if (favorites.length === 0) {
-    return <p>You have no favorite flights saved.</p>;
+    return <p className="text-muted text-center mt-5">You have no favorite flights saved.</p>;
   }
 
   return (
-    <div className="my-favorites">
-      <h2>My Favorite Flights</h2>
-      {favorites.map((favorite, index) => (
-        <div key={index} className="card mb-3">
-          <div className="card-body">
-            <h5 className="card-title">Flight: {favorite.flight_number || 'N/A'}</h5>
-            <p className="card-text">Label: {favorite.label || 'No Label'}</p> {/* Display custom label */}
-            <p className="card-text">Airline: {favorite.airline}</p>
-            <p className="card-text">
-              Departure: {favorite.departure_airport} at {new Date(favorite.departure_time).toLocaleString()}
-            </p>
-            <p className="card-text">
-              Arrival: {favorite.destination_airport} at {new Date(favorite.arrival_time).toLocaleString()}
-            </p>
-            <p className="card-text">Price: ${favorite.price}</p>
-            <p className="card-text">Stops: {favorite.stops === 0 ? 'Non-stop' : favorite.stops}</p>
+    <div className="my-favorites container">
+      <h2 className="text-center my-4">My Favorite Flights</h2>
+      <div className="row">
+        {favorites.map((favorite, index) => (
+          <div key={index} className="col-md-4">
+            <div className="card shadow-sm mb-4">
+              <div className="card-body">
+                <h5 className="card-title text-primary">Flight: {favorite.flight_number || 'N/A'}</h5>
+                <p className="text-muted">Label: {favorite.label || 'No Label'}</p> 
+                <p className="mb-2"><i className="fas fa-plane"></i> Airline: {favorite.airline}</p>
+                <p><i className="fas fa-map-marker-alt"></i> Departure: {favorite.departure_airport} at {new Date(favorite.departure_time).toLocaleString()}</p>
+                <p><i className="fas fa-map-marker-alt"></i> Arrival: {favorite.destination_airport} at {new Date(favorite.arrival_time).toLocaleString()}</p>
+                <p><i className="fas fa-dollar-sign"></i> Price: ${favorite.price}</p>
+                <p><i className="fas fa-exchange-alt"></i> Stops: {favorite.stops === 0 ? 'Non-stop' : favorite.stops}</p>
+              </div>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
