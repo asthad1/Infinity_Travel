@@ -779,6 +779,140 @@ def validate_coupon():
         'discount_amount': coupon.discount_amount,
         'message': f'You get a {discount}% discount with this coupon!'
     }), 200
+    
+# ===================== CRUD FOR SAVEDSEARCH MODEL ===================== #
+
+
+@app.route('/api/saved-searches', methods=['GET'])
+def get_saved_searches():
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({'error': 'User ID is required'}), 400
+
+    saved_searches = SavedSearch.query.filter_by(
+        user_id=user_id).order_by(SavedSearch.created.desc()).all()
+    return jsonify([search.to_dict() for search in saved_searches]), 200
+
+
+@app.route('/api/saved-searches', methods=['POST'])
+def save_search():
+    data = request.json
+
+    # Create new saved search
+    new_search = SavedSearch(
+        user_id=data['user_id'],
+        name=data.get('name', f"{data['from_airport']} to {
+                      data['to_airport']}"),
+        from_airport=data['from_airport'],
+        to_airport=data['to_airport'],
+        departure_date=datetime.strptime(
+            data['departure_date'], '%Y-%m-%d').date(),
+        return_date=datetime.strptime(
+            data['return_date'], '%Y-%m-%d').date() if data.get('return_date') else None,
+        adults=data.get('adults', 1),
+        max_price=data.get('max_price'),
+        max_stops=data.get('max_stops'),
+        preferred_airline=data.get('preferred_airline'),
+        last_search_date=datetime.utcnow()
+    )
+
+    try:
+        db.session.add(new_search)
+        db.session.commit()
+        return jsonify(new_search.to_dict()), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 400
+
+
+@app.route('/api/saved-searches/<int:search_id>', methods=['PUT'])
+def update_saved_search(search_id):
+    search = SavedSearch.query.get_or_404(search_id)
+    data = request.json
+
+    # Update fields if they exist in the request
+    if 'name' in data:
+        search.name = data['name']
+    if 'max_price' in data:
+        search.max_price = data['max_price']
+    if 'max_stops' in data:
+        search.max_stops = data['max_stops']
+    if 'preferred_airline' in data:
+        search.preferred_airline = data['preferred_airline']
+
+    try:
+        db.session.commit()
+        return jsonify(search.to_dict()), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 400
+
+
+@app.route('/api/saved-searches/<int:search_id>', methods=['DELETE'])
+def delete_saved_search(search_id):
+    search = SavedSearch.query.get_or_404(search_id)
+
+    try:
+        db.session.delete(search)
+        db.session.commit()
+        return jsonify({'message': 'Saved search deleted successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 400
+
+
+@app.route('/api/saved-searches/<int:search_id>/execute', methods=['GET'])
+def execute_saved_search(search_id):
+    search = SavedSearch.query.get_or_404(search_id)
+
+    # Build search query based on saved parameters
+    flights_query = Flight.query.filter(
+        Flight.from_airport == search.from_airport,
+        Flight.to_airport == search.to_airport,
+        Flight.departure_date == search.departure_date
+    )
+
+    # Apply saved filters
+    if search.max_price:
+        flights_query = flights_query.filter(Flight.fare <= search.max_price)
+    if search.max_stops is not None:
+        flights_query = flights_query.filter(Flight.stops <= search.max_stops)
+    if search.preferred_airline:
+        flights_query = flights_query.filter(
+            Flight.airline == search.preferred_airline)
+
+    # Execute the search
+    flights = flights_query.all()
+
+    # Update last search information
+    search.last_search_date = datetime.utcnow()
+    if flights:
+        search.last_minimum_price = min(flight.fare for flight in flights)
+    db.session.commit()
+
+    # Format flight results
+    flight_results = [
+        {
+            'flight_id': flight.id,
+            'flight_number': flight.flight_name,
+            'airline': flight.airline,
+            'departure_airport': flight.from_airport,
+            'destination_airport': flight.to_airport,
+            'departure_time': flight.departure.strftime('%Y-%m-%d %H:%M'),
+            'arrival_time': flight.arrival.strftime('%Y-%m-%d %H:%M'),
+            'price': flight.fare,
+            'stops': flight.stops,
+            'duration': flight.duration,
+            'available_seats': flight.available_seats
+        }
+        for flight in flights
+    ]
+
+    return jsonify({
+        'search': search.to_dict(),
+        'results': flight_results,
+        'total_results': len(flights)
+    }), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9001, debug=True)
