@@ -113,3 +113,37 @@ class Coupon(BaseModel, db.Model):
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
     user_roles = Column(String(50), nullable=True)  # Customer, Vendor, etc.
     discount_type = Column(String(50), nullable=True)  # Holiday, First-time User, etc.
+
+
+class SavedSearch(BaseModel, db.Model):
+    __tablename__ = 'saved_searches'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    name = Column(String(100), nullable=False)
+    # Matching Flight model's pattern
+    from_airport = Column(String(5), nullable=False)
+    # Matching Flight model's pattern
+    to_airport = Column(String(5), nullable=False)
+    # Matching Flight model's pattern
+    departure_date = Column(Date, nullable=False)
+    # Optional for one-way flights
+    return_date = Column(Date, nullable=True)
+    adults = Column(Integer, default=1)
+    created = Column(DateTime, default=datetime.utcnow)
+    modified = Column(DateTime, onupdate=datetime.utcnow)
+
+    # Search filters
+    max_price = Column(Integer, nullable=True)
+    max_stops = Column(Integer, nullable=True)
+    preferred_airline = Column(String(100), nullable=True)
+
+    # Track last search results
+    last_search_date = Column(DateTime, nullable=True)
+    last_minimum_price = Column(Integer, nullable=True)
+
+    # Relationships
+    user = relationship('User', backref='saved_searches')
+
+    def __repr__(self):
+        return f'<SavedSearch {self.name}: {self.from_airport} to {self.to_airport}>'
