@@ -21,7 +21,7 @@ import logging
 
 app = Flask(__name__)
 CORS(app)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://infinity_travel_owner:xxxx@ep-spring-frost-a4siuz5k.us-east-1.aws.neon.tech/infinity_travel?sslmode=require'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://infinity_travel_owner:q9urkfXI7nGg@ep-spring-frost-a4siuz5k.us-east-1.aws.neon.tech/infinity_travel?sslmode=require'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(message)s')
 # Initialize SQLAlchemy
@@ -109,7 +109,8 @@ def login():
     password = data.get('password')
 
     # Assuming you're checking the email and password against your database
-    user = User.query.filter_by(email=email).first()  # Query by email instead of username
+    # Query by email instead of username
+    user = User.query.filter_by(email=email).first()
 
     if user and user.password == password:  # Assuming check_password method exists
         # Login successful, return user information including user_id
@@ -120,7 +121,6 @@ def login():
     else:
         # Login failed
         return jsonify({'message': 'Invalid credentials'}), 401
-
 
 
 # Route to change password
@@ -223,8 +223,6 @@ def get_flights():
     return jsonify(flight_list), 200
 
 
-
-
 @app.route('/api/flights/<int:id>', methods=['GET'])
 def get_flight(id):
     flight = Flight.query.get_or_404(id)
@@ -285,31 +283,36 @@ def search_flights():
     departure_airport = data.get('departureAirport')
     destination_airport = data.get('destinationAirport')
     departure_date = data.get('departureDate')
-    
+
     return_date = data.get('returnDate') if 'returnDate' in data else None
     num_travellers = data.get('numTravellers', 1)
     num_stops = data.get('numStops') if data.get('numStops') != '' else None
-    selected_airline = data.get('selectedAirline') if data.get('selectedAirline') != '' else None
+    selected_airline = data.get('selectedAirline') if data.get(
+        'selectedAirline') != '' else None
     max_price = data.get('maxPrice') if data.get('maxPrice') != '' else None
 
     # Start with base query for departure flights
     flights_query = Flight.query
-    logging.debug(flights_query) 
+    logging.debug(flights_query)
     # Apply filters based on input parameters for departure flights
     if departure_airport:
-        flights_query = flights_query.filter(Flight.from_airport == departure_airport)
+        flights_query = flights_query.filter(
+            Flight.from_airport == departure_airport)
 
     if destination_airport:
-        flights_query = flights_query.filter(Flight.to_airport == destination_airport)
+        flights_query = flights_query.filter(
+            Flight.to_airport == destination_airport)
 
     if departure_date:
-        flights_query = flights_query.filter(Flight.departure_date == departure_date)
+        flights_query = flights_query.filter(
+            Flight.departure_date == departure_date)
 
     if num_stops is not None:
         flights_query = flights_query.filter(Flight.stops == int(num_stops))
 
     if selected_airline:
-        flights_query = flights_query.filter(Flight.airline == selected_airline)
+        flights_query = flights_query.filter(
+            Flight.airline == selected_airline)
 
     if max_price:
         flights_query = flights_query.filter(Flight.fare <= float(max_price))
@@ -328,22 +331,28 @@ def search_flights():
         return_flights_query = Flight.query
 
         # Apply filters for return flights
-        return_flights_query = return_flights_query.filter(Flight.from_airport == destination_airport)
-        return_flights_query = return_flights_query.filter(Flight.to_airport == departure_airport)
-        return_flights_query = return_flights_query.filter(Flight.departure_date == return_date)
+        return_flights_query = return_flights_query.filter(
+            Flight.from_airport == destination_airport)
+        return_flights_query = return_flights_query.filter(
+            Flight.to_airport == departure_airport)
+        return_flights_query = return_flights_query.filter(
+            Flight.departure_date == return_date)
 
         if num_stops is not None:
-            return_flights_query = return_flights_query.filter(Flight.stops == int(num_stops))
+            return_flights_query = return_flights_query.filter(
+                Flight.stops == int(num_stops))
 
         if selected_airline:
-            return_flights_query = return_flights_query.filter(Flight.airline == selected_airline)
+            return_flights_query = return_flights_query.filter(
+                Flight.airline == selected_airline)
 
         if max_price:
-            return_flights_query = return_flights_query.filter(Flight.fare <= float(max_price))
+            return_flights_query = return_flights_query.filter(
+                Flight.fare <= float(max_price))
 
         # Fetch all matching return flights
         return_flights = return_flights_query.all()
-        
+
         # Filter out return flights that don't have enough available seats
         available_return_flights = [
             flight for flight in return_flights if int(flight.available_seats) >= int(num_travellers)
@@ -390,7 +399,6 @@ def search_flights():
         'departureFlights': departure_flight_list,
         'returnFlights': return_flight_list
     }), 200
-
 
 
 # ===================== CRUD FOR CITY MODEL ===================== #
@@ -534,7 +542,7 @@ def add_favorite():
     data = request.json
     user_id = data.get('user_id')
     flight_id = data.get('flight_id')
-    
+
     favorite = Favorite(
         user_id=user_id,
         flight_id=flight_id,
@@ -545,18 +553,20 @@ def add_favorite():
         price=data.get('price'),
         label=data.get('label', 'Favorite Flight')
     )
-    
+
     db.session.add(favorite)
     db.session.commit()
-    
+
     return jsonify({'message': 'Flight added to favorites'}), 201
 
 # Get all favorites for a user
+
+
 @app.route('/api/favorites/<int:user_id>', methods=['GET'])
 def get_favorites(user_id):
     # Retrieve all favorites for the given user
     favorites = Favorite.query.filter_by(user_id=user_id).all()
-    
+
     # Build a response including flight details for each favorite
     favorite_list = [
         {
@@ -580,11 +590,13 @@ def get_favorites(user_id):
     return jsonify(favorite_list), 200
 
 # Update a favorite (label)
+
+
 @app.route('/api/favorites/<int:favorite_id>', methods=['PUT'])
 def update_favorite(favorite_id):
     data = request.json
     favorite = Favorite.query.get(favorite_id)
-    
+
     if not favorite:
         return jsonify({'error': 'Favorite not found'}), 404
 
@@ -595,6 +607,8 @@ def update_favorite(favorite_id):
     return jsonify({'message': 'Favorite updated successfully!'}), 200
 
 # Delete a favorite
+
+
 @app.route('/api/favorites/<int:favorite_id>', methods=['DELETE'])
 def delete_favorite(favorite_id):
     favorite = Favorite.query.get(favorite_id)
@@ -604,7 +618,7 @@ def delete_favorite(favorite_id):
 
     db.session.delete(favorite)
     db.session.commit()
-    
+
     return jsonify({'message': 'Favorite deleted successfully!'}), 200
 # Route to generate and share a favorite search
 
@@ -639,7 +653,6 @@ def view_shared_search(url):
     }), 200
 
 
-
 # ===================== CRUD FOR COUPON MODEL ===================== #
 
 # GET all coupons
@@ -649,12 +662,16 @@ def get_coupons():
     return jsonify([coupon.to_dict() for coupon in coupons]), 200
 
 # GET a single coupon by ID
+
+
 @app.route('/coupons/<int:coupon_id>', methods=['GET'])
 def get_coupon(coupon_id):
     coupon = Coupon.query.get_or_404(coupon_id)
     return jsonify(coupon.to_dict()), 200
 
 # CREATE a new coupon
+
+
 @app.route('/coupons', methods=['POST'])
 def create_coupon():
     data = request.json
@@ -674,25 +691,33 @@ def create_coupon():
     return jsonify(new_coupon.to_dict()), 201
 
 # UPDATE an existing coupon by ID
+
+
 @app.route('/coupons/<int:coupon_id>', methods=['PUT'])
 def update_coupon(coupon_id):
     data = request.json
     coupon = Coupon.query.get_or_404(coupon_id)
-    
+
     coupon.coupon_code = data.get('coupon_code', coupon.coupon_code)
-    coupon.discount_percentage = data.get('discount_percentage', coupon.discount_percentage)
-    coupon.discount_amount = data.get('discount_amount', coupon.discount_amount)
-    coupon.start_date = datetime.strptime(data['start_date'], '%Y-%m-%d %H:%M:%S')
+    coupon.discount_percentage = data.get(
+        'discount_percentage', coupon.discount_percentage)
+    coupon.discount_amount = data.get(
+        'discount_amount', coupon.discount_amount)
+    coupon.start_date = datetime.strptime(
+        data['start_date'], '%Y-%m-%d %H:%M:%S')
     coupon.end_date = datetime.strptime(data['end_date'], '%Y-%m-%d %H:%M:%S')
-    coupon.minimum_order_amount = data.get('minimum_order_amount', coupon.minimum_order_amount)
+    coupon.minimum_order_amount = data.get(
+        'minimum_order_amount', coupon.minimum_order_amount)
     coupon.admin_id = data.get('admin_id', coupon.admin_id)
     coupon.user_roles = data.get('user_roles', coupon.user_roles)
     coupon.discount_type = data.get('discount_type', coupon.discount_type)
-    
+
     db.session.commit()
     return jsonify(coupon.to_dict()), 200
 
 # DELETE a coupon by ID
+
+
 @app.route('/coupons/<int:coupon_id>', methods=['DELETE'])
 def delete_coupon(coupon_id):
     coupon = Coupon.query.get_or_404(coupon_id)
@@ -702,9 +727,9 @@ def delete_coupon(coupon_id):
 
 
 @app.route('/api/search/flights/<from_airport_code>/<to_airport_code>/<date>/<int:travellers>', methods=['GET'])
-def get_flights_by_airports(from_airport_code, to_airport_code, date, travellers):   
+def get_flights_by_airports(from_airport_code, to_airport_code, date, travellers):
     # Parse the date in YYMMDD format and convert to datetime
-    
+
     try:
         # Convert YYMMDD to YYYY-MM-DD
         parsed_date = datetime.strptime(
@@ -743,16 +768,19 @@ def get_flights_by_airports(from_airport_code, to_airport_code, date, travellers
     return jsonify([flight.to_dict() for flight in result_flights]), 200
 
 # Redirect traffic to your frontend application (React)
+
+
 @app.route('/shared-flights/<flight_id>')
 def shared_flights(flight_id):
     # Replace 'localhost:3000' with the production URL if necessary
     return redirect(f"http://localhost:3000/shared-flights/{flight_id}")
 
+
 @app.route('/api/validate_coupon', methods=['POST'])
 def validate_coupon():
     data = request.json
     discount_code = data.get('discount_code')
-    
+
     # Validate if the coupon code was provided
     if not discount_code:
         return jsonify({'error': 'No discount code provided'}), 400
@@ -779,7 +807,7 @@ def validate_coupon():
         'discount_amount': coupon.discount_amount,
         'message': f'You get a {discount}% discount with this coupon!'
     }), 200
-    
+
 # ===================== CRUD FOR SAVEDSEARCH MODEL ===================== #
 
 
@@ -796,32 +824,60 @@ def get_saved_searches():
 
 @app.route('/api/saved-searches', methods=['POST'])
 def save_search():
-    data = request.json
-
-    # Create new saved search
-    new_search = SavedSearch(
-        user_id=data['user_id'],
-        name=data.get('name', f"{data['from_airport']} to {
-                      data['to_airport']}"),
-        from_airport=data['from_airport'],
-        to_airport=data['to_airport'],
-        departure_date=datetime.strptime(
-            data['departure_date'], '%Y-%m-%d').date(),
-        return_date=datetime.strptime(
-            data['return_date'], '%Y-%m-%d').date() if data.get('return_date') else None,
-        adults=data.get('adults', 1),
-        max_price=data.get('max_price'),
-        max_stops=data.get('max_stops'),
-        preferred_airline=data.get('preferred_airline'),
-        last_search_date=datetime.utcnow()
-    )
-
     try:
-        db.session.add(new_search)
-        db.session.commit()
-        return jsonify(new_search.to_dict()), 201
+        data = request.json
+        app.logger.info(f"Received save search request with data: {data}")
+
+        # Validate required fields
+        required_fields = {
+            'user_id': int,
+            'from_airport': str,
+            'to_airport': str,
+            'departure_date': str
+        }
+
+        # Validate each required field
+        for field, field_type in required_fields.items():
+            if field not in data:
+                return jsonify({'error': f'Missing required field: {field}'}), 400
+            try:
+                if field_type == int:
+                    data[field] = int(data[field])
+                elif field_type == str and not data[field]:
+                    return jsonify({'error': f'Field cannot be empty: {field}'}), 400
+            except ValueError:
+                return jsonify({'error': f'Invalid value for field: {field}'}), 400
+
+        try:
+            new_search = SavedSearch(
+                user_id=data['user_id'],
+                name=data.get('name', f"{data['from_airport']} to {
+                              data['to_airport']}"),
+                from_airport=data['from_airport'],
+                to_airport=data['to_airport'],
+                departure_date=data['departure_date'],
+                return_date=data.get('return_date'),
+                adults=data.get('adults', 1),
+                max_price=data.get('max_price'),
+                max_stops=data.get('max_stops'),
+                preferred_airline=data.get('preferred_airline'),
+                created=datetime.now(),
+                modified=datetime.now(),
+                last_search_date=datetime.now()
+            )
+
+            db.session.add(new_search)
+            db.session.commit()
+
+            return jsonify(new_search.to_dict()), 201
+
+        except Exception as e:
+            app.logger.error(f"Error creating saved search: {str(e)}")
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 400
+
     except Exception as e:
-        db.session.rollback()
+        app.logger.error(f"Unexpected error in save_search: {str(e)}")
         return jsonify({'error': str(e)}), 400
 
 
@@ -913,6 +969,7 @@ def execute_saved_search(search_id):
         'results': flight_results,
         'total_results': len(flights)
     }), 200
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9001, debug=True)

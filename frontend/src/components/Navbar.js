@@ -1,15 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 function Navbar({ user }) {
   const navigate = useNavigate();
+  const [savedSearchCount, setSavedSearchCount] = useState(0);
+
+  useEffect(() => {
+    if (user?.user_id) {
+      fetchSavedSearchCount();
+    }
+  }, [user?.user_id]);
+
+  const fetchSavedSearchCount = async () => {
+    try {
+      const response = await axios.get(`http://localhost:9001/api/saved-searches?user_id=${user.user_id}`);
+      setSavedSearchCount(response.data.length);
+    } catch (error) {
+      console.error('Error fetching saved search count:', error);
+    }
+  };
 
   const handleLogout = () => {
-    // Clear localStorage and navigate to login
     localStorage.removeItem('user');
     localStorage.removeItem('user_id');
     navigate('/login');
-    window.location.reload();  // Force a page reload to reset state
+    window.location.reload();
   };
 
   return (
@@ -54,6 +70,15 @@ function Navbar({ user }) {
                     <li><Link className="dropdown-item" to="/profile">Change Password</Link></li>
                     <li><Link className="dropdown-item" to="/my-favorites">My Favorites</Link></li>
                     <li><Link className="dropdown-item" to="/my-flights">My Flights</Link></li>
+                    <li>
+                      <Link className="dropdown-item d-flex justify-content-between align-items-center" to="/saved-searches">
+                        <span><i className="fas fa-search"></i> Saved Searches</span>
+                        {savedSearchCount > 0 && (
+                          <span className="badge bg-primary rounded-pill">{savedSearchCount}</span>
+                        )}
+                      </Link>
+                    </li>
+                    <li><hr className="dropdown-divider" /></li>
                     <li><button className="dropdown-item" onClick={handleLogout}>Logout</button></li>
                   </ul>
                 </li>
