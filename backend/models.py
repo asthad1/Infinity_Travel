@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Float, Date
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import date, datetime
 from flask_sqlalchemy import SQLAlchemy
 from extensions import db
 from utils import to_dict
@@ -11,11 +11,10 @@ class BaseModel:
     def to_dict(self):
         return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
 
-    
 
 class User(BaseModel, db.Model):
     __tablename__ = 'users'
-    
+
     id = Column(Integer, primary_key=True)
     name = Column(String(50), nullable=False)
     # lastname = Column(String(50), nullable=False)
@@ -37,15 +36,19 @@ class Flight(BaseModel, db.Model):
     id = Column(Integer, primary_key=True)
     flight_name = Column(String(10), nullable=False)
     airline = Column(String(100), nullable=False)  # Airline name
-    from_airport = Column(String(5), nullable=False)  # IATA code for departure airport (e.g., LAX)
-    to_airport = Column(String(5), nullable=False)  # IATA code for destination airport (e.g., JFK)
+    # IATA code for departure airport (e.g., LAX)
+    from_airport = Column(String(5), nullable=False)
+    # IATA code for destination airport (e.g., JFK)
+    to_airport = Column(String(5), nullable=False)
     departure = Column(DateTime, nullable=False)  # Departure time and date
     arrival = Column(DateTime, nullable=False)  # Arrival time and date
     duration = Column(String(10), nullable=False)  # Flight duration
     fare = Column(Integer, nullable=False)  # Flight price in USD
     stops = Column(Integer, nullable=False)  # Number of stops
-    available_seats = Column(Integer, nullable=False)  # Available seats for the flight
-    departure_date = Column(Date, nullable=False)  # Departure date for search filtering
+    # Available seats for the flight
+    available_seats = Column(Integer, nullable=False)
+    # Departure date for search filtering
+    departure_date = Column(Date, nullable=False)
 
     def __repr__(self):
         return f'<Flight {self.flight_name} from {self.from_airport} to {self.to_airport}>'
@@ -53,7 +56,7 @@ class Flight(BaseModel, db.Model):
 
 class City(BaseModel, db.Model):
     __tablename__ = 'cities'
-    
+
     id = Column(Integer, primary_key=True)
     city_name = Column(String(100), nullable=False)
     state_id = Column(Integer, ForeignKey('states.id'), nullable=False)
@@ -63,7 +66,7 @@ class City(BaseModel, db.Model):
 
 class State(BaseModel, db.Model):
     __tablename__ = 'states'
-    
+
     id = Column(Integer, primary_key=True)
     state_name = Column(String(100), nullable=False)
     created = Column(DateTime, default=datetime.utcnow)
@@ -72,7 +75,7 @@ class State(BaseModel, db.Model):
 
 class Airport(BaseModel, db.Model):
     __tablename__ = 'airports'
-    
+
     id = Column(Integer, primary_key=True)
     airport = Column(String(100), nullable=False)
     airport_code = Column(String(5), unique=True, nullable=False)
@@ -83,24 +86,27 @@ class Airport(BaseModel, db.Model):
     def __repr__(self):
         return f'<Airport {self.airport_code}>'
 
+
 class Favorite(BaseModel, db.Model):
     __tablename__ = 'favorites'
-    
+
     id = Column(Integer, primary_key=True)
     flight_id = Column(Integer, ForeignKey('flights.id'), nullable=False)
     user_id = db.Column(db.Integer, nullable=False)
     departure_airport = Column(String(255), nullable=False)  # Use snake_case
     arrival_airport = Column(String(255), nullable=False)    # Use snake_case
     label = db.Column(db.String(255), nullable=True)
-    departure_time = Column(DateTime, default=datetime.utcnow)  # Correct: snake_case
-    arrival_time = Column(DateTime, default=datetime.utcnow) 
+    # Correct: snake_case
+    departure_time = Column(DateTime, default=datetime.utcnow)
+    arrival_time = Column(DateTime, default=datetime.utcnow)
     price = Column(Integer, nullable=False)
 
     flight = db.relationship('Flight')
 
+
 class Coupon(BaseModel, db.Model):
     __tablename__ = 'coupons'
-    
+
     coupon_id = Column(Integer, primary_key=True)
     coupon_code = Column(String(50), nullable=False, unique=True)
     discount_percentage = Column(Float, nullable=True)
@@ -108,8 +114,55 @@ class Coupon(BaseModel, db.Model):
     start_date = Column(DateTime, nullable=False)
     end_date = Column(DateTime, nullable=False)
     minimum_order_amount = Column(Float, nullable=True)
-    admin_id = Column(Integer, nullable=False)  # ForeignKey can be added if needed
+    # ForeignKey can be added if needed
+    admin_id = Column(Integer, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
     user_roles = Column(String(50), nullable=True)  # Customer, Vendor, etc.
-    discount_type = Column(String(50), nullable=True)  # Holiday, First-time User, etc.
+    # Holiday, First-time User, etc.
+    discount_type = Column(String(50), nullable=True)
+
+
+class SavedSearch(BaseModel, db.Model):
+    __tablename__ = 'saved_searches'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    name = Column(String(100), nullable=False)
+    from_airport = Column(String(5), nullable=False)
+    to_airport = Column(String(5), nullable=False)
+    # Store as string 'YYYY-MM-DD'
+    departure_date = Column(String(10), nullable=False)
+    # Store as string 'YYYY-MM-DD'
+    return_date = Column(String(10), nullable=True)
+    adults = Column(Integer, default=1)
+    created = Column(DateTime, default=datetime.now)
+    modified = Column(DateTime, onupdate=datetime.now)
+
+    # Optional filters
+    max_price = Column(Integer, nullable=True)
+    max_stops = Column(Integer, nullable=True)
+    preferred_airline = Column(String(100), nullable=True)
+
+    # Last search results
+    last_search_date = Column(DateTime, nullable=True)
+    last_minimum_price = Column(Integer, nullable=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'name': self.name,
+            'from_airport': self.from_airport,
+            'to_airport': self.to_airport,
+            'departure_date': self.departure_date,
+            'return_date': self.return_date,
+            'adults': self.adults,
+            'max_price': self.max_price,
+            'max_stops': self.max_stops,
+            'preferred_airline': self.preferred_airline,
+            'created': self.created.isoformat() if self.created else None,
+            'modified': self.modified.isoformat() if self.modified else None,
+            'last_search_date': self.last_search_date.isoformat() if self.last_search_date else None,
+            'last_minimum_price': self.last_minimum_price
+        }

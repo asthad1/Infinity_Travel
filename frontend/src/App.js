@@ -6,14 +6,12 @@ import Register from './components/Register';
 import Home from './pages/Home';
 import MyFlights from './components/MyFlights';
 import Profile from './components/Profile';
-import FlightSearches from './pages/FlightSearches';
 import Support from './pages/Support';
 import MyFavorites from './components/MyFavorites';
 import SavedFlights from './components/SavedFlights';
+import SavedSearches from './components/SavedSearches';
 import SharedFlightDetails from './components/SharedFlightDetails';
-import Footer from './components/Footer';
 import FlightSearchResults from './components/FlightSearchResults';
-// import UserFavoriteFlights from './components/UserFavoriteFlights';
 import FlightSearchForm from './components/FlightSearchForm';
 import Checkout from './pages/Checkout';
 
@@ -54,7 +52,7 @@ function App() {
         <Route path="/savedflights" element={<SavedFlights />} />
         <Route path="/shared-flights/:flightId" element={<SharedFlightDetails />} />
         <Route path="/flightsearchresults" element={<FlightSearchResults />} />
-        {/* <Route path="/savedflights" element={<UserFavoriteFlights />} /> */}
+        <Route path="/saved-searches" element={<SavedSearches />} />
         <Route path="/flights" element={<FlightSearchForm />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="*" element={<Navigate to="/" />} />

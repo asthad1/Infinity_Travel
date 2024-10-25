@@ -1,47 +1,124 @@
 import React, { useEffect, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faPlaneDeparture, 
+  faPlaneArrival, 
+  faClock, 
+  faUsers,
+  faDollarSign,
+  faCalendarAlt
+} from '@fortawesome/free-solid-svg-icons';
+import './MyFlights.css';
+
+// Import airline images
+const airlineImages = {
+  'Air France': require('../assets/images/airlines/air-france.jpg'),
+  'American Airlines': require('../assets/images/airlines/american-airlines.png'),
+  'British Airways': require('../assets/images/airlines/british.png'),
+  'Cathay Pacific': require('../assets/images/airlines/cathay.jpg'),
+  'Delta': require('../assets/images/airlines/delta.png'),
+  'Emirates': require('../assets/images/airlines/emirates.png'),
+  'Lufthansa': require('../assets/images/airlines/lufthansa.png'),
+  'Qatar Airways': require('../assets/images/airlines/qatar.jpg'),
+  'Singapore Airlines': require('../assets/images/airlines/singapore.png'),
+  'United': require('../assets/images/airlines/united.png'),
+  'default': require('../assets/images/airlines/default-logo.png')
+};
 
 function MyFlights() {
   const [flights, setFlights] = useState([]);
 
-  // Retrieve flight data from localStorage when the component mounts
   useEffect(() => {
     const storedFlights = JSON.parse(localStorage.getItem('myFlights')) || [];
     setFlights(storedFlights);
   }, []);
 
+  const getAirlineLogo = (airline) => {
+    return airlineImages[airline] || airlineImages.default;
+  };
+
+  const formatDateTime = (dateTimeString) => {
+    return new Date(dateTimeString).toLocaleString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: true
+    });
+  };
+
   if (flights.length === 0) {
-    return <div>No flights have been booked yet.</div>;
+    return (
+      <div className="empty-flights-container">
+        <div className="empty-flights-content">
+          <FontAwesomeIcon icon={faPlaneDeparture} className="empty-icon" />
+          <h2>No Flights Booked Yet</h2>
+          <p>Your booked flights will appear here once you make a reservation.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="container mt-5">
-      <h2>My Booked Flights</h2>
-      <ul className="list-group">
+    <div className="my-flights-container">
+      <h2 className="page-title">My Booked Flights</h2>
+      <div className="flights-grid">
         {flights.map((flight, index) => (
-          // Ensure flight object and its properties exist before rendering
           flight && (
-            <li key={index} className="list-group-item">
-              <strong>Airline:</strong> {flight.airline || 'N/A'}
-              <br />
-              <strong>Flight Number:</strong> {flight.flight_number || 'N/A'}
-              <br />
-              <strong>Departure:</strong> {flight.departure_airport || 'N/A'}
-              <br />
-              <strong>Destination:</strong> {flight.destination_airport || 'N/A'}
-              <br />
-              <strong>Departure Time:</strong> {flight.departure_time || 'N/A'}
-              <br />
-              <strong>Arrival Time:</strong> {flight.arrival_time || 'N/A'}
-              <br />
-              <strong>Duration:</strong> {flight.duration || 'N/A'}
-              <br />
-              <strong>Price:</strong> ${flight.price || 'N/A'}
-              <br />
-              <strong>Number of Travelers:</strong> {flight.travelers || 'N/A'}
-            </li>
+            <div key={index} className="flight-card">
+              <div className="airline-header">
+                <img 
+                  src={getAirlineLogo(flight.airline)} 
+                  alt={flight.airline} 
+                  className="airline-logo"
+                />
+                <div className="flight-number">
+                  Flight {flight.flight_number}
+                </div>
+              </div>
+              
+              <div className="flight-details">
+                <div className="route-info">
+                  <h5>From: </h5>
+                  <div className="departure">
+                    <FontAwesomeIcon icon={faPlaneDeparture} className="icon" />
+                    <div className="location">
+                      <h3>{flight.departure_airport}</h3>
+                      <p>{formatDateTime(flight.departure_time)}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="duration">
+                    <div className="duration-line"></div>
+                    <span>{flight.duration}</span>
+                  </div>
+                  
+                  <h5>To: </h5>
+                  <div className="arrival">
+                    <FontAwesomeIcon icon={faPlaneArrival} className="icon" />
+                    <div className="location">
+                      <h3>{flight.destination_airport}</h3>
+                      <p>{formatDateTime(flight.arrival_time)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flight-info">
+                  <div className="info-item">
+                    <FontAwesomeIcon icon={faUsers} className="icon" />
+                    <span>{flight.travelers} Travelers</span>
+                  </div>
+                  <div className="info-item">
+                    <FontAwesomeIcon icon={faDollarSign} className="icon" />
+                    <span>${flight.price}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           )
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

@@ -1,92 +1,153 @@
+/* Home.css */
+
 /* Jumbotron Section */
 .jumbotron {
-  background-color: #f8f9fa;
-  padding: 2rem 1rem;
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin-top: 2rem;
+  overflow: hidden;
+  position: relative;
 }
 
-.jumbotron h1 {
-  font-size: 2.5rem;
-  font-weight: bold;
-}
-
-/* Icon Color in Features Section */
-.container .card-body i {
-  color: #007bff;
-  /* Icon color */
-}
-
-/* Section Heading */
-.container h2 {
+.jumbotron h1.display-4 {
+  font-size: 2.8rem;
   font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
 }
 
-/* Feature Cards */
-.card {
+.jumbotron .lead {
+  font-size: 1.25rem;
+  color: #6c757d;
+  margin-bottom: 2rem;
+}
+
+.jumbotron img {
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
-  /* Adds hover effect */
 }
 
-.card:hover {
-  transform: translateY(-10px);
-  /* Lifts card slightly on hover */
+.jumbotron img:hover {
+  transform: scale(1.02);
 }
 
-/* Features Section for Flexbox */
+.jumbotron .btn-primary {
+  border: none;
+  padding: 1rem 2rem;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.jumbotron .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(52, 152, 219, 0.2);
+}
+
+/* Features Section */
 .features-section {
+  margin-top: 2rem;
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
-  /* Even spacing between the cards */
-  margin: 0 -0.5rem;
-  /* Adjust to remove extra margin at the edges of the row */
+  gap: 1.5rem;
+}
+
+.features-section .col-md-4 {
+  display: flex;
+  flex: 1;
+  min-width: 300px;
 }
 
 .feature-card {
-  flex: 1 1 calc(33.33% - 1rem);
-  /* 3 cards per row with even spacing, minus gap */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  /* Consistent shadow for a modern look */
-  margin: 0.5rem;
-  /* Consistent spacing on all sides */
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  height: 100%;
+  width: 100%;
+  background: #ffffff;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  padding: 2rem;
+}
+
+.feature-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .feature-card .card-body {
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  align-items: center;
 }
 
-/* Responsive Handling for Smaller Devices */
+.feature-card i {
+  margin-bottom: 1.5rem;
+  font-size: 2.5rem;
+  transition: transform 0.3s ease;
+}
+
+.feature-card:hover i {
+  transform: scale(1.1);
+}
+
+/* Custom colors for each feature card icon */
+
+/* Plane icon */
+.feature-card:nth-child(2) i {
+  color: #2ecc71;
+}
+
+/* Hotel icon */
+.feature-card:nth-child(3) i {
+  color: #f1c40f;
+}
+
+/* Tags icon */
+
+.feature-card .card-title {
+  color: #2c3e50;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 1rem 0;
+}
+
+.feature-card .card-text {
+  color: #6c757d;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
+  .jumbotron {
+    padding: 2rem 1rem;
+    text-align: center;
+  }
+
+  .jumbotron h1.display-4 {
+    font-size: 2rem;
+    margin-top: 1.5rem;
+  }
+
+  .jumbotron img {
+    margin-bottom: 1.5rem;
+  }
+
+  .features-section {
+    gap: 1rem;
+  }
+
   .feature-card {
-    flex: 1 1 100%;
-    /* On smaller screens, make each card take full width */
     margin-bottom: 1rem;
   }
+}
 
-  .jumbotron h1 {
-    font-size: 2rem;
+/* Container max-width */
+@media (min-width: 1200px) {
+  .container {
+    max-width: 1140px;
   }
-}
-
-/* Responsive Handling for Bigger Devices */
-@media (min-width: 769px) {
-  .col-md-4 {
-    flex: 1 1 calc(33.33% - 1rem);
-    /* 3 cards per row with even spacing, minus gap */
-  }
-}
-
-/* Icon Styling for Better Spacing */
-.card-body i {
-  margin-bottom: 1rem;
-}
-
-/* General Container Adjustments */
-.container {
-  max-width: 1140px;
 }

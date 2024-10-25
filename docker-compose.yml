@@ -4,7 +4,7 @@ services:
   backend:
     build: ./backend
     environment:
-      - DATABASE_URL=postgresql://infinity_travel_owner:xxxx@ep-spring-frost-a4siuz5k.us-east-1.aws.neon.tech/infinity_travel?sslmode=require
+      - DATABASE_URL=postgresql://infinity_travel_owner:q9urkfXI7nGg@ep-spring-frost-a4siuz5k.us-east-1.aws.neon.tech/infinity_travel?sslmode=require
       - PYTHONUNBUFFERED=1
     ports:
       - '9001:9001'

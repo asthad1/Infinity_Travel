@@ -1,0 +1,183 @@
+/* MyFlights.css */
+.my-flights-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-title {
+  color: #2c3e50;
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.flights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+  padding: 1rem;
+}
+
+.flight-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.flight-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.airline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.airline-logo {
+  height: 40px;
+  object-fit: contain;
+}
+
+.flight-number {
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.flight-details {
+  padding: 1.5rem;
+}
+
+.route-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.departure,
+.arrival {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.location h3 {
+  font-size: 1.2rem;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.location p {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin: 0.25rem 0 0 0;
+}
+
+.duration {
+  position: relative;
+  text-align: center;
+  padding: 0.5rem 0;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.duration-line {
+  position: relative;
+  height: 2px;
+  background: #e9ecef;
+  margin: 0.5rem 0;
+}
+
+.duration-line::before,
+.duration-line::after {
+  content: '•';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.5rem;
+}
+
+.duration-line::before {
+  left: 0;
+}
+
+.duration-line::after {
+  right: 0;
+}
+
+.flight-info {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 1rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #2c3e50;
+  font-size: 0.95rem;
+}
+
+/* Empty State Styling */
+.empty-flights-container {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.empty-flights-content {
+  padding: 2rem;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+}
+
+.empty-flights-content h2 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.empty-flights-content p {
+  color: #6c757d;
+  font-size: 1.1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .my-flights-container {
+    padding: 1rem;
+  }
+
+  .flights-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .flight-card {
+    margin-bottom: 1rem;
+  }
+
+  .airline-header {
+    padding: 0.75rem;
+  }
+
+  .flight-details {
+    padding: 1rem;
+  }
+}

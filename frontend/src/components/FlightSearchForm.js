@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import Select from 'react-select';
 import './FlightSearchForm.css';
 import FlightFilter from './FlightFilter';
-import FlightSearchResults from './FlightSearchResults'; // Import FlightSearchResults
+import FlightSearchResults from './FlightSearchResults';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilteredFlights, setErrorMessage } from '../store/flightsSlice';
 import { setDepartureAirport, setDestinationAirport, setDepartureDate, setTravelers } from '../store/searchSlice';
-import axios from 'axios'; // Import axios for API calls
-import { Form } from 'react-bootstrap'; // Import for slider
+import { saveSearch } from '../store/savedSearchesSlice';
+import axios from 'axios';
+import { Form } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlaneDeparture, faPlaneArrival, faCalendarAlt, faUser } from '@fortawesome/free-solid-svg-icons';
 
@@ -19,36 +20,36 @@ function FlightSearchForm() {
   const destinationAirport = useSelector((state) => state.search.destinationAirport);
   const departureDate = useSelector((state) => state.search.departureDate);
   const travelers = useSelector((state) => state.search.travelers);
-  const filteredFlights = useSelector((state) => state.flights.filteredFlights); // Get filtered flights
+  const filteredFlights = useSelector((state) => state.flights.filteredFlights);
+  const errorMessage = useSelector((state) => state.flights.errorMessage);
 
   // Local state
   const [showFilters, setShowFilters] = useState(false);
   const [minDate, setMinDate] = useState('');
-  const [airports, setAirports] = useState([]); // State for storing airport options
+  const [airports, setAirports] = useState([]);
   const [numStops, setNumStops] = useState('');
   const [selectedAirline, setSelectedAirline] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [returnDate, setReturnDate] = useState('');
   const [filteredReturnFlights, setFilteredReturnFlights] = useState([]);
   const [isRoundtrip, setIsRoundtrip] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  // Fetch airports on component load
   useEffect(() => {
     axios
-      .get('http://localhost:9001/api/airports') // Replace with the correct airport endpoint
+      .get('http://localhost:9001/api/airports')
       .then((response) => {
         const airportOptions = response.data.map((airport) => ({
           value: airport.code,
           label: `${airport.name} (${airport.code})`,
         }));
-        setAirports(airportOptions); // Populate airports dynamically from API
+        setAirports(airportOptions);
       })
       .catch((error) => {
         console.error('Error fetching airports:', error);
         dispatch(setErrorMessage('Error fetching airport data. Please try again.'));
       });
 
-    // Set min date
     const today = new Date();
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -56,10 +57,53 @@ function FlightSearchForm() {
     setMinDate(`${yyyy}-${mm}-${dd}`);
   }, [dispatch]);
 
+  const handleSaveSearch = async () => {
+    if (!departureAirport || !destinationAirport || !departureDate || travelers < 1) {
+      dispatch(setErrorMessage('Please fill all required fields before saving the search.'));
+      return;
+    }
+
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user?.user_id) {
+      dispatch(setErrorMessage('Please log in to save searches'));
+      return;
+    }
+
+    // Format data to match backend expectations
+    const searchData = {
+      user_id: user.user_id,
+      from_airport: departureAirport.value,          // Changed from departureAirport
+      to_airport: destinationAirport.value,          // Changed from destinationAirport
+      departure_date: departureDate,                 // Keep date format as is
+      return_date: returnDate || null,
+      adults: parseInt(travelers),
+      max_stops: numStops ? parseInt(numStops) : null,
+      max_price: maxPrice ? parseInt(maxPrice) : null,
+      preferred_airline: selectedAirline || null,
+      name: `${departureAirport.label} to ${destinationAirport.label}`
+    };
+
+    console.log('Sending search data:', searchData);  // Debug log
+
+    setIsSaving(true);
+    try {
+      const response = await axios.post('http://localhost:9001/api/saved-searches', searchData);
+      console.log('Save search response:', response.data);
+      dispatch(setErrorMessage(''));
+      alert('Search saved successfully!');
+    } catch (error) {
+      console.error('Save search error:', error.response?.data || error);
+      const errorMessage = error.response?.data?.error || 'Failed to save search. Please try again.';
+      dispatch(setErrorMessage(errorMessage));
+      alert(errorMessage);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleSearch = (e) => {
     e.preventDefault();
 
-    // Check if required fields are filled
     if (!departureAirport || !destinationAirport || !departureDate || travelers < 1) {
       dispatch(setErrorMessage('Please fill all the required fields.'));
       return;
@@ -68,25 +112,22 @@ function FlightSearchForm() {
     const selectedDepartureDate = new Date(departureDate);
     const selectedReturnDate = new Date(returnDate);
 
-    // Check if return date is after the departure date for roundtrip
     if (isRoundtrip && selectedReturnDate <= selectedDepartureDate) {
       dispatch(setErrorMessage('Return date must be after departure date.'));
       return;
     }
 
-    // Prepare search criteria
     const searchCriteria = {
       departureAirport: departureAirport?.value,
       destinationAirport: destinationAirport?.value,
       departureDate,
-      returnDate: isRoundtrip ? returnDate : null, // Include return date if roundtrip is selected
+      returnDate: isRoundtrip ? returnDate : null,
       numTravellers: travelers,
       numStops,
       selectedAirline,
       maxPrice,
     };
 
-    // Send search request to the backend
     axios
       .post('http://localhost:9001/api/flights/search', searchCriteria)
       .then((response) => {
@@ -95,16 +136,15 @@ function FlightSearchForm() {
         if (departureFlights.length === 0) {
           dispatch(setErrorMessage('No departure flights found matching the criteria.'));
         } else {
-          dispatch(setErrorMessage('')); // Clear any error message
-          dispatch(setFilteredFlights(departureFlights)); // Update filtered flights in Redux
+          dispatch(setErrorMessage(''));
+          dispatch(setFilteredFlights(departureFlights));
         }
 
-        // Filter return flights if roundtrip is checked
         if (isRoundtrip) {
           if (returnFlights.length === 0) {
             dispatch(setErrorMessage('No return flights found matching the criteria.'));
           } else {
-            setFilteredReturnFlights(returnFlights); // Set return flights in local state
+            setFilteredReturnFlights(returnFlights);
           }
         }
       })
@@ -238,9 +278,27 @@ function FlightSearchForm() {
           />
         )}
 
-        <button type="submit" className="btn btn-primary btn-lg mt-3">
-          Search Flights
-        </button>
+        {/* Button Group */}
+        <div className="d-flex gap-2 mt-3">
+          <button type="submit" className="btn btn-primary btn-lg">
+            Search Flights
+          </button>
+          <button 
+            type="button" 
+            className="btn btn-outline-primary btn-lg"
+            onClick={handleSaveSearch}
+            disabled={isSaving}
+          >
+            {isSaving ? 'Saving...' : 'Save Search'}
+          </button>
+        </div>
+
+        {/* Error Messages */}
+        {errorMessage && (
+          <div className="alert alert-danger mt-3" role="alert">
+            {errorMessage}
+          </div>
+        )}
       </form>
 
       {/* Display Flight Search Results */}

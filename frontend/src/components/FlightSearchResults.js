@@ -3,30 +3,57 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Modal, Button } from 'react-bootstrap';
 import { saveFavorite } from '../store/favoritesSlice';
 import { useNavigate } from 'react-router-dom';
-import { FaPlane, FaHeart, FaShareAlt } from 'react-icons/fa'; // Icons added for a modern look
+import { FaPlane, FaHeart, FaShareAlt, FaClock, FaExchangeAlt } from 'react-icons/fa';
+import './FlightSearchResults.css';
+
+// Import airline images
+const airlineImages = {
+  'Air France': require('../assets/images/airlines/air-france.jpg'),
+  'American Airlines': require('../assets/images/airlines/american-airlines.png'),
+  'British Airways': require('../assets/images/airlines/british.png'),
+  'Cathay Pacific': require('../assets/images/airlines/cathay.jpg'),
+  'Delta': require('../assets/images/airlines/delta.png'),
+  'Emirates': require('../assets/images/airlines/emirates.png'),
+  'Lufthansa': require('../assets/images/airlines/lufthansa.png'),
+  'Qatar Airways': require('../assets/images/airlines/qatar.jpg'),
+  'Singapore Airlines': require('../assets/images/airlines/singapore.png'),
+  'United': require('../assets/images/airlines/united.png'),
+  'default': require('../assets/images/airlines/default-logo.png')
+};
 
 const FlightSearchResults = ({ flights, travelers }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const user_id = useSelector((state) => state.user.user_id); // Get user_id from Redux
-  const [labelModal, setLabelModal] = useState(false);  // State to control label modal visibility
-  const [label, setLabel] = useState('');  // State to store the label entered by the user
-  const [selectedFlight, setSelectedFlight] = useState(null);  // State to store the selected flight
-  const [shareModal, setShareModal] = useState(false);  // State to control share modal visibility
-  const [shareLink, setShareLink] = useState('');  // State to store the generated share link
+  const user_id = useSelector((state) => state.user.user_id);
+  const [labelModal, setLabelModal] = useState(false);
+  const [shareModal, setShareModal] = useState(false);
+  const [label, setLabel] = useState('');
+  const [selectedFlight, setSelectedFlight] = useState(null);
+  const [shareLink, setShareLink] = useState('');
 
-  // Function to handle "Save to Favorites" button click
+  const getAirlineLogo = (airline) => {
+    return airlineImages[airline] || airlineImages.default;
+  };
+
+  const formatDuration = (duration) => {
+    return duration.replace(':', 'h ') + 'm';
+  };
+
+  // Handle "Save to Favorites" button click
   const handleSaveFavoriteClick = (flight) => {
     if (!user_id) {
       alert('Please log in to save flights to favorites.');
+      navigate('/login');
       return;
     }
-    setSelectedFlight(flight);  // Set the selected flight
-    setLabelModal(true);  // Show the label modal
+    setSelectedFlight(flight);
+    setLabelModal(true);
   };
 
-  // Function to save the flight with a custom label
+  // Handle saving the favorite with label
   const handleSaveFavorite = () => {
+    if (!selectedFlight) return;
+
     const favoriteData = {
       flight_id: selectedFlight.flight_id,
       user_id: user_id,
@@ -35,85 +62,118 @@ const FlightSearchResults = ({ flights, travelers }) => {
       departure_time: selectedFlight.departure_time,
       arrival_time: selectedFlight.arrival_time,
       price: selectedFlight.price,
-      label: label || 'Favorite Flight',  // Use custom label or default label if empty
+      label: label || 'Favorite Flight',
     };
 
     dispatch(saveFavorite(favoriteData));
-    setLabelModal(false);  // Close the modal
-    setLabel('');  // Clear the label
+    handleLabelModalClose();
   };
 
-  // Function to handle sharing the flight
+  // Handle closing the label modal
+  const handleLabelModalClose = () => {
+    setLabelModal(false);
+    setLabel('');
+    setSelectedFlight(null);
+  };
+
+  // Handle sharing the flight
   const handleShare = (flight) => {
-    const uniqueURL = `http://localhost:3000/shared-flights/${flight.flight_id}`;  // Generate a shareable link
-    setShareLink(uniqueURL);
     setSelectedFlight(flight);
-    setShareModal(true);  // Show the share modal
+    const uniqueURL = `http://localhost:3000/shared-flights/${flight.flight_id}`;
+    setShareLink(uniqueURL);
+    setShareModal(true);
   };
 
-  // Function to handle closing the share modal
+  // Handle closing the share modal
   const handleShareModalClose = () => {
     setShareModal(false);
     setShareLink('');
+    setSelectedFlight(null);
   };
 
-  // Function to copy the share link to the clipboard
+  // Handle copying the share link
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareLink);
     alert('Link copied to clipboard!');
   };
 
-  // Function to handle closing the label modal
-  const handleLabelModalClose = () => {
-    setLabelModal(false);
-    setLabel('');
-  };
-
+  // Handle checkout/purchase click
   const handleCheckoutClick = (flight) => {
-    if (!user_id) {  // Check if user is logged in
+    if (!user_id) {
       alert('Please log in to purchase a flight.');
-      navigate('/login');  // Redirect to login page if not logged in
+      navigate('/login');
       return;
     }
-    navigate('/checkout', { state: { flight, travelers } });  // Proceed to checkout if logged in
+    navigate('/checkout', { state: { flight, travelers } });
   };
 
   return (
-    <div className="flight-search-results mt-5">
-      <h3>Search Results <FaPlane /></h3>
+    <div className="flight-search-results">
+      <h3><FaPlane /> Available Flights</h3>
       {flights.map((flight, index) => (
-        <div key={index} className="card mb-3 shadow-lg" style={{ borderRadius: '10px' }}>
-          <div className="card-body">
-            <h5 className="card-title">Flight: {flight.flight_number || 'N/A'}</h5>
-            <p className="card-text"><strong>Airline:</strong> {flight.airline}</p>
-            <p className="card-text">
-              <strong>Departure:</strong> {flight.departure_airport} at {new Date(flight.departure_time).toLocaleString()}
-            </p>
-            <p className="card-text">
-              <strong>Arrival:</strong> {flight.destination_airport} at {new Date(flight.arrival_time).toLocaleString()}
-            </p>
-            <p className="card-text"><strong>Price:</strong> ${flight.price}</p>
+        <div key={index} className="flight-card">
+          <div className="flight-card-header">
+            <div className="airline-info">
+              <img 
+                src={getAirlineLogo(flight.airline)} 
+                alt={flight.airline} 
+                className="airline-logo"
+              />
+              <span>{flight.airline} - Flight {flight.flight_number}</span>
+            </div>
+          </div>
 
-            <button
-              className="btn btn-primary me-2"
-              onClick={() => handleCheckoutClick(flight)}
-            >
-              Purchase Flight
-            </button> &nbsp;
-            {/* Save flight button */}
-            <button className="btn btn-secondary" onClick={() => handleSaveFavoriteClick(flight)}>
-              <FaHeart /> Add to Favorites
-            </button>
+          <div className="flight-main-content">
+            <div className="departure-info">
+              <div className="flight-time">{new Date(flight.departure_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+              <div className="flight-location">{flight.departure_airport}</div>
+              <div className="flight-date">{new Date(flight.departure_time).toLocaleDateString()}</div>
+            </div>
 
-            {/* Share flight button */}
-            <button className="btn btn-outline-primary ms-2" onClick={() => handleShare(flight)}>
-              <FaShareAlt /> Share Flight
-            </button>
+            <div className="flight-duration">
+              <div><FaClock /> {formatDuration(flight.duration)}</div>
+              <div className="duration-line"></div>
+              <div>{flight.stops === 0 ? 'Direct' : `${flight.stops} stop${flight.stops > 1 ? 's' : ''}`}</div>
+            </div>
+
+            <div className="arrival-info">
+              <div className="flight-time">{new Date(flight.arrival_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+              <div className="flight-location">{flight.destination_airport}</div>
+              <div className="flight-date">{new Date(flight.arrival_time).toLocaleDateString()}</div>
+            </div>
+          </div>
+
+          <div className="flight-actions">
+            <div className="price-section">
+              <div className="price-amount">${flight.price}</div>
+              <div className="price-traveler">per traveler</div>
+            </div>
+
+            <div className="action-buttons">
+              <button 
+                className="btn btn-primary"
+                onClick={() => handleCheckoutClick(flight)}
+              >
+                Purchase Flight
+              </button>
+              <button 
+                className="btn btn-secondary"
+                onClick={() => handleSaveFavoriteClick(flight)}
+              >
+                <FaHeart /> Save
+              </button>
+              <button 
+                className="btn btn-outline-primary"
+                onClick={() => handleShare(flight)}
+              >
+                <FaShareAlt /> Share
+              </button>
+            </div>
           </div>
         </div>
       ))}
 
-      {/* Modal for entering the label before saving to favorites */}
+      {/* Label Modal */}
       <Modal show={labelModal} onHide={handleLabelModalClose} centered>
         <Modal.Header closeButton>
           <Modal.Title>Enter Label for Favorite</Modal.Title>
@@ -138,7 +198,7 @@ const FlightSearchResults = ({ flights, travelers }) => {
         </Modal.Footer>
       </Modal>
 
-      {/* Modal for sharing the flight */}
+      {/* Share Modal */}
       <Modal show={shareModal} onHide={handleShareModalClose} centered>
         <Modal.Header closeButton>
           <Modal.Title>Share Flight</Modal.Title>
