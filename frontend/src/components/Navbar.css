@@ -6,3 +6,7 @@
 .ms-auto li {
   margin-right: 0.5rem;
 }
+
+.rounded-pill {
+  margin-left: 1rem;
+}
