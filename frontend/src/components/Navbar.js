@@ -72,10 +72,7 @@ function Navbar({ user }) {
                     <li><Link className="dropdown-item" to="/my-flights">My Flights</Link></li>
                     <li>
                       <Link className="dropdown-item d-flex justify-content-between align-items-center" to="/saved-searches">
-                        <span><i className="fas fa-search"></i> Saved Searches</span>
-                        {savedSearchCount > 0 && (
-                          <span className="badge bg-primary rounded-pill">{savedSearchCount}</span>
-                        )}
+                        <span>My Searches</span>
                       </Link>
                     </li>
                     <li><hr className="dropdown-divider" /></li>
