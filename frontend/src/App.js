@@ -16,12 +16,23 @@ import FlightSearchForm from './components/FlightSearchForm';
 import Checkout from './pages/Checkout';
 
 function App() {
-  const [currentUser, setCurrentUser] = useState(JSON.parse(localStorage.getItem('user')));
+  const [currentUser, setCurrentUser] = useState(() => {
+    const user = localStorage.getItem('user');
+    return user ? JSON.parse(user) : null;
+  });
+
+  const [notificationCount, setNotificationCount] = useState(() => {
+    const count = localStorage.getItem('notificationCount');
+    return count ? JSON.parse(count) : 0;
+  });
 
   useEffect(() => {
-    // Listen for changes to localStorage, especially on login and logout
-    const handleStorageChange = () => {
-      setCurrentUser(JSON.parse(localStorage.getItem('user')));
+    const handleStorageChange = (event) => {
+      if (event.key === 'user') {
+        setCurrentUser(event.newValue ? JSON.parse(event.newValue) : null);
+      } else if (event.key === 'notificationCount') {
+        setNotificationCount(event.newValue ? JSON.parse(event.newValue) : 0);
+      }
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -30,17 +41,9 @@ function App() {
     };
   }, []);
 
-  useEffect(() => {
-    // Re-check localStorage on app load to set the currentUser
-    const storedUser = JSON.parse(localStorage.getItem('user'));
-    if (storedUser) {
-      setCurrentUser(storedUser);
-    }
-  }, []);
-
   return (
     <Router>
-      <Navbar user={currentUser} />
+      <Navbar user={currentUser} notificationCount={notificationCount} />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login setCurrentUser={setCurrentUser} />} />
@@ -62,3 +65,4 @@ function App() {
 }
 
 export default App;
+
