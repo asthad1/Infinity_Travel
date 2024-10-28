@@ -28,6 +28,8 @@ class User(BaseModel, db.Model):
     password = Column(String(255), nullable=False)
     role = Column(String(50), nullable=False)  # To denote user type
     membership_number = db.Column(db.String(45), unique=True, nullable=False)
+    
+    redemptions = relationship('CouponRedemption', back_populates='user')
 
 
 class Flight(BaseModel, db.Model):
@@ -121,6 +123,8 @@ class Coupon(BaseModel, db.Model):
     user_roles = Column(String(50), nullable=True)  # Customer, Vendor, etc.
     # Holiday, First-time User, etc.
     discount_type = Column(String(50), nullable=True)
+    
+    redemptions = relationship('CouponRedemption', back_populates='coupon')
 
 
 class SavedSearch(BaseModel, db.Model):
@@ -166,3 +170,15 @@ class SavedSearch(BaseModel, db.Model):
             'last_search_date': self.last_search_date.isoformat() if self.last_search_date else None,
             'last_minimum_price': self.last_minimum_price
         }
+
+class CouponRedemption(db.Model):
+    __tablename__ = 'coupon_redemptions'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    coupon_id = Column(Integer, ForeignKey('coupons.coupon_id'), nullable=False)
+    redeemed_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationships
+    user = relationship('User', back_populates='redemptions')
+    coupon = relationship('Coupon', back_populates='redemptions')
