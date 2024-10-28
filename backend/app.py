@@ -780,26 +780,36 @@ def shared_flights(flight_id):
 def validate_coupon():
     data = request.json
     discount_code = data.get('discount_code')
-
-    # Validate if the coupon code was provided
-    if not discount_code:
-        return jsonify({'error': 'No discount code provided'}), 400
-
+    email = data.get('user')  # Assuming user ID is passed in the request
+    
+    # Retrieve the user based on the provided email
+    user = User.query.filter_by(email=email).first()  # Assuming user_email is passed into the function
+    
+    if not discount_code or not user:
+        return jsonify({'error': 'No discount code or user ID provided'}), 400
+    
     # Query the coupon from the database
     coupon = Coupon.query.filter_by(coupon_code=discount_code).first()
 
     if not coupon:
-        # If the coupon does not exist
         return jsonify({'error': 'Invalid discount code'}), 404
 
-    # Check if the coupon is expired
     current_time = datetime.utcnow()
-    print(coupon.end_date, current_time)
     if coupon.end_date < current_time:
         return jsonify({'error': 'Coupon has expired'}), 400
+    
+    # Check if the user has already redeemed this coupon
+    redemption = CouponRedemption.query.filter_by(user_id=user.id, coupon_id=coupon.coupon_id).first()
+    if redemption:
+        return jsonify({'error': 'Coupon has already been redeemed by this user'}), 400
 
-    # Coupon is valid, calculate the discount percentage or amount
+    # Coupon is valid, apply the discount
     discount = coupon.discount_percentage if coupon.discount_percentage else 0
+
+    # Record the redemption
+    new_redemption = CouponRedemption(user_id=user.id, coupon_id=coupon.coupon_id, redeemed_at=datetime.utcnow())
+    db.session.add(new_redemption)
+    db.session.commit()
 
     return jsonify({
         'success': 'Coupon applied successfully!',

@@ -20,8 +20,12 @@ function Checkout() {
 
   const handleDiscountSubmit = async () => {
     try {
+      const user = JSON.parse(localStorage.getItem('user'));
+
+      // Send discountCode and user_id to the API
       const response = await axios.post('http://localhost:9001/api/validate_coupon', {
         discount_code: discountCode,
+        user: user["email"]
       });
 
       const data = response.data;
@@ -33,10 +37,15 @@ function Checkout() {
       } else {
         setDiscount(data.discount_percentage / 100);
         setMessage(data.success || 'Discount applied successfully');
-        setIsError(false);
+      setIsError(false);
       }
     } catch (error) {
-      setMessage('An error occurred while applying the discount.');
+      // Display the error message from the API response if available
+      if (error.response && error.response.data && error.response.data.error) {
+        setMessage(error.response.data.error);
+      } else {
+        setMessage('Failed to apply discount');
+      }
       setDiscount(0);
       setIsError(true);
     }
@@ -99,17 +108,17 @@ function Checkout() {
         <br />
         <strong>Total Price:</strong>
         {discount > 0 ? (
-          <>
-            <span style={{ textDecoration: 'line-through', marginLeft: '10px' }}>
-              ${originalPrice}
-            </span>
-            <span style={{ color: 'green', fontWeight: 'bold', marginLeft: '10px' }}>
-              ${totalPrice}
-            </span>
-          </>
+            <>
+              <span style={{ textDecoration: 'line-through', marginLeft: '10px' }}>
+                ${originalPrice}
+              </span>
+              <span style={{ color: 'green', fontWeight: 'bold', marginLeft: '10px' }}>
+                ${totalPrice}
+              </span>
+            </>
         ) : (
           <span style={{ marginLeft: '10px' }}>${originalPrice}</span>
-        )}
+          )}
       </div>
 
       <div className="mt-3">
