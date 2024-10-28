@@ -26,7 +26,7 @@ function Home() {
           </div>
           {/* Right Column: Text */}
           <div className="col-md-6 text-center text-md-start">
-            <h1 className="display-4">testetststs to Infinity Travel</h1>
+            <h1 className="display-4">Welcome to Infinity Travel</h1>
             <p className="lead">
               Plan your next adventure with us and explore the world!
             </p>
