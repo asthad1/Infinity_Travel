@@ -1,7 +1,6 @@
-// NotificationBanner.js
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import './NotificationBanner.css'; // Import the CSS file
 
 function NotificationBanner({ user }) {
   const [userCount, setUserCount] = useState(null);
@@ -24,11 +23,21 @@ function NotificationBanner({ user }) {
   let message = '';
 
   if (user && user.role === 'admin') {
-    message = `Welcome to your dashboard, Infinity Travel currently has: ${userCount !== null ? userCount : '...'} users! Keep it up!!!`;
+    message = `Welcome to your dashboard, Infinity Travel currently has: ${
+      userCount !== null ? userCount : '...'
+    } users! Keep it up!!!`;
   } else if (user && user.role === 'frequentflyer') {
-    message = '***Use the code HOLID50 to get 50% off till New Years***';
+    message = (
+      <span>
+        ***Use code <strong>HOLID50</strong> for <strong>50% off</strong> flights till New Years***
+      </span>
+    );
   } else if (user && user.role === 'regular') {
-    message = '***Use the code HOLID30 to get 30% off till New Years***';
+    message = (
+      <span>
+        ***Use code <strong>HOLID30</strong> for <strong>30% off</strong> flights till New Years***
+      </span>
+    );
   }
 
   if (!message) {
@@ -36,12 +45,14 @@ function NotificationBanner({ user }) {
   }
 
   return (
-    <div>
-      <h1>Test Notification</h1>
-      {message}
+    <div className="notification-banner">
+      <h1>LIMITED TIME PROMOTIONAL OFFER</h1>
+      <p>{message}</p>
     </div>
   );
 }
 
 export default NotificationBanner;
+
+
 

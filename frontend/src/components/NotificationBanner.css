@@ -1,0 +1,24 @@
+/* NotificationBanner.css */
+
+.notification-banner {
+    width: 100%;
+    background-color: #fff9c4; /* Light yellow background */
+    padding: 0.5rem 1rem;       /* Similar padding as Navbar */
+    text-align: center;         /* Center the text */
+    margin-bottom: 0;           /* Adjust margin as needed */
+    border-bottom: 1px solid #e0e0e0; /* Optional border for separation */
+  }
+  
+  .notification-banner h1 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #333; /* Dark text for contrast */
+  }
+  
+  .notification-banner p {
+    margin: 0;
+    font-size: 1rem;
+    color: #333; /* Dark text for readability */
+  }
+  
+  
