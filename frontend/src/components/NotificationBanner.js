@@ -46,13 +46,16 @@ function NotificationBanner({ user }) {
 
   return (
     <div className="notification-banner">
-      <h1>LIMITED TIME PROMOTIONAL OFFER</h1>
+      {user && user.role !== 'admin' && (
+        <h1>LIMITED TIME PROMOTIONAL OFFER</h1>
+      )}
       <p>{message}</p>
     </div>
   );
 }
 
 export default NotificationBanner;
+
 
 
 
