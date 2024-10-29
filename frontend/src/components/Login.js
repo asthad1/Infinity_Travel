@@ -1,3 +1,5 @@
+// Login.js
+
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
@@ -36,7 +38,8 @@ function Login({ setCurrentUser }) {
       const data = await response.json();
 
       if (data.user_id) {
-        const userData = { user_id: data.user_id, email: data.email };
+        // Updated userData to include 'role'
+        const userData = { user_id: data.user_id, email: data.email, role: data.role };
         localStorage.setItem('user', JSON.stringify(userData));
         dispatch(setUser(userData));
         setCurrentUser(userData);
@@ -118,7 +121,7 @@ function Login({ setCurrentUser }) {
 
         <div className="login-footer">
           <p>
-            Don't have an account? {' '}
+            Don't have an account?{' '}
             <Link to="/register" className="register-link">
               Create Account
             </Link>
