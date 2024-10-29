@@ -45,7 +45,7 @@ class Flight(BaseModel, db.Model):
     departure = Column(DateTime, nullable=False)  # Departure time and date
     arrival = Column(DateTime, nullable=False)  # Arrival time and date
     duration = Column(String(10), nullable=False)  # Flight duration
-    fare = Column(Integer, nullable=False)  # Flight price in USD
+    fare = Column(Float, nullable=False)  # Flight price in USD
     stops = Column(Integer, nullable=False)  # Number of stops
     # Available seats for the flight
     available_seats = Column(Integer, nullable=False)

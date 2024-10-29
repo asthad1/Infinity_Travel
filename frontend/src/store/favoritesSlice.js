@@ -40,13 +40,13 @@ export const saveFavorite = (favoriteData) => async (dispatch) => {
     dispatch(addFavoriteSuccess(response.data));
 
     // Optionally, you can show a success message or handle this with a toast/notification
-    alert('Flight saved to favorites!');
+    alert('Flight saved to savedSearches!');
   } catch (error) {
     // Dispatch the error action with a meaningful message
-    dispatch(setFavoriteError('Failed to save favorite. Please try again later.'));
+    dispatch(setFavoriteError('Failed to save to savedSearches. Please try again later.'));
     console.error('Error saving favorite:', error);
 
     // Optionally, show an error message to the user
-    alert('Failed to save flight to favorites.');
+    alert('Failed to save flight to savedSearches.');
   }
 };
