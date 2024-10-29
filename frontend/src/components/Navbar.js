@@ -52,6 +52,9 @@ function Navbar({ user }) {
               <Link className="nav-link" to="/">Home</Link>
             </li>
             <li className="nav-item">
+              <Link className="nav-link" to="/coupons">Coupons</Link>
+            </li>
+            <li className="nav-item">
               <Link className="nav-link" to="/support">Support</Link>
             </li>
           </ul>
