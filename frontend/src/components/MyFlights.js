@@ -8,6 +8,7 @@ import {
   faDollarSign,
   faCalendarAlt
 } from '@fortawesome/free-solid-svg-icons';
+import Notifications from './Notifications';
 import './MyFlights.css';
 
 // Import airline images
@@ -62,6 +63,7 @@ function MyFlights() {
 
   return (
     <div className="my-flights-container">
+      <Notifications flights={flights} />
       <h2 className="page-title">My Booked Flights</h2>
       <div className="flights-grid">
         {flights.map((flight, index) => (

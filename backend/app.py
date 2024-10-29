@@ -15,7 +15,6 @@ from extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
 import logging
 
-
 # Load environment variables
 # load_dotenv()
 
@@ -30,7 +29,6 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(message)s')
 db.init_app(app)
 
 # ===================== LOGIN ================================== #
-
 
 # In-memory store for accounts (for example purposes; ideally use a database)
 accounts = {}
@@ -81,18 +79,6 @@ def register():
     if email in accounts:
         return jsonify({'message': 'Email already registered'}), 400
 
-    # Generate a unique membership number
-    # membership_number = str(uuid.uuid4())
-
-    # Store user information
-    # accounts[email] = {
-    #     'name': name,
-    #     'phone': phone,
-    #     'membership_number': membership_number,
-    #     'password': password  # Note: NEVER store plain text passwords in a real application
-    # }
-
-    # return jsonify({'message': 'Account created successfully', 'membership_number': membership_number}), 201
     user = User(name=name, email=email, phone=phone, role=role,
                 password=password, membership_number=membership_number)
     db.session.add(user)
@@ -101,7 +87,7 @@ def register():
     # Return membership number in the response
     return jsonify({'message': 'User registered successfully', 'membership_number': membership_number}), 201
 
-
+# *** Updated login route to include 'role' in the response ***
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
@@ -113,15 +99,15 @@ def login():
     user = User.query.filter_by(email=email).first()
 
     if user and user.password == password:  # Assuming check_password method exists
-        # Login successful, return user information including user_id
+        # Login successful, return user information including user_id and role
         return jsonify({
-            'email': user.email,  # Return email instead of username
-            'user_id': user.id  # Return user_id
+            'email': user.email,    # Return email instead of username
+            'user_id': user.id,     # Return user_id
+            'role': user.role       # Include the user's role
         }), 200
     else:
         # Login failed
         return jsonify({'message': 'Invalid credentials'}), 401
-
 
 # Route to change password
 @app.route('/api/change_password', methods=['POST'])
@@ -139,6 +125,14 @@ def change_password():
         return jsonify({'message': 'Password updated successfully'}), 200
     else:
         return jsonify({'message': 'Incorrect old password'}), 400
+
+
+# ===================== USER COUNT ENDPOINT FOR NOTIFICATION BANNER ===================== #
+
+@app.route('/api/users/count', methods=['GET'])
+def get_user_count():
+    count = User.query.count()
+    return jsonify({'count': count}), 200
 
 
 # ===================== CRUD FOR USER MODEL ===================== #

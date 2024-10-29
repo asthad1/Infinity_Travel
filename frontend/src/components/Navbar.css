@@ -10,3 +10,14 @@
 .rounded-pill {
   margin-left: 1rem;
 }
+
+.notification-badge {
+  background-color: red;
+  color: white;
+  border-radius: 50%;
+  padding: 0.2em 0.5em;
+  margin-left: 0.5em; /* Adjust space between text and badge */
+  font-size: 0.8em;
+  position: relative;
+  top: -2px; /* Adjust to vertically center if needed */
+}
