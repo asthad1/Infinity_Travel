@@ -14,6 +14,7 @@ from models import *
 from extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
 import logging
+from datetime import datetime
 
 # Load environment variables
 # load_dotenv()
@@ -650,7 +651,7 @@ def view_shared_search(url):
 # ===================== CRUD FOR COUPON MODEL ===================== #
 
 # GET all coupons
-@app.route('/coupons', methods=['GET'])
+@app.route('/api/coupons', methods=['GET'])
 def get_coupons():
     coupons = Coupon.query.all()
     return jsonify([coupon.to_dict() for coupon in coupons]), 200
@@ -658,7 +659,7 @@ def get_coupons():
 # GET a single coupon by ID
 
 
-@app.route('/coupons/<int:coupon_id>', methods=['GET'])
+@app.route('/api/coupons/<int:coupon_id>', methods=['GET'])
 def get_coupon(coupon_id):
     coupon = Coupon.query.get_or_404(coupon_id)
     return jsonify(coupon.to_dict()), 200
@@ -666,17 +667,18 @@ def get_coupon(coupon_id):
 # CREATE a new coupon
 
 
-@app.route('/coupons', methods=['POST'])
+@app.route('/api/coupons', methods=['POST'])
 def create_coupon():
     data = request.json
     new_coupon = Coupon(
         coupon_code=data['coupon_code'],
+        coupon_code_name=re.split('[-\s]', data.get('discount_type'))[0].upper() + 
+            (str(data.get('discount_percentage')) if data.get('discount_percentage') != 0 else data.get('discount_amount')),
         discount_percentage=data.get('discount_percentage'),
         discount_amount=data.get('discount_amount'),
-        start_date=datetime.strptime(data['start_date'], '%Y-%m-%d %H:%M:%S'),
-        end_date=datetime.strptime(data['end_date'], '%Y-%m-%d %H:%M:%S'),
+        start_date=datetime.strptime(data['start_date'], '%Y-%m-%d'),
+        end_date=datetime.strptime(data['end_date'], '%Y-%m-%d'),
         minimum_order_amount=data.get('minimum_order_amount'),
-        admin_id=data['admin_id'],
         user_roles=data.get('user_roles'),
         discount_type=data.get('discount_type')
     )
@@ -687,8 +689,9 @@ def create_coupon():
 # UPDATE an existing coupon by ID
 
 
-@app.route('/coupons/<int:coupon_id>', methods=['PUT'])
+@app.route('/api/coupons/<int:coupon_id>', methods=['PUT'])
 def update_coupon(coupon_id):
+
     data = request.json
     coupon = Coupon.query.get_or_404(coupon_id)
 
@@ -702,7 +705,6 @@ def update_coupon(coupon_id):
     coupon.end_date = datetime.strptime(data['end_date'], '%Y-%m-%d %H:%M:%S')
     coupon.minimum_order_amount = data.get(
         'minimum_order_amount', coupon.minimum_order_amount)
-    coupon.admin_id = data.get('admin_id', coupon.admin_id)
     coupon.user_roles = data.get('user_roles', coupon.user_roles)
     coupon.discount_type = data.get('discount_type', coupon.discount_type)
 
@@ -712,7 +714,7 @@ def update_coupon(coupon_id):
 # DELETE a coupon by ID
 
 
-@app.route('/coupons/<int:coupon_id>', methods=['DELETE'])
+@app.route('/api/coupons/<int:coupon_id>', methods=['DELETE'])
 def delete_coupon(coupon_id):
     coupon = Coupon.query.get_or_404(coupon_id)
     db.session.delete(coupon)

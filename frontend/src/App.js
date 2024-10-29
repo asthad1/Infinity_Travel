@@ -14,6 +14,7 @@ import SharedFlightDetails from './components/SharedFlightDetails';
 import FlightSearchResults from './components/FlightSearchResults';
 import FlightSearchForm from './components/FlightSearchForm';
 import Checkout from './pages/Checkout';
+import CouponsPage from './pages/Coupons';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(() => {
@@ -58,6 +59,7 @@ function App() {
         <Route path="/saved-searches" element={<SavedSearches />} />
         <Route path="/flights" element={<FlightSearchForm />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/coupons" element={<CouponsPage />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>

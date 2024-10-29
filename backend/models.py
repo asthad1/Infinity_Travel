@@ -110,14 +110,14 @@ class Coupon(BaseModel, db.Model):
     __tablename__ = 'coupons'
 
     coupon_id = Column(Integer, primary_key=True)
-    coupon_code = Column(String(50), nullable=False, unique=True)
+    coupon_code = Column(String(15), nullable=False, unique=True)
+    coupon_code_name = Column(String(50), nullable=False, unique=True)
     discount_percentage = Column(Float, nullable=True)
     discount_amount = Column(Float, nullable=True)
     start_date = Column(DateTime, nullable=False)
     end_date = Column(DateTime, nullable=False)
     minimum_order_amount = Column(Float, nullable=True)
     # ForeignKey can be added if needed
-    admin_id = Column(Integer, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
     user_roles = Column(String(50), nullable=True)  # Customer, Vendor, etc.
