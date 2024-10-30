@@ -51,9 +51,11 @@ function Navbar({ user }) {
             <li className="nav-item">
               <Link className="nav-link" to="/">Home</Link>
             </li>
-            <li className="nav-item">
-              <Link className="nav-link" to="/coupons">Coupons</Link>
-            </li>
+            {user?.role === 'admin' && ( // Only show Coupons link for admin
+              <li className="nav-item">
+                <Link className="nav-link" to="/coupons">Coupons</Link>
+              </li>
+            )}
             <li className="nav-item">
               <Link className="nav-link" to="/support">Support</Link>
             </li>

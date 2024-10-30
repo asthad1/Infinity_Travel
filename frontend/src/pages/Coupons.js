@@ -142,7 +142,7 @@ const Coupons = () => {
                 />
               </div>
               <div className="form-group">
-                <label>User Roles</label>
+                <label>User Role or Email ID</label>
                 <input
                   type="text"
                   name="user_roles"
@@ -165,29 +165,29 @@ const Coupons = () => {
               <button type="button" className="btn btn-secondary mt-3 ms-2" onClick={() => setShowAddCoupon(false)}>Cancel</button>
             </form>
           )}
+          
+          {/* Coupons list */}
+          <div className="coupon-list mt-4">
+            {coupons.map((coupon) => (
+              <div key={coupon.coupon_id} className="coupon-box">
+                <div className="coupon-details">
+                  <h4>{coupon.discount_type} {coupon.discount_percentage}% Off</h4>
+                  <p>Code: {coupon.coupon_code}</p>
+                  <p>Applies to: {coupon.user_roles || 'All Users'}</p>
+                  <p>Minimum Order: ${coupon.minimum_order_amount || 0}</p>
+                  <p>Expires on: {new Date(coupon.end_date).toLocaleDateString()}</p>
+                </div>
+                <button 
+                  className="btn btn-outline-success"
+                  onClick={() => handleCopyCode(coupon.coupon_code)}
+                >
+                  Copy code
+                </button>
+              </div>
+            ))}
+          </div>
         </>
       )}
-
-      {/* Coupons list */}
-      <div className="coupon-list">
-        {coupons.map((coupon) => (
-          <div key={coupon.coupon_id} className="coupon-box">
-            <div className="coupon-details">
-              <h4>{coupon.discount_type} {coupon.discount_percentage}% Off</h4>
-              <p>Code: {coupon.coupon_code}</p>
-              <p>Applies to: {coupon.user_roles || 'All Users'}</p>
-              <p>Minimum Order: ${coupon.minimum_order_amount || 0}</p>
-              <p>Expires on: {new Date(coupon.end_date).toLocaleDateString()}</p>
-            </div>
-            <button 
-              className="btn btn-outline-success"
-              onClick={() => handleCopyCode(coupon.coupon_code)}
-            >
-              Copy code
-            </button>
-          </div>
-        ))}
-      </div>
     </div>
   );
 };

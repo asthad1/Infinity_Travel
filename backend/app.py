@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 # Import the text, cast function and Date attribute
-from sqlalchemy import text, cast, Date
+from sqlalchemy import text, cast, Date, or_
 from sqlalchemy.orm import aliased
 import random
 import string
@@ -785,7 +785,13 @@ def validate_coupon():
         return jsonify({'error': 'No discount code or user ID provided'}), 400
     
     # Query the coupon from the database
-    coupon = Coupon.query.filter_by(coupon_code=discount_code).first()
+    coupon = Coupon.query.filter(
+    Coupon.coupon_code == discount_code,
+        or_(
+            Coupon.user_roles == user.role,
+            Coupon.user_roles == email
+        )
+    ).first()
 
     if not coupon:
         return jsonify({'error': 'Invalid discount code'}), 404
