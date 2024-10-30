@@ -4,16 +4,42 @@ import axios from 'axios';
 import { useDispatch } from 'react-redux';
 import { setFilteredFlights, setErrorMessage } from '../store/flightsSlice';
 import { setDepartureAirport, setDestinationAirport, setDepartureDate, setTravelers } from '../store/searchSlice';
+import { Modal, Button } from 'react-bootstrap';
+import { FaPlane, FaHeart, FaShareAlt, FaClock, FaExchangeAlt } from 'react-icons/fa';
 
 function SavedSearches() {
   const [savedSearches, setSavedSearches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeSearch, setActiveSearch] = useState(null);
+
+  // Add these state variables
+  const [selectedFlight, setSelectedFlight] = useState(null); // State to store the selected flight
+  const [shareModal, setShareModal] = useState(false); // State to control modal visibility
+  const [shareLink, setShareLink] = useState(''); // State to store the shareable link
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
   const user = JSON.parse(localStorage.getItem('user'));
+
+  // Handle sharing the flight
+  const handleShare = (flight) => {
+    // console.log('Flight to be shared:', flight);  // Log the flight object
+    setSelectedFlight(flight);  // Set the selected flight in state
+    const uniqueURL = `http://localhost:3000/shared-flights/${flight.id}`;
+    setShareLink(uniqueURL);  // Create and store the share link
+    setShareModal(true);  // Open the modal
+  };
+
+  const handleShareModalClose = () => {
+    setShareModal(false); // Close the modal
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(shareLink); // Copy the share link to clipboard
+    alert('Link copied to clipboard!');
+  };
 
   useEffect(() => {
     if (!user?.user_id) {
@@ -54,11 +80,11 @@ function SavedSearches() {
         numTravellers: search.adults,
         numStops: search.max_stops,
         selectedAirline: search.preferred_airline,
-        maxPrice: search.max_price
+        maxPrice: search.max_price,
       };
 
       const response = await axios.post('http://localhost:9001/api/flights/search', searchCriteria);
-      
+
       if (response.data.departureFlights.length === 0) {
         dispatch(setErrorMessage('No flights found for these criteria.'));
       } else {
@@ -80,7 +106,7 @@ function SavedSearches() {
     if (window.confirm('Are you sure you want to delete this saved search?')) {
       try {
         await axios.delete(`http://localhost:9001/api/saved-searches/${searchId}`);
-        setSavedSearches(savedSearches.filter(search => search.id !== searchId));
+        setSavedSearches(savedSearches.filter((search) => search.id !== searchId));
       } catch (err) {
         console.error('Error deleting saved search:', err);
         setError('Failed to delete saved search');
@@ -148,10 +174,20 @@ function SavedSearches() {
                       disabled={activeSearch === search.id}
                     >
                       {activeSearch === search.id ? (
-                        <><span className="spinner-border spinner-border-sm me-2"></span>Searching...</>
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2"></span>Searching...
+                        </>
                       ) : (
-                        <><i className="fas fa-search me-2"></i>Search Again</>
+                        <>
+                          <i className="fas fa-search me-2"></i>Search Again
+                        </>
                       )}
+                    </button>
+                    <button
+                      className="btn btn-outline-primary"
+                      onClick={() => handleShare(search)}
+                    >
+                      <FaShareAlt /> Share
                     </button>
                     <button
                       className="btn btn-outline-danger"
@@ -165,6 +201,36 @@ function SavedSearches() {
               </div>
             </div>
           ))}
+
+          {/* Share Modal */}
+          <Modal show={shareModal} onHide={handleShareModalClose} centered>
+            <Modal.Header closeButton>
+              <Modal.Title>Share Flight</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <p>Share this flight search via the link below:</p>
+              <input
+                type="text"
+                value={shareLink}
+                readOnly
+                className="form-control mb-3"
+              />
+              <Button variant="primary" onClick={handleCopyLink}>
+                Copy Link
+              </Button>
+              <hr />
+              <p>
+                <a href={`mailto:?subject=Flight Details&body=Check out this flight: ${shareLink}`}>
+                  Share via Email
+                </a>
+              </p>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button variant="secondary" onClick={handleShareModalClose}>
+                Close
+              </Button>
+            </Modal.Footer>
+          </Modal>
         </div>
       )}
     </div>

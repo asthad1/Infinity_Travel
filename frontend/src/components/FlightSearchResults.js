@@ -193,7 +193,7 @@ const FlightSearchResults = ({ flights, travelers }) => {
             Cancel
           </Button>
           <Button variant="primary" onClick={handleSaveFavorite}>
-            Save to Favorites
+            Save Your Search
           </Button>
         </Modal.Footer>
       </Modal>
