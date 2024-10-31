@@ -182,3 +182,38 @@ class CouponRedemption(db.Model):
     # Relationships
     user = relationship('User', back_populates='redemptions')
     coupon = relationship('Coupon', back_populates='redemptions')
+    
+
+class SearchMetrics(db.Model):
+    __tablename__ = 'search_metrics'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=True)
+    user_role = db.Column(db.String(50), default='guest')
+    from_airport = db.Column(db.String(5), nullable=False)
+    to_airport = db.Column(db.String(5), nullable=False)
+    departure_date = db.Column(db.Date, nullable=False)
+    return_date = db.Column(db.Date, nullable=True)
+    travelers = db.Column(db.Integer, default=1)
+    roundtrip = db.Column(db.Boolean, default=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    max_stops = db.Column(db.Integer, nullable=True)
+    preferred_airline = db.Column(db.String(100), nullable=True)
+    max_price = db.Column(db.Numeric(10, 2), nullable=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'user_role': self.user_role,
+            'from_airport': self.from_airport,
+            'to_airport': self.to_airport,
+            'departure_date': self.departure_date,
+            'return_date': self.return_date,
+            'travelers': self.travelers,
+            'roundtrip': self.roundtrip,
+            'timestamp': self.timestamp,
+            'max_stops': self.max_stops,
+            'preferred_airline': self.preferred_airline,
+            'max_price': float(self.max_price) if self.max_price else None,
+        }

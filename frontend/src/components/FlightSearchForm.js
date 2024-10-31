@@ -6,7 +6,6 @@ import FlightSearchResults from './FlightSearchResults';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilteredFlights, setErrorMessage } from '../store/flightsSlice';
 import { setDepartureAirport, setDestinationAirport, setDepartureDate, setTravelers } from '../store/searchSlice';
-import { saveSearch } from '../store/savedSearchesSlice';
 import axios from 'axios';
 import { Form } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -127,6 +126,37 @@ function FlightSearchForm() {
       selectedAirline,
       maxPrice,
     };
+
+    // Retrieve user data if available
+    const user = JSON.parse(localStorage.getItem('user')) || null;
+
+    // Capture search metrics with additional details
+    const searchMetrics = {
+      from_airport: departureAirport?.value,
+      to_airport: destinationAirport?.value,
+      departure_date: departureDate,
+      return_date: isRoundtrip ? returnDate : null,
+      travelers: parseInt(travelers),
+      roundtrip: isRoundtrip,
+      timestamp: new Date().toISOString(),
+      user_id: user ? user.user_id : null,
+      user_role: user ? user.role : 'guest',
+      max_stops: numStops ? parseInt(numStops) : null,
+      preferred_airline: selectedAirline || null,
+      max_price: maxPrice ? parseFloat(maxPrice) : null,
+    };
+
+    console.log('Sending search metrics:', searchMetrics);
+
+    // API call to save search metrics
+    axios
+      .post('http://localhost:9001/api/metrics', searchMetrics)
+      .then(() => {
+        console.log('Search metrics saved:', searchMetrics);
+      })
+      .catch((error) => {
+        console.error('Error saving search metrics:', error.response?.data || error);
+      });
 
     axios
       .post('http://localhost:9001/api/flights/search', searchCriteria)
