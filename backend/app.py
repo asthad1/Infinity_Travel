@@ -981,6 +981,54 @@ def execute_saved_search(search_id):
         'results': flight_results,
         'total_results': len(flights)
     }), 200
+    
+
+@app.route('/api/metrics', methods=['POST'])
+def save_search_metrics():
+    data = request.get_json()
+
+    # Validate required fields
+    required_fields = ['from_airport',
+                       'to_airport', 'departure_date', 'travelers']
+    for field in required_fields:
+        if field not in data or data[field] is None:
+            return jsonify({'error': f'Missing required field: {field}'}), 400
+
+    # Create a new SearchMetrics instance
+    search_metric = SearchMetrics(
+        user_id=data.get('user_id'),
+        user_role=data.get('user_role', 'guest'),
+        from_airport=data['from_airport'],
+        to_airport=data['to_airport'],
+        departure_date=datetime.strptime(
+            data['departure_date'], '%Y-%m-%d').date(),
+        return_date=datetime.strptime(
+            data['return_date'], '%Y-%m-%d').date() if data.get('return_date') else None,
+        travelers=data.get('travelers', 1),
+        roundtrip=data.get('roundtrip', False),
+        timestamp=datetime.utcnow(),
+        max_stops=data.get('max_stops'),
+        preferred_airline=data.get('preferred_airline'),
+        max_price=data.get('max_price')
+    )
+
+    try:
+        # Add the search metrics to the database
+        db.session.add(search_metric)
+        db.session.commit()
+        return jsonify({'message': 'Search metrics saved successfully'}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+    
+
+@app.route('/api/metrics', methods=['GET'])
+def get_all_search_metrics():
+    # Query all records from the SearchMetrics model
+    metrics = SearchMetrics.query.all()
+
+    # Return the list of metrics as JSON
+    return jsonify([metric.to_dict() for metric in metrics]), 200
 
 
 if __name__ == '__main__':
