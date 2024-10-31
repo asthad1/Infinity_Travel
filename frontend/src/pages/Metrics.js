@@ -1,53 +1,85 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bar, Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
-import faker from 'faker';
+import axios from 'axios';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
-const generateFakeData = () => {
-  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  const origins = ["SEA", "LAX", "JFK", "ORD", "ATL"];
-  const destinations = ["IAD", "MIA", "DFW", "BOS", "SFO"];
-
-  // Generate monthly search data
-  const monthlyData = months.map((month) => ({
-    month,
-    searches: origins.map((origin) => ({
-      origin,
-      destinations: destinations.map((destination) => ({
-        destination,
-        count: faker.datatype.number({ min: 50, max: 300 })
-      }))
-    }))
-  }));
-
-  // Generate time-range search data
-  const timeRanges = ["12AM-3AM", "3AM-6AM", "6AM-9AM", "9AM-12PM", "12PM-3PM", "3PM-6PM", "6PM-9PM", "9PM-12AM"];
-  const timeRangeData = timeRanges.map(range => ({
-    range,
-    percentage: faker.datatype.number({ min: 1, max: 20 })
-  }));
-
-  return { monthlyData, timeRangeData };
-};
-
 function MetricsPage() {
-  const { monthlyData, timeRangeData } = generateFakeData();
-  const [selectedMonth, setSelectedMonth] = useState(monthlyData[0].month);
+  const [monthlyData, setMonthlyData] = useState([]);
+  const [timeRangeData, setTimeRangeData] = useState([]);
+  const [selectedMonth, setSelectedMonth] = useState('');
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const response = await axios.get('http://localhost:9001/api/metrics');
+        const metrics = response.data;
+        formatMetricsData(metrics);
+      } catch (error) {
+        console.error('Error fetching metrics data:', error);
+      }
+    };
+
+    fetchMetrics();
+  }, []);
+
+  const formatMetricsData = (metrics) => {
+    const monthlySearchData = {};
+    const timeRangeCounts = Array(8).fill(0); // 8 time slots (3-hour ranges)
+
+    metrics.forEach(metric => {
+      // Format monthly data
+      const month = new Date(metric.departure_date).toLocaleString('default', { month: 'long' });
+      const route = `${metric.from_airport} to ${metric.to_airport}`;
+      if (!monthlySearchData[month]) {
+        monthlySearchData[month] = {};
+      }
+      if (!monthlySearchData[month][route]) {
+        monthlySearchData[month][route] = 0;
+      }
+      monthlySearchData[month][route] += 1;
+
+      // Format time range data
+      const hour = new Date(metric.timestamp).getUTCHours();
+      const timeRangeIndex = Math.floor(hour / 3); // Each index represents a 3-hour range
+      timeRangeCounts[timeRangeIndex] += 1;
+    });
+
+    const formattedMonthlyData = Object.keys(monthlySearchData).map(month => ({
+      month,
+      searches: Object.keys(monthlySearchData[month]).map(route => ({
+        route,
+        count: monthlySearchData[month][route]
+      }))
+    }));
+
+    const formattedTimeRangeData = timeRangeCounts.map((count, index) => {
+      const rangeStart = index * 3;
+      const rangeEnd = rangeStart + 3;
+      return {
+        range: `${rangeStart}:00 - ${rangeEnd}:00`,
+        percentage: (count / metrics.length * 100).toFixed(2)
+      };
+    });
+
+    setMonthlyData(formattedMonthlyData);
+    setTimeRangeData(formattedTimeRangeData);
+    setSelectedMonth(formattedMonthlyData[0]?.month || '');
+  };
 
   const handleMonthChange = (event) => {
     setSelectedMonth(event.target.value);
   };
 
-  const monthSearchData = monthlyData.find(data => data.month === selectedMonth);
+  const monthSearchData = monthlyData.find(data => data.month === selectedMonth) || { searches: [] };
 
   const barChartData = {
-    labels: monthSearchData.searches.flatMap(s => s.destinations.map(d => `${s.origin} to ${d.destination}`)),
+    labels: monthSearchData.searches.map(s => s.route),
     datasets: [
       {
         label: `Searches for ${selectedMonth}`,
-        data: monthSearchData.searches.flatMap(s => s.destinations.map(d => d.count)),
+        data: monthSearchData.searches.map(s => s.count),
         backgroundColor: 'rgba(75, 192, 192, 0.6)',
         borderColor: 'rgba(75, 192, 192, 1)',
         borderWidth: 1,
