@@ -192,9 +192,9 @@ function SavedSearches() {
                           <h5 className="card-title">{search.name}</h5>
                           <p><strong>From:</strong> {search.from_airport}</p>
                           <p><strong>To:</strong> {search.to_airport}</p>
-                          <p><strong>Date:</strong> {new Date(search.departure_date).toLocaleDateString()}</p>
+                          <p><strong>Date:</strong> {new Date(`${search.departure_date}T00:00:00`).toLocaleDateString()}</p>
                           {search.return_date && (
-                            <p><strong>Return:</strong> {new Date(search.return_date).toLocaleDateString()}</p>
+                            <p><strong>Return:</strong>  {new Date(`${search.return_date}T00:00:00`).toLocaleDateString()}</p>
                           )}
                           <p><strong>Travelers:</strong> {search.adults || 1}</p>
                           {search.max_price && <p><strong>Max Price:</strong> ${search.max_price}</p>}
