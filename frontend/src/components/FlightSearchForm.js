@@ -6,6 +6,7 @@ import FlightSearchResults from './FlightSearchResults';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilteredFlights, setErrorMessage } from '../store/flightsSlice';
 import { setDepartureAirport, setDestinationAirport, setDepartureDate, setTravelers } from '../store/searchSlice';
+import { saveSearch } from '../store/savedSearchesSlice';
 import axios from 'axios';
 import { Form } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -68,19 +69,28 @@ function FlightSearchForm() {
       return;
     }
 
-    // Format data to match backend expectations
+    /// Fetch city and country details for the selected airports
+    const fromDetails = await axios.get(`http://localhost:9001/api/airport-details/${departureAirport.value}`);
+    const toDetails = await axios.get(`http://localhost:9001/api/airport-details/${destinationAirport.value}`);
+
+    // Prepare search data
     const searchData = {
       user_id: user.user_id,
-      from_airport: departureAirport.value,          // Changed from departureAirport
-      to_airport: destinationAirport.value,          // Changed from destinationAirport
-      departure_date: departureDate,                 // Keep date format as is
+      from_airport: departureAirport.value,
+      to_airport: destinationAirport.value,
+      departure_date: departureDate,
       return_date: returnDate || null,
       adults: parseInt(travelers),
       max_stops: numStops ? parseInt(numStops) : null,
       max_price: maxPrice ? parseInt(maxPrice) : null,
       preferred_airline: selectedAirline || null,
-      name: `${departureAirport.label} to ${destinationAirport.label}`
+      name: `${departureAirport.label} to ${destinationAirport.label}`,
+      from_city: fromDetails.data.city,
+      from_country: fromDetails.data.country,
+      to_city: toDetails.data.city,
+      to_country: toDetails.data.country
     };
+
 
     console.log('Sending search data:', searchData);  // Debug log
 
@@ -126,37 +136,6 @@ function FlightSearchForm() {
       selectedAirline,
       maxPrice,
     };
-
-    // Retrieve user data if available
-    const user = JSON.parse(localStorage.getItem('user')) || null;
-
-    // Capture search metrics with additional details
-    const searchMetrics = {
-      from_airport: departureAirport?.value,
-      to_airport: destinationAirport?.value,
-      departure_date: departureDate,
-      return_date: isRoundtrip ? returnDate : null,
-      travelers: parseInt(travelers),
-      roundtrip: isRoundtrip,
-      timestamp: new Date().toISOString(),
-      user_id: user ? user.user_id : null,
-      user_role: user ? user.role : 'guest',
-      max_stops: numStops ? parseInt(numStops) : null,
-      preferred_airline: selectedAirline || null,
-      max_price: maxPrice ? parseFloat(maxPrice) : null,
-    };
-
-    console.log('Sending search metrics:', searchMetrics);
-
-    // API call to save search metrics
-    axios
-      .post('http://localhost:9001/api/metrics', searchMetrics)
-      .then(() => {
-        console.log('Search metrics saved:', searchMetrics);
-      })
-      .catch((error) => {
-        console.error('Error saving search metrics:', error.response?.data || error);
-      });
 
     axios
       .post('http://localhost:9001/api/flights/search', searchCriteria)
@@ -243,11 +222,11 @@ function FlightSearchForm() {
               <FontAwesomeIcon icon={faCalendarAlt} className="me-2" />
               Roundtrip
             </label>
-            <Form.Check 
-              type="switch" 
-              id="roundtrip-switch" 
-              checked={isRoundtrip} 
-              onChange={(e) => setIsRoundtrip(e.target.checked)} 
+            <Form.Check
+              type="switch"
+              id="roundtrip-switch"
+              checked={isRoundtrip}
+              onChange={(e) => setIsRoundtrip(e.target.checked)}
             />
           </div>
 
@@ -313,8 +292,8 @@ function FlightSearchForm() {
           <button type="submit" className="btn btn-primary btn-lg">
             Search Flights
           </button>
-          <button 
-            type="button" 
+          <button
+            type="button"
             className="btn btn-outline-primary btn-lg"
             onClick={handleSaveSearch}
             disabled={isSaving}

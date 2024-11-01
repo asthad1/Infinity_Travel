@@ -6,47 +6,26 @@ import { setFilteredFlights, setErrorMessage } from '../store/flightsSlice';
 import { setDepartureAirport, setDestinationAirport, setDepartureDate, setTravelers } from '../store/searchSlice';
 import { Modal, Button } from 'react-bootstrap';
 import { FaPlane, FaHeart, FaShareAlt, FaClock, FaExchangeAlt } from 'react-icons/fa';
+import './MyFavorites.css';
 
 function SavedSearches() {
   const [savedSearches, setSavedSearches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeSearch, setActiveSearch] = useState(null);
-
-  // Add these state variables
-  const [selectedFlight, setSelectedFlight] = useState(null); // State to store the selected flight
-  const [shareModal, setShareModal] = useState(false); // State to control modal visibility
-  const [shareLink, setShareLink] = useState(''); // State to store the shareable link
+  const [selectedFlight, setSelectedFlight] = useState(null);
+  const [shareModal, setShareModal] = useState(false);
+  const [shareLink, setShareLink] = useState('');
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
   const user = JSON.parse(localStorage.getItem('user'));
-
-  // Handle sharing the flight
-  const handleShare = (flight) => {
-    // console.log('Flight to be shared:', flight);  // Log the flight object
-    setSelectedFlight(flight);  // Set the selected flight in state
-    const uniqueURL = `http://localhost:3000/shared-flights/${flight.id}`;
-    setShareLink(uniqueURL);  // Create and store the share link
-    setShareModal(true);  // Open the modal
-  };
-
-  const handleShareModalClose = () => {
-    setShareModal(false); // Close the modal
-  };
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(shareLink); // Copy the share link to clipboard
-    alert('Link copied to clipboard!');
-  };
 
   useEffect(() => {
     if (!user?.user_id) {
       navigate('/login');
       return;
     }
-
     fetchSavedSearches();
   }, [user?.user_id, navigate]);
 
@@ -65,13 +44,11 @@ function SavedSearches() {
   const handleSearchAgain = async (search) => {
     setActiveSearch(search.id);
     try {
-      // First, update the search form with the saved search criteria
       dispatch(setDepartureAirport({ value: search.from_airport, label: search.from_airport }));
       dispatch(setDestinationAirport({ value: search.to_airport, label: search.to_airport }));
       dispatch(setDepartureDate(search.departure_date));
       dispatch(setTravelers(search.adults || 1));
 
-      // Execute the search
       const searchCriteria = {
         departureAirport: search.from_airport,
         destinationAirport: search.to_airport,
@@ -92,7 +69,6 @@ function SavedSearches() {
         dispatch(setErrorMessage(''));
       }
 
-      // Navigate to home page with search results
       navigate('/');
     } catch (err) {
       console.error('Error executing search:', err);
@@ -114,8 +90,77 @@ function SavedSearches() {
     }
   };
 
+  const handleShare = (flight) => {
+    setSelectedFlight(flight);
+    const uniqueURL = `http://localhost:3000/shared-flights/${flight.id}`;
+    setShareLink(uniqueURL);
+    setShareModal(true);
+  };
+
+  const handleShareModalClose = () => setShareModal(false);
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(shareLink);
+    alert('Link copied to clipboard!');
+  };
+
   if (loading) return <div className="text-center mt-5"><div className="spinner-border" role="status"></div></div>;
   if (error) return <div className="alert alert-danger m-3">{error}</div>;
+
+  // Group saved searches by country and city
+  const groupedSearches = savedSearches.reduce((acc, search) => {
+    const country = search.to_country || "Unknown Country";
+    const city = search.to_city || "Unknown City";
+    if (!acc[country]) acc[country] = {};
+    if (!acc[country][city]) acc[country][city] = [];
+    acc[country][city].push(search);
+    return acc;
+  }, {});
+
+  const countryCodeMap = {
+    'United States': 'us',
+    'Brazil': 'br',
+    'Canada': 'ca',
+    'United Kingdom': 'gb',
+    'Australia': 'au',
+    'Germany': 'de',
+    'France': 'fr',
+    'Italy': 'it',
+    'Mexico': 'mx',
+    'Japan': 'jp',
+    'China': 'cn',
+    'India': 'in',
+    'South Korea': 'kr',
+    'Russia': 'ru',
+    'Netherlands': 'nl',
+    'Spain': 'es',
+    'Switzerland': 'ch',
+    'Sweden': 'se',
+    'Norway': 'no',
+    'Denmark': 'dk',
+    'Finland': 'fi',
+    'New Zealand': 'nz',
+    'South Africa': 'za',
+    'Argentina': 'ar',
+    'Chile': 'cl',
+    'Colombia': 'co',
+    'Turkey': 'tr',
+    'Saudi Arabia': 'sa',
+    'United Arab Emirates': 'ae',
+    'Israel': 'il',
+    'Egypt': 'eg',
+    'Nigeria': 'ng',
+    'Pakistan': 'pk',
+    'Bangladesh': 'bd',
+    'Vietnam': 'vn',
+    'Philippines': 'ph',
+    'Thailand': 'th',
+    'Indonesia': 'id',
+    'Malaysia': 'my',
+    'Singapore': 'sg',
+    'Hong Kong': 'hk'
+    // Add additional countries as needed
+  };
 
   return (
     <div className="container mt-4">
@@ -125,114 +170,94 @@ function SavedSearches() {
           No saved searches yet. Try saving a search from the home page!
         </div>
       ) : (
-        <div className="row">
-          {savedSearches.map((search) => (
-            <div key={search.id} className="col-md-6 col-lg-4 mb-4">
-              <div className="card h-100 shadow-sm">
-                <div className="card-body">
-                  <h5 className="card-title">{search.name}</h5>
-                  <div className="card-text">
-                    <p className="mb-2">
-                      <i className="fas fa-plane-departure me-2"></i>
-                      <strong>From:</strong> {search.from_airport}
-                    </p>
-                    <p className="mb-2">
-                      <i className="fas fa-plane-arrival me-2"></i>
-                      <strong>To:</strong> {search.to_airport}
-                    </p>
-                    <p className="mb-2">
-                      <i className="fas fa-calendar me-2"></i>
-                      <strong>Date:</strong> {new Date(search.departure_date).toLocaleDateString()}
-                    </p>
-                    {search.return_date && (
-                      <p className="mb-2">
-                        <i className="fas fa-calendar-alt me-2"></i>
-                        <strong>Return:</strong> {new Date(search.return_date).toLocaleDateString()}
-                      </p>
-                    )}
-                    <p className="mb-2">
-                      <i className="fas fa-users me-2"></i>
-                      <strong>Travelers:</strong> {search.adults || 1}
-                    </p>
-                    {search.max_price && (
-                      <p className="mb-2">
-                        <i className="fas fa-tag me-2"></i>
-                        <strong>Max Price:</strong> ${search.max_price}
-                      </p>
-                    )}
-                    {search.last_minimum_price && (
-                      <p className="text-info bg-light p-2 rounded">
-                        <i className="fas fa-clock me-2"></i>
-                        Last found price: ${search.last_minimum_price}
-                      </p>
-                    )}
-                  </div>
-                  <div className="mt-3 d-flex justify-content-between">
-                    <button
-                      className="btn btn-primary"
-                      onClick={() => handleSearchAgain(search)}
-                      disabled={activeSearch === search.id}
-                    >
-                      {activeSearch === search.id ? (
-                        <>
-                          <span className="spinner-border spinner-border-sm me-2"></span>Searching...
-                        </>
-                      ) : (
-                        <>
-                          <i className="fas fa-search me-2"></i>Search Again
-                        </>
-                      )}
-                    </button>
-                    <button
-                      className="btn btn-outline-primary"
-                      onClick={() => handleShare(search)}
-                    >
-                      <FaShareAlt /> Share
-                    </button>
-                    <button
-                      className="btn btn-outline-danger"
-                      onClick={() => handleDelete(search.id)}
-                      disabled={activeSearch === search.id}
-                    >
-                      <i className="fas fa-trash me-2"></i>Delete
-                    </button>
-                  </div>
+        Object.entries(groupedSearches).map(([country, cities]) => (
+          <div key={country} className="country-section mb-4 p-3 rounded shadow-sm">
+            <h3 className="mb-2">Destination</h3>
+            <div className="country-header mb-2">
+              <img
+                src={`https://flagcdn.com/48x36/${countryCodeMap[country] || country.slice(0, 2).toLowerCase()}.png`}
+                alt={`${country} flag`}
+                className="country-flag"
+              />
+              <h3 className="country-name">{country}</h3>
+            </div>
+            {Object.entries(cities).map(([city, searches]) => (
+              <div key={city} className="city-section mb-3">
+                <h4>{city}</h4>
+                <div className="searches-container row">
+                  {searches.map((search) => (
+                    <div key={search.id} className="col-md-6 col-lg-4 mb-4">
+                      <div className="card h-100 shadow-sm">
+                        <div className="card-body">
+                          <h5 className="card-title">{search.name}</h5>
+                          <p><strong>From:</strong> {search.from_airport}</p>
+                          <p><strong>To:</strong> {search.to_airport}</p>
+                          <p><strong>Date:</strong> {new Date(search.departure_date).toLocaleDateString()}</p>
+                          {search.return_date && (
+                            <p><strong>Return:</strong> {new Date(search.return_date).toLocaleDateString()}</p>
+                          )}
+                          <p><strong>Travelers:</strong> {search.adults || 1}</p>
+                          {search.max_price && <p><strong>Max Price:</strong> ${search.max_price}</p>}
+                          {search.last_minimum_price && (
+                            <p className="text-info bg-light p-2 rounded">
+                              Last found price: ${search.last_minimum_price}
+                            </p>
+                          )}
+                          <div className="mt-3 d-flex justify-content-between">
+                            <button
+                              className="btn btn-primary"
+                              onClick={() => handleSearchAgain(search)}
+                              disabled={activeSearch === search.id}
+                            >
+                              {activeSearch === search.id ? (
+                                <>
+                                  <span className="spinner-border spinner-border-sm me-2"></span>Searching...
+                                </>
+                              ) : (
+                                <>
+                                  <i className="fas fa-search me-2"></i>Search Again
+                                </>
+                              )}
+                            </button>
+                            <button
+                              className="btn btn-outline-primary"
+                              onClick={() => handleShare(search)}
+                            >
+                              <FaShareAlt /> Share
+                            </button>
+                            <button
+                              className="btn btn-outline-danger"
+                              onClick={() => handleDelete(search.id)}
+                              disabled={activeSearch === search.id}
+                            >
+                              <i className="fas fa-trash me-2"></i>Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          ))}
-
-          {/* Share Modal */}
-          <Modal show={shareModal} onHide={handleShareModalClose} centered>
-            <Modal.Header closeButton>
-              <Modal.Title>Share Flight</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              <p>Share this flight search via the link below:</p>
-              <input
-                type="text"
-                value={shareLink}
-                readOnly
-                className="form-control mb-3"
-              />
-              <Button variant="primary" onClick={handleCopyLink}>
-                Copy Link
-              </Button>
-              <hr />
-              <p>
-                <a href={`mailto:?subject=Flight Details&body=Check out this flight: ${shareLink}`}>
-                  Share via Email
-                </a>
-              </p>
-            </Modal.Body>
-            <Modal.Footer>
-              <Button variant="secondary" onClick={handleShareModalClose}>
-                Close
-              </Button>
-            </Modal.Footer>
-          </Modal>
-        </div>
+            ))}
+          </div>
+        ))
       )}
+
+      {/* Share Modal */}
+      <Modal show={shareModal} onHide={handleShareModalClose} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Share Flight</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Share this flight search via the link below:</p>
+          <input type="text" value={shareLink} readOnly className="form-control mb-3" />
+          <Button variant="primary" onClick={handleCopyLink}>Copy Link</Button>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleShareModalClose}>Close</Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

@@ -529,6 +529,35 @@ def get_airlines():
     airline_list = [airline[0] for airline in airlines]
     return jsonify(airline_list), 200
 
+
+@app.route('/api/airport-details/<airport_code>', methods=['GET'])
+def get_airport_details(airport_code):
+    # Look up the airport based on the airport code
+    airport = db.session.query(Airport).filter_by(airport_code=airport_code).first()
+    if not airport:
+        return jsonify({'city': 'Unknown', 'country': 'Unknown'}), 404
+
+    # Fetch the city based on city_id from the airport
+    city = db.session.query(City).filter_by(id=airport.city_id).first()
+    if not city:
+        return jsonify({'city': 'Unknown', 'country': 'Unknown'}), 404
+    
+    # Fetch the state using city.state_id
+    state = db.session.query(State).filter_by(id=city.state_id).first()
+    if not state:
+        return jsonify({'city': city.city_name, 'country': 'Unknown'}), 404
+
+    # Fetch the country using state.country_id
+    country = db.session.query(Country).filter_by(id=state.country_id).first()
+    
+    # Return city and country information
+    return jsonify({
+        'city': city.city_name,
+        'country': country.country_name if country else 'Unknown Country'
+    })
+
+
+
 # ===================== CRUD FOR FAVORITE MODEL ===================== #
 
 
@@ -833,7 +862,6 @@ def get_saved_searches():
         user_id=user_id).order_by(SavedSearch.created.desc()).all()
     return jsonify([search.to_dict() for search in saved_searches]), 200
 
-
 @app.route('/api/saved-searches', methods=['POST'])
 def save_search():
     try:
@@ -861,10 +889,13 @@ def save_search():
                 return jsonify({'error': f'Invalid value for field: {field}'}), 400
 
         try:
+            # Map from_country and from_city to country_name and city_name for compatibility
+            country_name = data.get('to_country', 'Unknown Country')
+            city_name = data.get('to_city', 'Unknown City')
+
             new_search = SavedSearch(
                 user_id=data['user_id'],
-                name=data.get('name', f"{data['from_airport']} to {
-                              data['to_airport']}"),
+                name=data.get('name', f"{data['from_airport']} to {data['to_airport']}"),
                 from_airport=data['from_airport'],
                 to_airport=data['to_airport'],
                 departure_date=data['departure_date'],
@@ -875,13 +906,20 @@ def save_search():
                 preferred_airline=data.get('preferred_airline'),
                 created=datetime.now(),
                 modified=datetime.now(),
-                last_search_date=datetime.now()
+                last_search_date=datetime.now(),
+                to_country=country_name,  # Save country information
+                to_city=city_name         # Save city information
             )
 
             db.session.add(new_search)
             db.session.commit()
 
-            return jsonify(new_search.to_dict()), 201
+            # Modify response to include `country_name` and `city_name` for compatibility with `MyFavorites.js`
+            response_data = new_search.to_dict()
+            response_data['country_name'] = country_name  # Rename for compatibility
+            response_data['city_name'] = city_name        # Rename for compatibility
+
+            return jsonify(response_data), 201
 
         except Exception as e:
             app.logger.error(f"Error creating saved search: {str(e)}")
@@ -981,54 +1019,8 @@ def execute_saved_search(search_id):
         'results': flight_results,
         'total_results': len(flights)
     }), 200
-    
 
-@app.route('/api/metrics', methods=['POST'])
-def save_search_metrics():
-    data = request.get_json()
 
-    # Validate required fields
-    required_fields = ['from_airport',
-                       'to_airport', 'departure_date', 'travelers']
-    for field in required_fields:
-        if field not in data or data[field] is None:
-            return jsonify({'error': f'Missing required field: {field}'}), 400
-
-    # Create a new SearchMetrics instance
-    search_metric = SearchMetrics(
-        user_id=data.get('user_id'),
-        user_role=data.get('user_role', 'guest'),
-        from_airport=data['from_airport'],
-        to_airport=data['to_airport'],
-        departure_date=datetime.strptime(
-            data['departure_date'], '%Y-%m-%d').date(),
-        return_date=datetime.strptime(
-            data['return_date'], '%Y-%m-%d').date() if data.get('return_date') else None,
-        travelers=data.get('travelers', 1),
-        roundtrip=data.get('roundtrip', False),
-        timestamp=datetime.utcnow(),
-        max_stops=data.get('max_stops'),
-        preferred_airline=data.get('preferred_airline'),
-        max_price=data.get('max_price')
-    )
-
-    try:
-        # Add the search metrics to the database
-        db.session.add(search_metric)
-        db.session.commit()
-        return jsonify({'message': 'Search metrics saved successfully'}), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-    
-
-@app.route('/api/metrics', methods=['GET'])
-def get_all_search_metrics():
-    # Query all records from the SearchMetrics model
-    metrics = SearchMetrics.query.all()
-
-    # Return the list of metrics as JSON
-    return jsonify([metric.to_dict() for metric in metrics]), 200
 
 
 if __name__ == '__main__':

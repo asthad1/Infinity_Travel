@@ -56,6 +56,15 @@ class Flight(BaseModel, db.Model):
         return f'<Flight {self.flight_name} from {self.from_airport} to {self.to_airport}>'
 
 
+class Country(BaseModel, db.Model):
+    __tablename__ = 'countries'
+
+    id = Column(Integer, primary_key=True)
+    country_name = Column(String(100), nullable=False, unique=True)
+    country_code = Column(String(100), nullable=False, unique=True)
+    created = Column(DateTime, default=datetime.utcnow)
+    modified = Column(DateTime, onupdate=datetime.utcnow)
+
 class City(BaseModel, db.Model):
     __tablename__ = 'cities'
 
@@ -70,6 +79,7 @@ class State(BaseModel, db.Model):
     __tablename__ = 'states'
 
     id = Column(Integer, primary_key=True)
+    country_id = Column(Integer, ForeignKey('countries.id'), nullable=False)
     state_name = Column(String(100), nullable=False)
     created = Column(DateTime, default=datetime.utcnow)
     modified = Column(DateTime, onupdate=datetime.utcnow)
@@ -151,6 +161,12 @@ class SavedSearch(BaseModel, db.Model):
     # Last search results
     last_search_date = Column(DateTime, nullable=True)
     last_minimum_price = Column(Integer, nullable=True)
+    
+    # New fields for country and city
+    from_country = Column(String(100), nullable=True)  # Country of origin
+    to_country = Column(String(100), nullable=True)    # Destination country
+    from_city = Column(String(100), nullable=True)     # Origin city
+    to_city = Column(String(100), nullable=True)       # Destination city
 
     def to_dict(self):
         return {
@@ -168,7 +184,11 @@ class SavedSearch(BaseModel, db.Model):
             'created': self.created.isoformat() if self.created else None,
             'modified': self.modified.isoformat() if self.modified else None,
             'last_search_date': self.last_search_date.isoformat() if self.last_search_date else None,
-            'last_minimum_price': self.last_minimum_price
+            'last_minimum_price': self.last_minimum_price,
+            'from_country': self.from_country,
+            'to_country': self.to_country,
+            'from_city': self.from_city,
+            'to_city': self.to_city
         }
 
 class CouponRedemption(db.Model):
@@ -182,38 +202,3 @@ class CouponRedemption(db.Model):
     # Relationships
     user = relationship('User', back_populates='redemptions')
     coupon = relationship('Coupon', back_populates='redemptions')
-    
-
-class SearchMetrics(db.Model):
-    __tablename__ = 'search_metrics'
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, nullable=True)
-    user_role = db.Column(db.String(50), default='guest')
-    from_airport = db.Column(db.String(5), nullable=False)
-    to_airport = db.Column(db.String(5), nullable=False)
-    departure_date = db.Column(db.Date, nullable=False)
-    return_date = db.Column(db.Date, nullable=True)
-    travelers = db.Column(db.Integer, default=1)
-    roundtrip = db.Column(db.Boolean, default=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    max_stops = db.Column(db.Integer, nullable=True)
-    preferred_airline = db.Column(db.String(100), nullable=True)
-    max_price = db.Column(db.Numeric(10, 2), nullable=True)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'user_id': self.user_id,
-            'user_role': self.user_role,
-            'from_airport': self.from_airport,
-            'to_airport': self.to_airport,
-            'departure_date': self.departure_date,
-            'return_date': self.return_date,
-            'travelers': self.travelers,
-            'roundtrip': self.roundtrip,
-            'timestamp': self.timestamp,
-            'max_stops': self.max_stops,
-            'preferred_airline': self.preferred_airline,
-            'max_price': float(self.max_price) if self.max_price else None,
-        }
