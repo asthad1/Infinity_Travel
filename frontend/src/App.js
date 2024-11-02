@@ -16,6 +16,7 @@ import FlightSearchForm from './components/FlightSearchForm';
 import Checkout from './pages/Checkout';
 import CouponsPage from './pages/Coupons';
 import MetricsPage from './pages/Metrics';
+import PaymentGateway from './pages/PaymentGateway';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(() => {
@@ -60,7 +61,7 @@ function App() {
         <Route path="/saved-searches" element={<SavedSearches />} />
         <Route path="/flights" element={<FlightSearchForm />} />
         <Route path="/checkout" element={<Checkout />} />
-
+        <Route path="/payment-gateway" element={<PaymentGateway />} />
         {/* Admin-only routes */}
         <Route path="/coupons" element={currentUser?.role === 'admin' ? <CouponsPage /> : <Navigate to="/" />} />
         <Route path="/metrics" element={currentUser?.role === 'admin' ? <MetricsPage /> : <Navigate to="/" />} />

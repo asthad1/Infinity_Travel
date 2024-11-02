@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { FaCreditCard, FaPaypal, FaGooglePay } from 'react-icons/fa';
 
 function Checkout() {
   const location = useLocation();
@@ -12,7 +13,6 @@ function Checkout() {
   const [discount, setDiscount] = useState(0);
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
-  const [purchaseSuccess, setPurchaseSuccess] = useState(false);
 
   if (!flight) {
     return <div>No flight information available.</div>;
@@ -22,7 +22,6 @@ function Checkout() {
     try {
       const user = JSON.parse(localStorage.getItem('user'));
 
-      // Send discountCode and user_id to the API
       const response = await axios.post('http://localhost:9001/api/validate_coupon', {
         discount_code: discountCode,
         user: user["email"]
@@ -35,12 +34,11 @@ function Checkout() {
         setDiscount(0);
         setIsError(true);
       } else {
-        setDiscount(data.discount_percentage / 100);
+        setDiscount(data.discount_applied);
         setMessage(data.success || 'Discount applied successfully');
-      setIsError(false);
+        setIsError(false);
       }
     } catch (error) {
-      // Display the error message from the API response if available
       if (error.response && error.response.data && error.response.data.error) {
         setMessage(error.response.data.error);
       } else {
@@ -51,30 +49,8 @@ function Checkout() {
     }
   };
 
-  const handlePurchase = () => {
-    setPurchaseSuccess(true);
-
-    // Here you can add code to save flight details after purchase
-    const purchasedFlight = {
-      airline: flight.airline,
-      flight_number: flight.flight_number,
-      departure_airport: flight.departure_airport,
-      destination_airport: flight.destination_airport,
-      departure_time: flight.departure_time,
-      arrival_time: flight.arrival_time,
-      duration: flight.duration,
-      price: flight.price,
-      travelers,
-    };
-
-    // Save the flight details to local storage
-    const storedFlights = JSON.parse(localStorage.getItem('myFlights')) || [];
-    storedFlights.push(purchasedFlight);
-    localStorage.setItem('myFlights', JSON.stringify(storedFlights));
-
-    setTimeout(() => {
-      navigate('/');
-    }, 3000); // Redirect to home page after 3 seconds
+  const handlePurchase = (method) => {
+    navigate('/payment-gateway', { state: { method, flight, travelers, discount } });
   };
 
   const totalPrice = (flight.price * travelers * (1 - discount)).toFixed(2);
@@ -84,6 +60,7 @@ function Checkout() {
     <div className="container mt-5">
       <h2>Checkout</h2>
       <div>
+        {/* Flight Details */}
         <strong>Airline:</strong> {flight.airline}
         <br />
         <strong>Flight Number:</strong> {flight.flight_number}
@@ -118,7 +95,7 @@ function Checkout() {
             </>
         ) : (
           <span style={{ marginLeft: '10px' }}>${originalPrice}</span>
-          )}
+        )}
       </div>
 
       <div className="mt-3">
@@ -143,16 +120,33 @@ function Checkout() {
         )}
       </div>
 
-      {/* Purchase button */}
-      <button className="btn btn-success mt-3" onClick={handlePurchase}>
-        Purchase
-      </button>
-
-      {purchaseSuccess && (
-        <div className="alert alert-success mt-3">
-          Flight ticket purchased successfully! Redirecting to home page...
+      {/* Payment Options */}
+      <div className="mt-4">
+        <h4>Select Payment Method</h4>
+        <div className="d-flex align-items-center">
+          <button
+            className="btn btn-outline-primary me-3"
+            onClick={() => handlePurchase("Credit Card")}
+          >
+            <FaCreditCard size={24} className="me-2" />
+            Credit Card
+          </button>
+          <button
+            className="btn btn-outline-primary me-3"
+            onClick={() => handlePurchase("PayPal")}
+          >
+            <FaPaypal size={24} className="me-2" />
+            PayPal
+          </button>
+          <button
+            className="btn btn-outline-primary"
+            onClick={() => handlePurchase("Google Pay")}
+          >
+            <FaGooglePay size={24} className="me-2" />
+            Google Pay
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

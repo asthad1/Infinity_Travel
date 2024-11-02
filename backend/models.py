@@ -202,3 +202,23 @@ class CouponRedemption(db.Model):
     # Relationships
     user = relationship('User', back_populates='redemptions')
     coupon = relationship('Coupon', back_populates='redemptions')
+
+
+class BookedFlight(BaseModel, db.Model):
+    __tablename__ = 'booked_flights'
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    airline = Column(String, nullable=False)
+    flight_number = Column(String, nullable=False)
+    from_airport = Column(String, nullable=False)
+    to_airport = Column(String, nullable=False)
+    departure_date = Column(DateTime, nullable=False)
+    arrival_date = Column(DateTime, nullable=False)
+    duration = Column(String, nullable=False)
+    price = Column(Float, nullable=False)
+    travelers = Column(Integer, nullable=False)
+    discount_applied = Column(Float, default=0.0)  # Total discount in dollars
+    total_price = Column(Float, nullable=False)
+    payment_method = Column(String, nullable=False)  # e.g., "Credit Card", "PayPal", "Google Pay"
+    booking_date = Column(DateTime, default=datetime.utcnow)

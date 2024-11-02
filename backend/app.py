@@ -1021,7 +1021,100 @@ def execute_saved_search(search_id):
     }), 200
 
 
+#===================Booked Flights========================
+@app.route('/api/book_flight', methods=['POST'])
+def book_flight():
+    try:
+        data = request.get_json()
 
+        # Create a new BookedFlight record
+        new_booking = BookedFlight(
+            user_id=data['user_id'],
+            airline=data['airline'],
+            flight_number=data['flight_number'],
+            from_airport=data['from_airport'],
+            to_airport=data['to_airport'],
+            departure_date=datetime.fromisoformat(data['departure_date']),
+            arrival_date=datetime.fromisoformat(data['arrival_date']),
+            duration=data['duration'],
+            price=data['price'],
+            travelers=data['travelers'],
+            discount_applied=data['discount_applied'],
+            total_price=data['total_price'],
+            payment_method=data['payment_method'],
+            booking_date=datetime.utcnow()
+        )
+
+        # Add and commit the booking to the database
+        db.session.add(new_booking)
+        db.session.commit()
+
+        return jsonify({"message": "Flight booked successfully!", "booking_id": new_booking.id}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/confirmation', methods=['GET'])
+def confirmation():
+    try:
+        booking_id = request.args.get('booking_id')
+        booking = BookedFlight.query.get(booking_id)
+
+        if not booking:
+            return jsonify({"error": "Booking not found"}), 404
+
+        # Prepare booking details for confirmation
+        booking_details = {
+            "id": booking.id,
+            "user_id": booking.user_id,
+            "airline": booking.airline,
+            "flight_number": booking.flight_number,
+            "from_airport": booking.from_airport,
+            "to_airport": booking.to_airport,
+            "departure_date": booking.departure_date,
+            "arrival_date": booking.arrival_date,
+            "duration": booking.duration,
+            "price": booking.price,
+            "travelers": booking.travelers,
+            "discount_applied": booking.discount_applied,
+            "total_price": booking.total_price,
+            "payment_method": booking.payment_method,
+            "booking_date": booking.booking_date
+        }
+
+        return jsonify({"booking": booking_details}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/api/booked_flights', methods=['GET'])
+def get_booked_flights():
+    user_id = request.args.get('user_id')
+    
+    if not user_id:
+        return jsonify({"error": "User ID is required"}), 400
+
+    try:
+        flights = BookedFlight.query.filter_by(user_id=user_id).all()
+        flight_data = [
+            {
+                "id": flight.id,
+                "airline": flight.airline,
+                "flight_number": flight.flight_number,
+                "departure_airport": flight.from_airport,
+                "destination_airport": flight.to_airport,
+                "departure_time": flight.departure_date.isoformat(),
+                "arrival_time": flight.arrival_date.isoformat(),
+                "duration": flight.duration,
+                "price": flight.price,
+                "travelers": flight.travelers,
+                "total_price": flight.total_price,
+                "payment_method": flight.payment_method,
+            }
+            for flight in flights
+        ]
+        return jsonify(flight_data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500   
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9001, debug=True)
