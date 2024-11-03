@@ -27,7 +27,7 @@ const airlineImages = {
   'default': require('../assets/images/airlines/default-logo.png')
 };
 
-function MyFavorites() {
+function SavedSearches() {
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const user = JSON.parse(localStorage.getItem('user'));
@@ -150,4 +150,4 @@ function MyFavorites() {
   );
 }
 
-export default MyFavorites;
+export default SavedSearches;

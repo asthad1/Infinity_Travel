@@ -8,7 +8,7 @@ import { Modal, Button } from 'react-bootstrap';
 import { FaPlane, FaHeart, FaShareAlt, FaClock, FaExchangeAlt } from 'react-icons/fa';
 import './MyFavorites.css';
 
-function SavedSearches() {
+function MyFavorites() {
   const [savedSearches, setSavedSearches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -262,4 +262,4 @@ function SavedSearches() {
   );
 }
 
-export default SavedSearches;
+export default MyFavorites;

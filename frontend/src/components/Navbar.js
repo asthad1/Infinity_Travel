@@ -107,7 +107,7 @@ function Navbar({ user }) {
                       </Link>
                     </li>
                     <li>
-                      <Link className="dropdown-item" to="/saved-searches">My Searches</Link>
+                      <Link className="dropdown-item" to="/saved-searches">Individual Flights</Link>
                     </li>
                     <li><hr className="dropdown-divider" /></li>
                     <li><button className="dropdown-item" onClick={handleLogout}>Logout</button></li>
