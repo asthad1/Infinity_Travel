@@ -2,10 +2,17 @@ import React from 'react';
 import './Home.css';  // Custom CSS for styling
 import FlightSearchForm from '../components/FlightSearchForm';  
 import travelImage from '../assets/images/ladyonboat.jpg';  // Import image
+import NotificationBanner from '../components/NotificationBanner'; // Import NotificationBanner
 
 function Home() {
+  // Retrieve user information from localStorage
+  const user = JSON.parse(localStorage.getItem('user'));
+
   return (
     <div className="home">
+      {/* Notification Banner */}
+      <NotificationBanner user={user} />
+
       {/* Hero Section */}
       <div className="jumbotron container bg-light p-5 mt-5">  {/* Add margin-top to avoid overflow */}
         <div className="row align-items-center">

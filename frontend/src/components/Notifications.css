@@ -1,0 +1,42 @@
+.notifications-container {
+  padding: 20px;
+  background-color: #fff3cd; /* Light yellow background */
+  border: 1px solid #ffeeba; /* Border color */
+  border-radius: 5px;
+  margin: 20px 0;
+}
+  .notification-icon {
+    margin-right: 10px;
+    font-size: 24px;
+  }
+  
+  .notifications-container ul {
+    margin-top: 20px;
+    margin-left: 300px;
+    list-style-type: none;
+    padding: 0;
+  }
+  
+  .notifications-container li {
+    margin-left: 300px;
+    margin: 5px 0;
+  }
+  
+  .notification-header {
+    margin-top: 10px; /* Adjust spacing as needed */
+    font-weight: bold; /* Example style */
+    color: #856404; /* Example color */
+  }
+
+  .notification-list {
+    margin-top: 10px;
+  }
+  
+  .notification-box {
+    background-color: #fff; /* White background for each box */
+    border: 1px solid #ffeeba; /* Border around the box */
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Slight shadow for depth */
+  }

@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 # Import the text, cast function and Date attribute
-from sqlalchemy import text, cast, Date
+from sqlalchemy import text, cast, Date, or_
 from sqlalchemy.orm import aliased
 import random
 import string
@@ -14,7 +14,7 @@ from models import *
 from extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
 import logging
-
+from datetime import datetime
 
 # Load environment variables
 # load_dotenv()
@@ -30,7 +30,6 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(message)s')
 db.init_app(app)
 
 # ===================== LOGIN ================================== #
-
 
 # In-memory store for accounts (for example purposes; ideally use a database)
 accounts = {}
@@ -81,18 +80,6 @@ def register():
     if email in accounts:
         return jsonify({'message': 'Email already registered'}), 400
 
-    # Generate a unique membership number
-    # membership_number = str(uuid.uuid4())
-
-    # Store user information
-    # accounts[email] = {
-    #     'name': name,
-    #     'phone': phone,
-    #     'membership_number': membership_number,
-    #     'password': password  # Note: NEVER store plain text passwords in a real application
-    # }
-
-    # return jsonify({'message': 'Account created successfully', 'membership_number': membership_number}), 201
     user = User(name=name, email=email, phone=phone, role=role,
                 password=password, membership_number=membership_number)
     db.session.add(user)
@@ -101,7 +88,7 @@ def register():
     # Return membership number in the response
     return jsonify({'message': 'User registered successfully', 'membership_number': membership_number}), 201
 
-
+# *** Updated login route to include 'role' in the response ***
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json
@@ -113,15 +100,15 @@ def login():
     user = User.query.filter_by(email=email).first()
 
     if user and user.password == password:  # Assuming check_password method exists
-        # Login successful, return user information including user_id
+        # Login successful, return user information including user_id and role
         return jsonify({
-            'email': user.email,  # Return email instead of username
-            'user_id': user.id  # Return user_id
+            'email': user.email,    # Return email instead of username
+            'user_id': user.id,     # Return user_id
+            'role': user.role       # Include the user's role
         }), 200
     else:
         # Login failed
         return jsonify({'message': 'Invalid credentials'}), 401
-
 
 # Route to change password
 @app.route('/api/change_password', methods=['POST'])
@@ -139,6 +126,14 @@ def change_password():
         return jsonify({'message': 'Password updated successfully'}), 200
     else:
         return jsonify({'message': 'Incorrect old password'}), 400
+
+
+# ===================== USER COUNT ENDPOINT FOR NOTIFICATION BANNER ===================== #
+
+@app.route('/api/users/count', methods=['GET'])
+def get_user_count():
+    count = User.query.count()
+    return jsonify({'count': count}), 200
 
 
 # ===================== CRUD FOR USER MODEL ===================== #
@@ -534,6 +529,35 @@ def get_airlines():
     airline_list = [airline[0] for airline in airlines]
     return jsonify(airline_list), 200
 
+
+@app.route('/api/airport-details/<airport_code>', methods=['GET'])
+def get_airport_details(airport_code):
+    # Look up the airport based on the airport code
+    airport = db.session.query(Airport).filter_by(airport_code=airport_code).first()
+    if not airport:
+        return jsonify({'city': 'Unknown', 'country': 'Unknown'}), 404
+
+    # Fetch the city based on city_id from the airport
+    city = db.session.query(City).filter_by(id=airport.city_id).first()
+    if not city:
+        return jsonify({'city': 'Unknown', 'country': 'Unknown'}), 404
+    
+    # Fetch the state using city.state_id
+    state = db.session.query(State).filter_by(id=city.state_id).first()
+    if not state:
+        return jsonify({'city': city.city_name, 'country': 'Unknown'}), 404
+
+    # Fetch the country using state.country_id
+    country = db.session.query(Country).filter_by(id=state.country_id).first()
+    
+    # Return city and country information
+    return jsonify({
+        'city': city.city_name,
+        'country': country.country_name if country else 'Unknown Country'
+    })
+
+
+
 # ===================== CRUD FOR FAVORITE MODEL ===================== #
 
 
@@ -656,7 +680,7 @@ def view_shared_search(url):
 # ===================== CRUD FOR COUPON MODEL ===================== #
 
 # GET all coupons
-@app.route('/coupons', methods=['GET'])
+@app.route('/api/coupons', methods=['GET'])
 def get_coupons():
     coupons = Coupon.query.all()
     return jsonify([coupon.to_dict() for coupon in coupons]), 200
@@ -664,7 +688,7 @@ def get_coupons():
 # GET a single coupon by ID
 
 
-@app.route('/coupons/<int:coupon_id>', methods=['GET'])
+@app.route('/api/coupons/<int:coupon_id>', methods=['GET'])
 def get_coupon(coupon_id):
     coupon = Coupon.query.get_or_404(coupon_id)
     return jsonify(coupon.to_dict()), 200
@@ -672,17 +696,18 @@ def get_coupon(coupon_id):
 # CREATE a new coupon
 
 
-@app.route('/coupons', methods=['POST'])
+@app.route('/api/coupons', methods=['POST'])
 def create_coupon():
     data = request.json
     new_coupon = Coupon(
         coupon_code=data['coupon_code'],
+        coupon_code_name=re.split('[-\s]', data.get('discount_type'))[0].upper() + 
+            (str(data.get('discount_percentage')) if data.get('discount_percentage') != 0 else data.get('discount_amount')),
         discount_percentage=data.get('discount_percentage'),
         discount_amount=data.get('discount_amount'),
-        start_date=datetime.strptime(data['start_date'], '%Y-%m-%d %H:%M:%S'),
-        end_date=datetime.strptime(data['end_date'], '%Y-%m-%d %H:%M:%S'),
+        start_date=datetime.strptime(data['start_date'], '%Y-%m-%d'),
+        end_date=datetime.strptime(data['end_date'], '%Y-%m-%d'),
         minimum_order_amount=data.get('minimum_order_amount'),
-        admin_id=data['admin_id'],
         user_roles=data.get('user_roles'),
         discount_type=data.get('discount_type')
     )
@@ -693,8 +718,9 @@ def create_coupon():
 # UPDATE an existing coupon by ID
 
 
-@app.route('/coupons/<int:coupon_id>', methods=['PUT'])
+@app.route('/api/coupons/<int:coupon_id>', methods=['PUT'])
 def update_coupon(coupon_id):
+
     data = request.json
     coupon = Coupon.query.get_or_404(coupon_id)
 
@@ -708,7 +734,6 @@ def update_coupon(coupon_id):
     coupon.end_date = datetime.strptime(data['end_date'], '%Y-%m-%d %H:%M:%S')
     coupon.minimum_order_amount = data.get(
         'minimum_order_amount', coupon.minimum_order_amount)
-    coupon.admin_id = data.get('admin_id', coupon.admin_id)
     coupon.user_roles = data.get('user_roles', coupon.user_roles)
     coupon.discount_type = data.get('discount_type', coupon.discount_type)
 
@@ -718,7 +743,7 @@ def update_coupon(coupon_id):
 # DELETE a coupon by ID
 
 
-@app.route('/coupons/<int:coupon_id>', methods=['DELETE'])
+@app.route('/api/coupons/<int:coupon_id>', methods=['DELETE'])
 def delete_coupon(coupon_id):
     coupon = Coupon.query.get_or_404(coupon_id)
     db.session.delete(coupon)
@@ -789,7 +814,13 @@ def validate_coupon():
         return jsonify({'error': 'No discount code or user ID provided'}), 400
     
     # Query the coupon from the database
-    coupon = Coupon.query.filter_by(coupon_code=discount_code).first()
+    coupon = Coupon.query.filter(
+    Coupon.coupon_code == discount_code,
+        or_(
+            Coupon.user_roles == user.role,
+            Coupon.user_roles == email
+        )
+    ).first()
 
     if not coupon:
         return jsonify({'error': 'Invalid discount code'}), 404
@@ -831,7 +862,6 @@ def get_saved_searches():
         user_id=user_id).order_by(SavedSearch.created.desc()).all()
     return jsonify([search.to_dict() for search in saved_searches]), 200
 
-
 @app.route('/api/saved-searches', methods=['POST'])
 def save_search():
     try:
@@ -859,10 +889,13 @@ def save_search():
                 return jsonify({'error': f'Invalid value for field: {field}'}), 400
 
         try:
+            # Map from_country and from_city to country_name and city_name for compatibility
+            country_name = data.get('to_country', 'Unknown Country')
+            city_name = data.get('to_city', 'Unknown City')
+
             new_search = SavedSearch(
                 user_id=data['user_id'],
-                name=data.get('name', f"{data['from_airport']} to {
-                              data['to_airport']}"),
+                name=data.get('name', f"{data['from_airport']} to {data['to_airport']}"),
                 from_airport=data['from_airport'],
                 to_airport=data['to_airport'],
                 departure_date=data['departure_date'],
@@ -873,13 +906,20 @@ def save_search():
                 preferred_airline=data.get('preferred_airline'),
                 created=datetime.now(),
                 modified=datetime.now(),
-                last_search_date=datetime.now()
+                last_search_date=datetime.now(),
+                to_country=country_name,  # Save country information
+                to_city=city_name         # Save city information
             )
 
             db.session.add(new_search)
             db.session.commit()
 
-            return jsonify(new_search.to_dict()), 201
+            # Modify response to include `country_name` and `city_name` for compatibility with `MyFavorites.js`
+            response_data = new_search.to_dict()
+            response_data['country_name'] = country_name  # Rename for compatibility
+            response_data['city_name'] = city_name        # Rename for compatibility
+
+            return jsonify(response_data), 201
 
         except Exception as e:
             app.logger.error(f"Error creating saved search: {str(e)}")
@@ -980,6 +1020,101 @@ def execute_saved_search(search_id):
         'total_results': len(flights)
     }), 200
 
+
+#===================Booked Flights========================
+@app.route('/api/book_flight', methods=['POST'])
+def book_flight():
+    try:
+        data = request.get_json()
+
+        # Create a new BookedFlight record
+        new_booking = BookedFlight(
+            user_id=data['user_id'],
+            airline=data['airline'],
+            flight_number=data['flight_number'],
+            from_airport=data['from_airport'],
+            to_airport=data['to_airport'],
+            departure_date=datetime.fromisoformat(data['departure_date']),
+            arrival_date=datetime.fromisoformat(data['arrival_date']),
+            duration=data['duration'],
+            price=data['price'],
+            travelers=data['travelers'],
+            discount_applied=data['discount_applied'],
+            total_price=data['total_price'],
+            payment_method=data['payment_method'],
+            booking_date=datetime.utcnow()
+        )
+
+        # Add and commit the booking to the database
+        db.session.add(new_booking)
+        db.session.commit()
+
+        return jsonify({"message": "Flight booked successfully!", "booking_id": new_booking.id}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/confirmation', methods=['GET'])
+def confirmation():
+    try:
+        booking_id = request.args.get('booking_id')
+        booking = BookedFlight.query.get(booking_id)
+
+        if not booking:
+            return jsonify({"error": "Booking not found"}), 404
+
+        # Prepare booking details for confirmation
+        booking_details = {
+            "id": booking.id,
+            "user_id": booking.user_id,
+            "airline": booking.airline,
+            "flight_number": booking.flight_number,
+            "from_airport": booking.from_airport,
+            "to_airport": booking.to_airport,
+            "departure_date": booking.departure_date,
+            "arrival_date": booking.arrival_date,
+            "duration": booking.duration,
+            "price": booking.price,
+            "travelers": booking.travelers,
+            "discount_applied": booking.discount_applied,
+            "total_price": booking.total_price,
+            "payment_method": booking.payment_method,
+            "booking_date": booking.booking_date
+        }
+
+        return jsonify({"booking": booking_details}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/api/booked_flights', methods=['GET'])
+def get_booked_flights():
+    user_id = request.args.get('user_id')
+    
+    if not user_id:
+        return jsonify({"error": "User ID is required"}), 400
+
+    try:
+        flights = BookedFlight.query.filter_by(user_id=user_id).all()
+        flight_data = [
+            {
+                "id": flight.id,
+                "airline": flight.airline,
+                "flight_number": flight.flight_number,
+                "departure_airport": flight.from_airport,
+                "destination_airport": flight.to_airport,
+                "departure_time": flight.departure_date.isoformat(),
+                "arrival_time": flight.arrival_date.isoformat(),
+                "duration": flight.duration,
+                "price": flight.price,
+                "travelers": flight.travelers,
+                "total_price": flight.total_price,
+                "payment_method": flight.payment_method,
+            }
+            for flight in flights
+        ]
+        return jsonify(flight_data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500   
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9001, debug=True)

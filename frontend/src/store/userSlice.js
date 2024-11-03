@@ -6,18 +6,21 @@ const initialState = {
   user_id: null,  
 };
 
-// Create user slice
 const userSlice = createSlice({
   name: 'user',
   initialState,
   reducers: {
     setUser: (state, action) => {
-      state.email = action.payload.email;  // Store email instead of username
-      state.user_id = action.payload.user_id;  // Store user_id
+      if (action.payload && action.payload.email && action.payload.user_id) {
+        state.email = action.payload.email;  // Store email
+        state.user_id = action.payload.user_id;  // Store user_id
+      } else {
+        console.error("Invalid payload for setUser:", action.payload);
+      }
     },
     clearUser: (state) => {
       state.email = null;
-      state.user_id = null;  
+      state.user_id = null;
     },
   },
 });

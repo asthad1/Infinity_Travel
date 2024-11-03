@@ -53,7 +53,7 @@ const FlightSearchResults = ({ flights, travelers }) => {
   // Handle saving the favorite with label
   const handleSaveFavorite = () => {
     if (!selectedFlight) return;
-
+  
     const favoriteData = {
       flight_id: selectedFlight.flight_id,
       user_id: user_id,
@@ -63,11 +63,15 @@ const FlightSearchResults = ({ flights, travelers }) => {
       arrival_time: selectedFlight.arrival_time,
       price: selectedFlight.price,
       label: label || 'Favorite Flight',
+      from_country: selectedFlight.from_country,  // Add country of origin
+      to_country: selectedFlight.to_country,      // Add destination country
+      from_city: selectedFlight.from_city,        // Add origin city
+      to_city: selectedFlight.to_city             // Add destination city
     };
-
+    console.log("Favorite data being saved:", favoriteData);
     dispatch(saveFavorite(favoriteData));
     handleLabelModalClose();
-  };
+  };  
 
   // Handle closing the label modal
   const handleLabelModalClose = () => {
@@ -193,7 +197,7 @@ const FlightSearchResults = ({ flights, travelers }) => {
             Cancel
           </Button>
           <Button variant="primary" onClick={handleSaveFavorite}>
-            Save to Favorites
+            Save Your Search
           </Button>
         </Modal.Footer>
       </Modal>

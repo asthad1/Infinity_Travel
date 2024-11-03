@@ -45,7 +45,7 @@ class Flight(BaseModel, db.Model):
     departure = Column(DateTime, nullable=False)  # Departure time and date
     arrival = Column(DateTime, nullable=False)  # Arrival time and date
     duration = Column(String(10), nullable=False)  # Flight duration
-    fare = Column(Integer, nullable=False)  # Flight price in USD
+    fare = Column(Float, nullable=False)  # Flight price in USD
     stops = Column(Integer, nullable=False)  # Number of stops
     # Available seats for the flight
     available_seats = Column(Integer, nullable=False)
@@ -55,6 +55,15 @@ class Flight(BaseModel, db.Model):
     def __repr__(self):
         return f'<Flight {self.flight_name} from {self.from_airport} to {self.to_airport}>'
 
+
+class Country(BaseModel, db.Model):
+    __tablename__ = 'countries'
+
+    id = Column(Integer, primary_key=True)
+    country_name = Column(String(100), nullable=False, unique=True)
+    country_code = Column(String(100), nullable=False, unique=True)
+    created = Column(DateTime, default=datetime.utcnow)
+    modified = Column(DateTime, onupdate=datetime.utcnow)
 
 class City(BaseModel, db.Model):
     __tablename__ = 'cities'
@@ -70,6 +79,7 @@ class State(BaseModel, db.Model):
     __tablename__ = 'states'
 
     id = Column(Integer, primary_key=True)
+    country_id = Column(Integer, ForeignKey('countries.id'), nullable=False)
     state_name = Column(String(100), nullable=False)
     created = Column(DateTime, default=datetime.utcnow)
     modified = Column(DateTime, onupdate=datetime.utcnow)
@@ -110,14 +120,14 @@ class Coupon(BaseModel, db.Model):
     __tablename__ = 'coupons'
 
     coupon_id = Column(Integer, primary_key=True)
-    coupon_code = Column(String(50), nullable=False, unique=True)
+    coupon_code = Column(String(15), nullable=False, unique=True)
+    coupon_code_name = Column(String(50), nullable=False, unique=True)
     discount_percentage = Column(Float, nullable=True)
     discount_amount = Column(Float, nullable=True)
     start_date = Column(DateTime, nullable=False)
     end_date = Column(DateTime, nullable=False)
     minimum_order_amount = Column(Float, nullable=True)
     # ForeignKey can be added if needed
-    admin_id = Column(Integer, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, onupdate=datetime.utcnow)
     user_roles = Column(String(50), nullable=True)  # Customer, Vendor, etc.
@@ -151,6 +161,12 @@ class SavedSearch(BaseModel, db.Model):
     # Last search results
     last_search_date = Column(DateTime, nullable=True)
     last_minimum_price = Column(Integer, nullable=True)
+    
+    # New fields for country and city
+    from_country = Column(String(100), nullable=True)  # Country of origin
+    to_country = Column(String(100), nullable=True)    # Destination country
+    from_city = Column(String(100), nullable=True)     # Origin city
+    to_city = Column(String(100), nullable=True)       # Destination city
 
     def to_dict(self):
         return {
@@ -168,7 +184,11 @@ class SavedSearch(BaseModel, db.Model):
             'created': self.created.isoformat() if self.created else None,
             'modified': self.modified.isoformat() if self.modified else None,
             'last_search_date': self.last_search_date.isoformat() if self.last_search_date else None,
-            'last_minimum_price': self.last_minimum_price
+            'last_minimum_price': self.last_minimum_price,
+            'from_country': self.from_country,
+            'to_country': self.to_country,
+            'from_city': self.from_city,
+            'to_city': self.to_city
         }
 
 class CouponRedemption(db.Model):
@@ -182,3 +202,23 @@ class CouponRedemption(db.Model):
     # Relationships
     user = relationship('User', back_populates='redemptions')
     coupon = relationship('Coupon', back_populates='redemptions')
+
+
+class BookedFlight(BaseModel, db.Model):
+    __tablename__ = 'booked_flights'
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    airline = Column(String, nullable=False)
+    flight_number = Column(String, nullable=False)
+    from_airport = Column(String, nullable=False)
+    to_airport = Column(String, nullable=False)
+    departure_date = Column(DateTime, nullable=False)
+    arrival_date = Column(DateTime, nullable=False)
+    duration = Column(String, nullable=False)
+    price = Column(Float, nullable=False)
+    travelers = Column(Integer, nullable=False)
+    discount_applied = Column(Float, default=0.0)  # Total discount in dollars
+    total_price = Column(Float, nullable=False)
+    payment_method = Column(String, nullable=False)  # e.g., "Credit Card", "PayPal", "Google Pay"
+    booking_date = Column(DateTime, default=datetime.utcnow)
