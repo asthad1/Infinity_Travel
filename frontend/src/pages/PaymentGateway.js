@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { FaCreditCard, FaPaypal, FaGooglePay } from 'react-icons/fa';
@@ -7,20 +7,32 @@ function PaymentGateway() {
   const location = useLocation();
   const navigate = useNavigate();
   const { method, flight, travelers, discount } = location.state;
+  const [cardDetails, setCardDetails] = useState({
+    nameOnCard: '',
+    cardNumber: '',
+    expirationDate: '',
+    cvv: '',
+  });
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setCardDetails({ ...cardDetails, [name]: value });
+  };
 
   const handleConfirmPayment = async () => {
     try {
       const user = JSON.parse(localStorage.getItem('user'));
       const userId = user?.user_id;
-  
+
       if (!userId) {
         console.error("User ID not found in localStorage.");
         alert("Unable to process booking. Please log in again.");
         return;
       }
-  
+
       const totalPrice = (flight.price * travelers - discount).toFixed(2);
-  
+
+      // Simulate the booking being stored
       const response = await axios.post('http://localhost:9001/api/book_flight', {
         user_id: userId,
         airline: flight.airline,
@@ -36,8 +48,9 @@ function PaymentGateway() {
         total_price: totalPrice,
         payment_method: method,
       });
-  
+
       if (response.status === 201) {
+        alert('Payment confirmed and booking stored successfully!');
         navigate('/my-flights');
       }
     } catch (error) {
@@ -46,19 +59,55 @@ function PaymentGateway() {
       alert('Booking failed. Please try again.');
     }
   };
-  
 
-  const renderIcon = () => {
-    switch (method) {
-      case 'Credit Card':
-        return <FaCreditCard size={24} />;
-      case 'PayPal':
-        return <FaPaypal size={24} />;
-      case 'Google Pay':
-        return <FaGooglePay size={24} />;
-      default:
-        return null;
+  const renderForm = () => {
+    if (method === 'Credit Card') {
+      return (
+        <div className="credit-card-form mt-3">
+          <h5>Enter Credit Card Details</h5>
+          <input
+            type="text"
+            name="nameOnCard"
+            placeholder="Name on Card"
+            value={cardDetails.nameOnCard}
+            onChange={handleInputChange}
+            className="form-control mb-2"
+          />
+          <input
+            type="text"
+            name="cardNumber"
+            placeholder="Card Number"
+            value={cardDetails.cardNumber}
+            onChange={handleInputChange}
+            className="form-control mb-2"
+          />
+          <input
+            type="text"
+            name="expirationDate"
+            placeholder="MM/YY"
+            value={cardDetails.expirationDate}
+            onChange={handleInputChange}
+            className="form-control mb-2"
+          />
+          <input
+            type="text"
+            name="cvv"
+            placeholder="CVV"
+            value={cardDetails.cvv}
+            onChange={handleInputChange}
+            className="form-control mb-2"
+          />
+        </div>
+      );
+    } else if (method === 'PayPal' || method === 'Google Pay') {
+      return (
+        <div className="payment-simulation mt-3">
+          <h5>Simulated {method} Payment</h5>
+          <p>{method} overlay would be shown here in a real application.</p>
+        </div>
+      );
     }
+    return null;
   };
 
   return (
@@ -67,9 +116,12 @@ function PaymentGateway() {
       <div className="mt-4">
         <h4>Selected Payment Method</h4>
         <div className="d-flex align-items-center">
-          {renderIcon()}
+          {method === 'Credit Card' && <FaCreditCard size={24} />}
+          {method === 'PayPal' && <FaPaypal size={24} />}
+          {method === 'Google Pay' && <FaGooglePay size={24} />}
           <span className="ms-3">{method}</span>
         </div>
+        {renderForm()}
         <button className="btn btn-success mt-3" onClick={handleConfirmPayment}>
           Confirm Payment
         </button>
