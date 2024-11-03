@@ -35,7 +35,7 @@ function Checkout() {
         setDiscount(0);
         setIsError(true);
       } else {
-        setDiscount(data.discount_percentage / 100);
+        setDiscount(data.discount_amount);
         setMessage(data.success || 'Discount applied successfully');
       setIsError(false);
       }
@@ -77,7 +77,7 @@ function Checkout() {
     }, 3000); // Redirect to home page after 3 seconds
   };
 
-  const totalPrice = (flight.price * travelers * (1 - discount)).toFixed(2);
+  const totalPrice = (flight.price * travelers - discount).toFixed(2);
   const originalPrice = (flight.price * travelers).toFixed(2);
 
   return (

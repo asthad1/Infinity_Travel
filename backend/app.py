@@ -672,9 +672,7 @@ def create_coupon():
     data = request.json
     new_coupon = Coupon(
         coupon_code=data['coupon_code'],
-        coupon_code_name=re.split('[-\s]', data.get('discount_type'))[0].upper() + 
-            (str(data.get('discount_percentage')) if data.get('discount_percentage') != 0 else data.get('discount_amount')),
-        discount_percentage=data.get('discount_percentage'),
+        coupon_code_name=re.split('[-\s]', data.get('discount_type'))[0].upper() + data.get('discount_amount'),
         discount_amount=data.get('discount_amount'),
         start_date=datetime.strptime(data['start_date'], '%Y-%m-%d'),
         end_date=datetime.strptime(data['end_date'], '%Y-%m-%d'),
@@ -696,8 +694,6 @@ def update_coupon(coupon_id):
     coupon = Coupon.query.get_or_404(coupon_id)
 
     coupon.coupon_code = data.get('coupon_code', coupon.coupon_code)
-    coupon.discount_percentage = data.get(
-        'discount_percentage', coupon.discount_percentage)
     coupon.discount_amount = data.get(
         'discount_amount', coupon.discount_amount)
     coupon.start_date = datetime.strptime(
@@ -805,8 +801,6 @@ def validate_coupon():
     if redemption:
         return jsonify({'error': 'Coupon has already been redeemed by this user'}), 400
 
-    # Coupon is valid, apply the discount
-    discount = coupon.discount_percentage if coupon.discount_percentage else 0
 
     # Record the redemption
     new_redemption = CouponRedemption(user_id=user.id, coupon_id=coupon.coupon_id, redeemed_at=datetime.utcnow())
@@ -815,9 +809,8 @@ def validate_coupon():
 
     return jsonify({
         'success': 'Coupon applied successfully!',
-        'discount_percentage': discount,
         'discount_amount': coupon.discount_amount,
-        'message': f'You get a {discount}% discount with this coupon!'
+        'message': f'You get a ${coupon.discount_amount} discount with this coupon!'
     }), 200
 
 # ===================== CRUD FOR SAVEDSEARCH MODEL ===================== #
