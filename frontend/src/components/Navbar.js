@@ -3,13 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../store/userSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUserCircle } from '@fortawesome/free-solid-svg-icons';
+import { faUserCircle, faTrophy } from '@fortawesome/free-solid-svg-icons';
+import { useFlightContext } from '../context/FlightContext';
 import './Navbar.css';
 
 function Navbar({ user }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [notificationCount, setNotificationCount] = useState(0);
+  const { totalFlightPrice } = useFlightContext();
 
   useEffect(() => {
     const count = localStorage.getItem('notificationCount') || 0;
@@ -68,6 +70,12 @@ function Navbar({ user }) {
           <ul className="navbar-nav ms-auto">
             {user && user.email ? (
               <>
+                <li className="nav-item">
+                  <div className="reward-points nav-link">
+                    <FontAwesomeIcon icon={faTrophy} className="me-1" />
+                    <span>Reward Points: {totalFlightPrice}</span>
+                  </div>
+                </li>
                 <li className="nav-item dropdown">
                   <a
                     className="nav-link dropdown-toggle"

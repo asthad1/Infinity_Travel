@@ -11,6 +11,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import Notifications from './Notifications';
 import './MyFlights.css';
+import { useFlightContext } from '../context/FlightContext';
 
 // Import airline images
 const airlineImages = {
@@ -30,6 +31,7 @@ const airlineImages = {
 function MyFlights() {
   const [flights, setFlights] = useState([]);
   const user = JSON.parse(localStorage.getItem('user'));
+  const { setTotalFlightPrice } = useFlightContext();
 
   useEffect(() => {
     const fetchFlights = async () => {
@@ -47,6 +49,11 @@ function MyFlights() {
       fetchFlights();
     }
   }, [user]);
+
+  useEffect(() => {
+    const total = flights.reduce((total, flight) => total + parseFloat(flight.total_price), 0);
+    setTotalFlightPrice(Math.round(total)); // Round to whole number
+  }, [flights, setTotalFlightPrice]);
 
   const getAirlineLogo = (airline) => {
     return airlineImages[airline] || airlineImages.default;
