@@ -24,7 +24,7 @@ function Checkout() {
 
       // Send discountCode and user_id to the API
       const response = await axios.post('http://localhost:9001/api/validate_coupon', {
-        discount_code: discountCode,
+        coupon_code: discountCode,
         user: user["email"]
       });
 
@@ -35,9 +35,11 @@ function Checkout() {
         setDiscount(0);
         setIsError(true);
       } else {
+        // store the discount code in a session
+        sessionStorage.setItem('coupon_code', discountCode);
         setDiscount(data.discount_amount);
         setMessage(data.success || 'Discount applied successfully');
-      setIsError(false);
+        setIsError(false);
       }
     } catch (error) {
       // Display the error message from the API response if available
@@ -51,8 +53,21 @@ function Checkout() {
     }
   };
 
-  const handlePurchase = () => {
-    setPurchaseSuccess(true);
+  const handlePurchase = async () => {
+    const user = JSON.parse(localStorage.getItem('user'));
+
+    const response = await axios.post('http://localhost:9001/api/redeem_coupon', {
+      coupon_code: discountCode,
+      user: user["email"]
+    });
+
+    if (response.status !== 200) {
+      setMessage(data.error || 'Failed to purchase with discount');
+      setIsError(true);
+    } else {
+      setPurchaseSuccess(true);
+    }
+
 
     // Here you can add code to save flight details after purchase
     const purchasedFlight = {

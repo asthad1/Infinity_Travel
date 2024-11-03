@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, redirect
+from flask import Flask, jsonify, request, redirect, current_app
 from flask_sqlalchemy import SQLAlchemy
 # Import the text, cast function and Date attribute
 from sqlalchemy import text, cast, Date, or_
@@ -771,18 +771,18 @@ def shared_flights(flight_id):
 @app.route('/api/validate_coupon', methods=['POST'])
 def validate_coupon():
     data = request.json
-    discount_code = data.get('discount_code')
+    coupon_code = data.get('coupon_code')
     email = data.get('user')  # Assuming user ID is passed in the request
     
     # Retrieve the user based on the provided email
     user = User.query.filter_by(email=email).first()  # Assuming user_email is passed into the function
     
-    if not discount_code or not user:
+    if not coupon_code or not user:
         return jsonify({'error': 'No discount code or user ID provided'}), 400
     
     # Query the coupon from the database
     coupon = Coupon.query.filter(
-    Coupon.coupon_code == discount_code,
+    Coupon.coupon_code == coupon_code,
         or_(
             Coupon.user_roles == user.role,
             Coupon.user_roles == email
@@ -801,17 +801,53 @@ def validate_coupon():
     if redemption:
         return jsonify({'error': 'Coupon has already been redeemed by this user'}), 400
 
-
-    # Record the redemption
-    new_redemption = CouponRedemption(user_id=user.id, coupon_id=coupon.coupon_id, redeemed_at=datetime.utcnow())
-    db.session.add(new_redemption)
-    db.session.commit()
-
     return jsonify({
         'success': 'Coupon applied successfully!',
         'discount_amount': coupon.discount_amount,
-        'message': f'You get a ${coupon.discount_amount} discount with this coupon!'
+        'message': f'You get a ${coupon.discount_amount} discount with this coupon!',
+        'coupon_code': coupon.coupon_code,
+        'coupon_id': coupon.coupon_id,
+        'user_id': user.id
     }), 200
+
+@app.route('/api/redeem_coupon', methods=['POST'])
+def redeem_coupon():
+    data = request.json
+    coupon_code = data.get('coupon_code')
+    email = data.get('user')  # Assuming user ID is passed in the request
+    
+    validate_payload = {
+            "user" : email, 
+            "coupon_code" : coupon_code
+    }
+    
+    with current_app.test_request_context('/api/validate_coupon', method='POST', json=validate_payload):
+        # Call validate_coupon and get the response
+        response = validate_coupon()
+        
+        if isinstance(response, tuple):
+            validate_coupon_response, status_code = response
+        else:
+            status_code = 200 
+            
+    # Check if validation was successful
+    if status_code != 200:
+        # Return the validation error message if unsuccessful
+        return validate_coupon_response
+    
+    validate_data = validate_coupon_response.get_json()
+    user_id = validate_data.get('user_id')
+    coupon_id = validate_data.get('coupon_id')
+    
+    # Record the redemption
+    new_redemption = CouponRedemption(user_id=user_id, coupon_id=coupon_id, redeemed_at=datetime.utcnow())
+    db.session.add(new_redemption)
+    db.session.commit()
+    
+    return jsonify({
+        'success': 'Coupon redeemed by the user successfully!',
+    }), 200
+    
 
 # ===================== CRUD FOR SAVEDSEARCH MODEL ===================== #
 
