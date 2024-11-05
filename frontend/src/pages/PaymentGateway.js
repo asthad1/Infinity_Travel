@@ -31,6 +31,27 @@ function PaymentGateway() {
       }
 
       const totalPrice = (flight.price * travelers - discount).toFixed(2);
+      const couponCode = sessionStorage.getItem('coupon_code');
+      
+      if (couponCode) {
+        try {
+          const redeemResponse = await axios.post('http://localhost:9001/api/redeem_coupon', {
+            coupon_code: couponCode,
+            user: user.email,
+          });
+
+          if (redeemResponse.status !== 200) {
+            alert(redeemResponse.data.error || 'Coupon redemption failed. Proceeding without discount.');
+          } else {
+            console.log('Coupon redeemed successfully:', redeemResponse.data);
+            sessionStorage.removeItem('coupon_code'); // Remove coupon code after redemption
+          }
+        } catch (error) {
+          console.error('Error redeeming coupon:', error.response?.data || error.message);
+          alert('Coupon redemption failed. Please try again.');
+          return;
+        }
+      }
 
       // Simulate the booking being stored
       const response = await axios.post('http://localhost:9001/api/book_flight', {
