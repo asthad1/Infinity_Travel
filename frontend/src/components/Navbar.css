@@ -21,3 +21,40 @@
   position: relative;
   top: -2px; /* Adjust to vertically center if needed */
 }
+
+/* Replace .total-flights-nav with new styles */
+.reward-points {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem; /* Match other nav items */
+  color: rgba(0, 0, 0, 0.55) !important; /* Match Bootstrap nav-link color */
+}
+
+.reward-points svg {
+  color: #FFD700;
+}
+
+.reward-points:hover {
+  color: rgba(0, 0, 0, 0.7) !important; /* Match Bootstrap nav-link hover */
+}
+
+/* Remove or comment out the old .total-flights-nav styles */
+.total-flights-nav {
+  /* display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  margin-right: 1rem; */
+}
+
+.total-flights-nav svg {
+  /* color: #FFD700; */
+}
+
+.total-flights-nav span {
+  /* color: white;
+  font-weight: 500; */
+}

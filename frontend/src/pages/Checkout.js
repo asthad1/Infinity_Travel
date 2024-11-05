@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { FaCreditCard, FaPaypal, FaGooglePay } from 'react-icons/fa';
 
 function Checkout() {
   const location = useLocation();
@@ -21,60 +22,44 @@ function Checkout() {
   const handleDiscountSubmit = async () => {
     try {
       const user = JSON.parse(localStorage.getItem('user'));
-
-      // Send discountCode and user_id to the API
       const response = await axios.post('http://localhost:9001/api/validate_coupon', {
-        discount_code: discountCode,
-        user: user["email"]
+        coupon_code: discountCode,
+        user: user.email,
       });
 
-      const data = response.data;
-
       if (response.status !== 200) {
-        setMessage(data.error || 'Failed to apply discount');
-        setDiscount(0);
-        setIsError(true);
+        const errorMessage = response.data.error || 'Failed to apply discount';
+        
+        // Check for specific condition indicating the coupon has already been redeemed
+        if (errorMessage.includes('already been redeemed')) {
+          setMessage('This coupon has already been redeemed and cannot be used again. Proceeding with full price.');
+          setIsError(true);
+          setDiscount(0); // Reset discount to proceed with full price
+        } else {
+          setMessage(errorMessage);
+          setIsError(true);
+          setDiscount(0);
+        }
       } else {
-        setDiscount(data.discount_amount);
-        setMessage(data.success || 'Discount applied successfully');
-      setIsError(false);
+        sessionStorage.setItem('coupon_code', discountCode);
+        setDiscount(response.data.discount_amount || response.data.discount_applied);
+        setMessage(response.data.success || 'Discount applied successfully');
+        setIsError(false);
       }
     } catch (error) {
-      // Display the error message from the API response if available
-      if (error.response && error.response.data && error.response.data.error) {
-        setMessage(error.response.data.error);
+      const apiError = error.response?.data?.error || 'Failed to apply discount';
+      if (apiError.includes('already been redeemed')) {
+        setMessage('This coupon has already been redeemed and cannot be used again. Proceeding with full price.');
       } else {
-        setMessage('Failed to apply discount');
+        setMessage(apiError);
       }
-      setDiscount(0);
       setIsError(true);
+      setDiscount(0); // Reset discount to proceed with full price
     }
   };
 
-  const handlePurchase = () => {
-    setPurchaseSuccess(true);
-
-    // Here you can add code to save flight details after purchase
-    const purchasedFlight = {
-      airline: flight.airline,
-      flight_number: flight.flight_number,
-      departure_airport: flight.departure_airport,
-      destination_airport: flight.destination_airport,
-      departure_time: flight.departure_time,
-      arrival_time: flight.arrival_time,
-      duration: flight.duration,
-      price: flight.price,
-      travelers,
-    };
-
-    // Save the flight details to local storage
-    const storedFlights = JSON.parse(localStorage.getItem('myFlights')) || [];
-    storedFlights.push(purchasedFlight);
-    localStorage.setItem('myFlights', JSON.stringify(storedFlights));
-
-    setTimeout(() => {
-      navigate('/');
-    }, 3000); // Redirect to home page after 3 seconds
+  const handlePurchase = (method) => {
+    navigate('/payment-gateway', { state: { method, flight, travelers, discount } });
   };
 
   const totalPrice = (flight.price * travelers - discount).toFixed(2);
@@ -83,44 +68,30 @@ function Checkout() {
   return (
     <div className="container mt-5">
       <h2>Checkout</h2>
+      {/* Flight details */}
       <div>
-        <strong>Airline:</strong> {flight.airline}
-        <br />
-        <strong>Flight Number:</strong> {flight.flight_number}
-        <br />
-        <strong>Departure:</strong> {flight.departure_airport}
-        <br />
-        <strong>Destination:</strong> {flight.destination_airport}
-        <br />
-        <strong>Departure Time:</strong> {flight.departure_time}
-        <br />
-        <strong>Arrival Time:</strong> {flight.arrival_time}
-        <br />
-        <strong>Duration:</strong> {flight.duration}
-        <br />
-        <strong>Price (per ticket):</strong> ${flight.price}
-        <br />
-        <strong>Number of Stops:</strong> {flight.stops}
-        <br />
-        <strong>Available Seats:</strong> {flight.available_seats}
-        <br />
-        <strong>Number of Travelers:</strong> {travelers}
-        <br />
+        <strong>Airline:</strong> {flight.airline}<br />
+        <strong>Flight Number:</strong> {flight.flight_number}<br />
+        <strong>Departure:</strong> {flight.departure_airport}<br />
+        <strong>Destination:</strong> {flight.destination_airport}<br />
+        <strong>Departure Time:</strong> {flight.departure_time}<br />
+        <strong>Arrival Time:</strong> {flight.arrival_time}<br />
+        <strong>Duration:</strong> {flight.duration}<br />
+        <strong>Price (per ticket):</strong> ${flight.price}<br />
+        <strong>Number of Stops:</strong> {flight.stops}<br />
+        <strong>Available Seats:</strong> {flight.available_seats}<br />
+        <strong>Number of Travelers:</strong> {travelers}<br />
         <strong>Total Price:</strong>
         {discount > 0 ? (
-            <>
-              <span style={{ textDecoration: 'line-through', marginLeft: '10px' }}>
-                ${originalPrice}
-              </span>
-              <span style={{ color: 'green', fontWeight: 'bold', marginLeft: '10px' }}>
-                ${totalPrice}
-              </span>
-            </>
+          <>
+            <span style={{ textDecoration: 'line-through', marginLeft: '10px' }}>${originalPrice}</span>
+            <span style={{ color: 'green', fontWeight: 'bold', marginLeft: '10px' }}>${totalPrice}</span>
+          </>
         ) : (
           <span style={{ marginLeft: '10px' }}>${originalPrice}</span>
-          )}
+        )}
       </div>
-
+      {/* Discount form */}
       <div className="mt-3">
         <input
           type="text"
@@ -134,7 +105,7 @@ function Checkout() {
           Apply Discount
         </button>
       </div>
-
+      {/* Display error/success message */}
       <div className="mt-2">
         {message && (
           <div className={isError ? 'text-danger' : 'text-success'}>
@@ -142,17 +113,22 @@ function Checkout() {
           </div>
         )}
       </div>
-
-      {/* Purchase button */}
-      <button className="btn btn-success mt-3" onClick={handlePurchase}>
-        Purchase
-      </button>
-
-      {purchaseSuccess && (
-        <div className="alert alert-success mt-3">
-          Flight ticket purchased successfully! Redirecting to home page...
+      {/* Payment Options */}
+      <div className="mt-4">
+        <h4>Select Payment Method</h4>
+        <div className="d-flex align-items-center">
+          <button className="btn btn-outline-primary me-3" onClick={() => handlePurchase('Credit Card')}>
+            <FaCreditCard size={24} className="me-2" /> Credit Card
+          </button>
+          <button className="btn btn-outline-primary me-3" onClick={() => handlePurchase('PayPal')}>
+            <FaPaypal size={24} className="me-2" /> PayPal
+          </button>
+          <button className="btn btn-outline-primary" onClick={() => handlePurchase('Google Pay')}>
+            <FaGooglePay size={24} className="me-2" /> Google Pay
+          </button>
         </div>
-      )}
+      </div>
+      {purchaseSuccess && <div className="alert alert-success mt-3">Flight ticket purchased successfully! Redirecting...</div>}
     </div>
   );
 }

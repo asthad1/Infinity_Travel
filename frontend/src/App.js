@@ -16,6 +16,8 @@ import FlightSearchForm from './components/FlightSearchForm';
 import Checkout from './pages/Checkout';
 import CouponsPage from './pages/Coupons';
 import MetricsPage from './pages/Metrics';
+import PaymentGateway from './pages/PaymentGateway';
+import { FlightProvider } from './context/FlightContext';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(() => {
@@ -44,30 +46,32 @@ function App() {
   }, []);
 
   return (
-    <Router>
-      <Navbar user={currentUser} notificationCount={notificationCount} />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login setCurrentUser={setCurrentUser} />} />
-        <Route path="/my-flights" element={currentUser ? <MyFlights /> : <Navigate to="/login" />} />
-        <Route path="/profile" element={currentUser ? <Profile /> : <Navigate to="/login" />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/support" element={<Support />} />
-        <Route path="/my-favorites" element={currentUser ? <MyFavorites /> : <Navigate to="/login" />} />
-        <Route path="/savedflights" element={<SavedFlights />} />
-        <Route path="/shared-flights/:flightId" element={<SharedFlightDetails />} />
-        <Route path="/flightsearchresults" element={<FlightSearchResults />} />
-        <Route path="/saved-searches" element={<SavedSearches />} />
-        <Route path="/flights" element={<FlightSearchForm />} />
-        <Route path="/checkout" element={<Checkout />} />
-
-        {/* Admin-only routes */}
-        <Route path="/coupons" element={currentUser?.role === 'admin' ? <CouponsPage /> : <Navigate to="/" />} />
-        <Route path="/metrics" element={currentUser?.role === 'admin' ? <MetricsPage /> : <Navigate to="/" />} />
-        
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
-    </Router>
+    <FlightProvider>
+      <Router>
+        <Navbar user={currentUser} notificationCount={notificationCount} />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login setCurrentUser={setCurrentUser} />} />
+          <Route path="/my-flights" element={currentUser ? <MyFlights /> : <Navigate to="/login" />} />
+          <Route path="/profile" element={currentUser ? <Profile /> : <Navigate to="/login" />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/support" element={<Support />} />
+          <Route path="/my-favorites" element={currentUser ? <MyFavorites /> : <Navigate to="/login" />} />
+          <Route path="/savedflights" element={<SavedFlights />} />
+          <Route path="/shared-flights/:flightId" element={<SharedFlightDetails />} />
+          <Route path="/flightsearchresults" element={<FlightSearchResults />} />
+          <Route path="/saved-searches" element={<SavedSearches />} />
+          <Route path="/flights" element={<FlightSearchForm />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/payment-gateway" element={<PaymentGateway />} />
+          {/* Admin-only routes */}
+          <Route path="/coupons" element={currentUser?.role === 'admin' ? <CouponsPage /> : <Navigate to="/" />} />
+          <Route path="/metrics" element={currentUser?.role === 'admin' ? <MetricsPage /> : <Navigate to="/" />} />
+          
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Router>
+    </FlightProvider>
   );
 }
 
