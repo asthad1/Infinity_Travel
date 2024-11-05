@@ -11,7 +11,6 @@ const Coupons = () => {
   const [notification, setNotification] = useState('');
   const [couponData, setCouponData] = useState({
     coupon_code: '',
-    discount_percentage: 0,
     discount_amount: 0,
     start_date: '',
     end_date: '',
@@ -52,7 +51,6 @@ const Coupons = () => {
       setShowAddCoupon(false); // Hide the form after saving
       setCouponData({ // Reset the form
         coupon_code: '',
-        discount_percentage: 0,
         discount_amount: 0,
         start_date: '',
         end_date: '',
@@ -86,16 +84,6 @@ const Coupons = () => {
                   value={couponData.coupon_code}
                   onChange={handleChange}
                   required
-                  className="form-control"
-                />
-              </div>
-              <div className="form-group">
-                <label>Discount Percentage</label>
-                <input
-                  type="number"
-                  name="discount_percentage"
-                  value={couponData.discount_percentage}
-                  onChange={handleChange}
                   className="form-control"
                 />
               </div>
@@ -171,7 +159,7 @@ const Coupons = () => {
             {coupons.map((coupon) => (
               <div key={coupon.coupon_id} className="coupon-box">
                 <div className="coupon-details">
-                  <h4>{coupon.discount_type} {coupon.discount_percentage}% Off</h4>
+                  <h4>{coupon.discount_type} ${coupon.discount_amount} Off</h4>
                   <p>Code: {coupon.coupon_code}</p>
                   <p>Applies to: {coupon.user_roles || 'All Users'}</p>
                   <p>Minimum Order: ${coupon.minimum_order_amount || 0}</p>

@@ -23,7 +23,7 @@ function Checkout() {
       const user = JSON.parse(localStorage.getItem('user'));
 
       const response = await axios.post('http://localhost:9001/api/validate_coupon', {
-        discount_code: discountCode,
+        coupon_code: discountCode,
         user: user["email"]
       });
 
@@ -34,7 +34,9 @@ function Checkout() {
         setDiscount(0);
         setIsError(true);
       } else {
-        setDiscount(data.discount_applied);
+        // store the discount code in a session
+        sessionStorage.setItem('coupon_code', discountCode);
+        setDiscount(data.discount_amount);
         setMessage(data.success || 'Discount applied successfully');
         setIsError(false);
       }
@@ -49,11 +51,24 @@ function Checkout() {
     }
   };
 
-  const handlePurchase = (method) => {
+  const handlePurchase = async () => {
+    const user = JSON.parse(localStorage.getItem('user'));
+
+    const response = await axios.post('http://localhost:9001/api/redeem_coupon', {
+      coupon_code: discountCode,
+      user: user["email"]
+    });
+
+    if (response.status !== 200) {
+      setMessage(data.error || 'Failed to purchase with discount');
+      setIsError(true);
+    } else {
+      setPurchaseSuccess(true);
+    }
     navigate('/payment-gateway', { state: { method, flight, travelers, discount } });
   };
 
-  const totalPrice = (flight.price * travelers * (1 - discount)).toFixed(2);
+  const totalPrice = (flight.price * travelers - discount).toFixed(2);
   const originalPrice = (flight.price * travelers).toFixed(2);
 
   return (
@@ -85,14 +100,14 @@ function Checkout() {
         <br />
         <strong>Total Price:</strong>
         {discount > 0 ? (
-            <>
-              <span style={{ textDecoration: 'line-through', marginLeft: '10px' }}>
-                ${originalPrice}
-              </span>
-              <span style={{ color: 'green', fontWeight: 'bold', marginLeft: '10px' }}>
-                ${totalPrice}
-              </span>
-            </>
+          <>
+            <span style={{ textDecoration: 'line-through', marginLeft: '10px' }}>
+              ${originalPrice}
+            </span>
+            <span style={{ color: 'green', fontWeight: 'bold', marginLeft: '10px' }}>
+              ${totalPrice}
+            </span>
+          </>
         ) : (
           <span style={{ marginLeft: '10px' }}>${originalPrice}</span>
         )}
