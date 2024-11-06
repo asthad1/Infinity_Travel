@@ -52,6 +52,17 @@
   border: 1px solid #dee2e6;
 }
 
+.hotel-image {
+  height: 250px;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.3s ease;
+}
+
+.hotel-image:hover {
+  transform: scale(1.05);
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .hotel-card .card-img-top {

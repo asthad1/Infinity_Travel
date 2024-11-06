@@ -2,130 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHotel, faCalendarAlt, faUser, faStar, faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons';
 import Select from 'react-select';
-import { Card, Modal, Button } from 'react-bootstrap';
+import { Card, Modal, Button, Spinner } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './HotelSearchForm.css';
+import hotel1 from '../assets/images/hotels/hotel-1.webp';
+import hotel2 from '../assets/images/hotels/hotel-2.jpg';
+import hotel3 from '../assets/images/hotels/hotel-3.jpg';
+import hotel4 from '../assets/images/hotels/hotel-4.jpg';
 
-const mockHotels = {
-  // New York (ID: 12)
-  12: [
-    {
-      id: 1,
-      name: 'The Plaza New York',
-      rating: 4.8,
-      pricePerNight: 599,
-      image: '/api/placeholder/400/250',
-      amenities: ['5-Star Dining', 'Spa', 'Luxury Suites', 'Central Park Views', 'Butler Service'],
-      neighborhood: 'Central Park South',
-      reviewCount: 2150
-    },
-    {
-      id: 2,
-      name: 'Manhattan Sky Hotel',
-      rating: 4.5,
-      pricePerNight: 299,
-      image: '/api/placeholder/400/250',
-      amenities: ['Rooftop Bar', 'Gym', 'Restaurant', 'Business Center', 'Free Wi-Fi'],
-      neighborhood: 'Times Square',
-      reviewCount: 1890
-    }
-  ],
-  // Los Angeles (ID: 11)
-  11: [
-    {
-      id: 3,
-      name: 'Beverly Hills Luxury Resort',
-      rating: 4.7,
-      pricePerNight: 499,
-      image: '/api/placeholder/400/250',
-      amenities: ['Pool', 'Spa', 'Celebrity Chef Restaurant', 'Valet Parking', 'Tennis Courts'],
-      neighborhood: 'Beverly Hills',
-      reviewCount: 1750
-    },
-    {
-      id: 4,
-      name: 'Santa Monica Beach Hotel',
-      rating: 4.4,
-      pricePerNight: 329,
-      image: '/api/placeholder/400/250',
-      amenities: ['Beachfront', 'Pool', 'Yoga Classes', 'Ocean View Restaurant', 'Bike Rentals'],
-      neighborhood: 'Santa Monica',
-      reviewCount: 2100
-    }
-  ],
-  // Paris (ID: 24)
-  24: [
-    {
-      id: 5,
-      name: 'Le Grand Paris Palace',
-      rating: 4.9,
-      pricePerNight: 799,
-      image: '/api/placeholder/400/250',
-      amenities: ['Eiffel Tower Views', 'Michelin Star Restaurant', 'Luxury Spa', 'Concierge', 'Airport Transfer'],
-      neighborhood: 'Champs-Élysées',
-      reviewCount: 1580
-    }
-  ],
-  // Tokyo (ID: 36)
-  36: [
-    {
-      id: 6,
-      name: 'Tokyo Sky Tower Hotel',
-      rating: 4.6,
-      pricePerNight: 450,
-      image: '/api/placeholder/400/250',
-      amenities: ['Sky Lounge', 'Japanese Garden', 'Sushi Restaurant', 'Tea Ceremony Room', 'Robot Concierge'],
-      neighborhood: 'Shinjuku',
-      reviewCount: 2300
-    }
-  ],
-  // Dubai (ID: 50)
-  50: [
-    {
-      id: 7,
-      name: 'Burj Al Arab View Resort',
-      rating: 4.9,
-      pricePerNight: 899,
-      image: '/api/placeholder/400/250',
-      amenities: ['Private Beach', 'Infinity Pool', 'Helipad', 'Gold-Plated Furnishings', 'Underwater Restaurant'],
-      neighborhood: 'Jumeirah Beach',
-      reviewCount: 1950
-    }
-  ],
-  // San Francisco (ID: 14)
-  14: [
-    {
-      id: 8,
-      name: 'Bay Area Deluxe Hotel',
-      rating: 4.5,
-      pricePerNight: 399,
-      image: '/api/placeholder/400/250',
-      amenities: ['Bay Views', 'Wine Bar', 'Tech Hub', 'Bike Rentals', 'Gourmet Restaurant'],
-      neighborhood: 'Fisherman\'s Wharf',
-      reviewCount: 1670
-    }
-  ],
-  // Miami (ID: 16)
-  16: [
-    {
-      id: 9,
-      name: 'South Beach Paradise Resort',
-      rating: 4.7,
-      pricePerNight: 459,
-      image: '/api/placeholder/400/250',
-      amenities: ['Private Beach', 'Infinity Pool', 'Nightclub', 'Spa', 'Beach Service'],
-      neighborhood: 'South Beach',
-      reviewCount: 2200
-    }
-  ]
-};
+const hotelImages = [hotel1, hotel2, hotel3, hotel4];
 
 const HotelSearchForm = () => {
   const navigate = useNavigate();
   const user = useSelector((state) => state.user);
-  
+
   // State management
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
@@ -141,11 +33,9 @@ const HotelSearchForm = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Add helper function for location display
+  // Display location helper
   const getDisplayLocation = () => {
-    if (!destination) return '';
-    const state = states.find(s => s.value === selectedState?.value);
-    return `${destination.label}${state ? `, ${state.label}` : ''}`;
+    return destination ? destination.label : '';
   };
 
   // Fetch states and cities on component mount
@@ -173,7 +63,7 @@ const HotelSearchForm = () => {
         setCities(formattedCities);
       } catch (error) {
         console.error('Error fetching locations:', error);
-        setErrorMessage('Error loading location data. Please try again.');
+        setErrorMessage('Error loading location data. Please try again later.');
       } finally {
         setIsLoading(false);
       }
@@ -182,25 +72,51 @@ const HotelSearchForm = () => {
     fetchStatesAndCities();
   }, []);
 
-  // Filter cities based on selected state
-  const filteredCityOptions = selectedState
-    ? cities.filter(city => city.state_id === selectedState.value).map(city => ({
-        value: city.value,
-        label: `${city.label}, ${selectedState.label}`
-      }))
-    : cities.map(city => {
-        const cityState = states.find(state => state.value === city.state_id);
-        return {
-          value: city.value,
-          label: `${city.label}, ${cityState ? cityState.label : ''}`
-        };
-      });
+  // Interdependent dropdowns
+  const filteredStates = destination
+    ? states.filter(state => state.value === cities.find(city => city.value === destination.value)?.state_id)
+    : states;
 
-  const handleSearch = (e) => {
+  const filteredCities = selectedState
+    ? cities.filter(city => city.state_id === selectedState.value)
+    : cities;
+
+  // Handle State change
+  const handleStateChange = (option) => {
+    setSelectedState(option);
+    if (option) {
+      // If a state is selected, filter cities to that state
+      const citiesInState = cities.filter(city => city.state_id === option.value);
+      if (destination && !citiesInState.find(city => city.value === destination.value)) {
+        // If selected city is not in the new state, reset destination
+        setDestination(null);
+      }
+    } else {
+      // If state is cleared, reset city selection
+      setDestination(null);
+    }
+  };
+
+  // Handle City change
+  const handleCityChange = (option) => {
+    setDestination(option);
+    if (option) {
+      // If a city is selected, set the state to the city's state
+      const city = cities.find(city => city.value === option.value);
+      const state = states.find(state => state.value === city.state_id);
+      setSelectedState(state);
+    } else {
+      // If city is cleared, reset state selection
+      setSelectedState(null);
+    }
+  };
+
+  const handleSearch = async (e) => {
     e.preventDefault();
     setErrorMessage('');
 
-    if (!destination || !checkIn || !checkOut) {
+    // Ensure all fields are filled out
+    if (!destination || !selectedState || !checkIn || !checkOut || !guests) {
       setErrorMessage('Please fill in all required fields.');
       return;
     }
@@ -213,15 +129,32 @@ const HotelSearchForm = () => {
       return;
     }
 
-    const hotels = mockHotels[destination.value] || [];
-    const results = hotels.map(hotel => ({
-      ...hotel,
-      address: `${hotel.neighborhood}, ${getDisplayLocation()}`,
-      totalPrice: calculateTotalPrice(hotel.pricePerNight, checkIn, checkOut)
-    }));
-    
-    setSearchResults(results);
-    setShowResults(true);
+    try {
+      setIsLoading(true);
+      const response = await axios.post('http://localhost:9001/api/hotels/search', {
+        city_id: destination.value,
+        check_in: checkIn,
+        check_out: checkOut,
+        guests: parseInt(guests)
+      });
+
+      const hotels = response.data.map((hotel, index) => ({
+        ...hotel,
+        // Parse amenities as an array of strings
+        amenities: typeof hotel.amenities === 'string' ? hotel.amenities.split(',') : [],
+        // Assign one of the imported images based on index, cycling through hotelImages
+        image: hotelImages[index % hotelImages.length],
+        totalPrice: calculateTotalPrice(hotel.price_per_night, checkIn, checkOut)
+      }));
+
+      setSearchResults(hotels);
+      setShowResults(true);
+    } catch (error) {
+      console.error('Error searching hotels:', error);
+      setErrorMessage('Error searching hotels. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const calculateTotalPrice = (pricePerNight, checkIn, checkOut) => {
@@ -231,13 +164,38 @@ const HotelSearchForm = () => {
     return pricePerNight * nights;
   };
 
-  const handleBooking = (hotel) => {
+  // Handle hotel booking
+  const handleBooking = async (hotel) => {
     if (!user?.email) {
       navigate('/login');
       return;
     }
-    setSelectedHotel(hotel);
-    setShowModal(true);
+
+    try {
+      const bookingData = {
+        user_id: user.user_id,
+        hotel_id: hotel.id,
+        check_in_date: checkIn,
+        check_out_date: checkOut,
+        num_guests: parseInt(guests),
+        room_count: 1,
+        total_price: hotel.totalPrice,
+        payment_method: 'credit_card'
+      };
+
+      const response = await axios.post('http://localhost:9001/api/hotel-bookings', bookingData);
+      if (response.data) {
+        navigate('/booking-confirmation', { 
+          state: { 
+            booking: response.data,
+            hotel: hotel 
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error booking hotel:', error);
+      setErrorMessage('Error booking hotel. Please try again.');
+    }
   };
 
   return (
@@ -251,15 +209,12 @@ const HotelSearchForm = () => {
             <div className="col-md-6 col-lg-3">
               <label className="form-label">
                 <FontAwesomeIcon icon={faMapMarkerAlt} className="me-2" />
-                State
+                State <span className="text-danger">*</span>
               </label>
               <Select
-                options={states}
+                options={filteredStates}
                 value={selectedState}
-                onChange={(option) => {
-                  setSelectedState(option);
-                  setDestination(null);
-                }}
+                onChange={handleStateChange}
                 placeholder="Select State"
                 isClearable={true}
                 className="hotel-select"
@@ -274,9 +229,9 @@ const HotelSearchForm = () => {
                 City <span className="text-danger">*</span>
               </label>
               <Select
-                options={filteredCityOptions}
+                options={filteredCities}
                 value={destination}
-                onChange={setDestination}
+                onChange={handleCityChange}
                 placeholder="Select City"
                 isClearable={true}
                 className="hotel-select"
@@ -284,6 +239,7 @@ const HotelSearchForm = () => {
               />
             </div>
 
+            {/* Check-in Date */}
             <div className="col-md-6 col-lg-2">
               <label className="form-label">
                 <FontAwesomeIcon icon={faCalendarAlt} className="me-2" />
@@ -295,9 +251,11 @@ const HotelSearchForm = () => {
                 value={checkIn}
                 onChange={(e) => setCheckIn(e.target.value)}
                 min={new Date().toISOString().split('T')[0]}
+                required
               />
             </div>
 
+            {/* Check-out Date */}
             <div className="col-md-6 col-lg-2">
               <label className="form-label">
                 <FontAwesomeIcon icon={faCalendarAlt} className="me-2" />
@@ -309,13 +267,15 @@ const HotelSearchForm = () => {
                 value={checkOut}
                 onChange={(e) => setCheckOut(e.target.value)}
                 min={checkIn || new Date().toISOString().split('T')[0]}
+                required
               />
             </div>
 
+            {/* Guests */}
             <div className="col-md-6 col-lg-1">
               <label className="form-label">
                 <FontAwesomeIcon icon={faUser} className="me-2" />
-                Guests
+                Guests <span className="text-danger">*</span>
               </label>
               <input
                 type="number"
@@ -324,9 +284,11 @@ const HotelSearchForm = () => {
                 onChange={(e) => setGuests(e.target.value)}
                 min="1"
                 max="10"
+                required
               />
             </div>
 
+            {/* Search Button */}
             <div className="col-md-6 col-lg-1 d-flex align-items-end">
               <button type="submit" className="btn btn-primary w-100" disabled={isLoading}>
                 Search
@@ -341,6 +303,8 @@ const HotelSearchForm = () => {
           )}
         </form>
 
+        {isLoading && <Spinner animation="border" className="my-4" />}
+
         {showResults && (
           <div className="mt-4">
             <h3 className="mb-3">Available Hotels in {getDisplayLocation()}</h3>
@@ -349,7 +313,12 @@ const HotelSearchForm = () => {
                 searchResults.map((hotel) => (
                   <div key={hotel.id} className="col-md-6 col-lg-4">
                     <Card className="h-100 hotel-card shadow-sm">
-                      <Card.Img variant="top" src={hotel.image} alt={hotel.name} />
+                      <Card.Img 
+                        variant="top" 
+                        src={hotel.image} 
+                        alt={hotel.name}
+                        className="hotel-image" 
+                      />
                       <Card.Body className="d-flex flex-column">
                         <Card.Title className="d-flex justify-content-between align-items-start">
                           <span>{hotel.name}</span>
@@ -361,6 +330,7 @@ const HotelSearchForm = () => {
                         <p className="text-muted small mb-2">
                           <FontAwesomeIcon icon={faMapMarkerAlt} className="me-1" />
                           {hotel.address}
+                          {hotel.neighborhood && `, ${hotel.neighborhood}`}
                         </p>
                         <div className="mb-3">
                           {hotel.amenities.map((amenity, index) => (
@@ -383,7 +353,7 @@ const HotelSearchForm = () => {
                             </button>
                           </div>
                           <div className="text-muted small mt-2">
-                            ${hotel.pricePerNight} per night
+                            ${hotel.price_per_night} per night
                           </div>
                         </div>
                       </Card.Body>
