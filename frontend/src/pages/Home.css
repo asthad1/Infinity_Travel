@@ -1,5 +1,12 @@
 /* Home.css */
 
+/* Container Settings */
+@media (min-width: 1200px) {
+  .container {
+    max-width: 1140px;
+  }
+}
+
 /* Jumbotron Section */
 .jumbotron {
   background-color: #ffffff;
@@ -47,111 +54,7 @@
   box-shadow: 0 6px 12px rgba(52, 152, 219, 0.2);
 }
 
-/* Features Section */
-.features-section {
-  margin-top: 2rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-}
-
-.features-section .col-md-4 {
-  display: flex;
-  flex: 1;
-  min-width: 300px;
-}
-
-.feature-card {
-  width: 100%;
-  background: #ffffff;
-  border: none;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
-  padding: 2rem;
-}
-
-.feature-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-}
-
-.feature-card .card-body {
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.feature-card i {
-  margin-bottom: 1.5rem;
-  font-size: 2.5rem;
-  transition: transform 0.3s ease;
-}
-
-.feature-card:hover i {
-  transform: scale(1.1);
-}
-
-/* Custom colors for each feature card icon */
-
-/* Plane icon */
-.feature-card:nth-child(2) i {
-  color: #2ecc71;
-}
-
-/* Hotel icon */
-.feature-card:nth-child(3) i {
-  color: #f1c40f;
-}
-
-/* Tags icon */
-
-.feature-card .card-title {
-  color: #2c3e50;
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin: 1rem 0;
-}
-
-.feature-card .card-text {
-  color: #6c757d;
-  font-size: 1rem;
-  line-height: 1.6;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .jumbotron {
-    padding: 2rem 1rem;
-    text-align: center;
-  }
-
-  .jumbotron h1.display-4 {
-    font-size: 2rem;
-    margin-top: 1.5rem;
-  }
-
-  .jumbotron img {
-    margin-bottom: 1.5rem;
-  }
-
-  .features-section {
-    gap: 1rem;
-  }
-
-  .feature-card {
-    margin-bottom: 1rem;
-  }
-}
-
-/* Container max-width */
-@media (min-width: 1200px) {
-  .container {
-    max-width: 1140px;
-  }
-}
-
+/* Search Toggle Section */
 .search-toggle-container {
   margin: 2rem 0;
 }
@@ -183,14 +86,203 @@
   color: #0d6efd;
 }
 
-/* Update feature card styles to include hotel icon */
-.feature-card .fa-hotel {
-  color: #e67e22;
+/* Features Section */
+.features-container {
+  padding: 3rem 0;
 }
 
-/* Responsive adjustments */
+.title-underline {
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(90deg, #0d6efd, #0dcaf0);
+  margin: 1rem auto;
+  border-radius: 2px;
+}
+
+.feature-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 2rem;
+  height: 100%;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  position: relative;
+}
+
+.feature-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Feature Card Icons */
+.feature-icon-wrapper {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  background: linear-gradient(135deg, #0d6efd, #0dcaf0);
+  position: relative;
+}
+
+.feature-icon-wrapper::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: inherit;
+  opacity: 0.2;
+  transform: scale(1.2);
+  z-index: -1;
+}
+
+.hotel-icon {
+  background: linear-gradient(135deg, #e67e22, #f1c40f);
+}
+
+.rewards-icon {
+  background: linear-gradient(135deg, #8e44ad, #9b59b6);
+}
+
+.feature-icon {
+  font-size: 2rem;
+  color: white;
+}
+
+/* Feature Card Content */
+.feature-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #2c3e50;
+}
+
+.feature-description {
+  color: #6c757d;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.feature-highlights {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 1.5rem;
+}
+
+.feature-highlights li {
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #2c3e50;
+}
+
+/* Feature Statistics */
+.feature-stats {
+  display: flex;
+  justify-content: space-around;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-number {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0d6efd;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.feature-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+}
+
+.feature-badge .badge {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Trust Indicators */
+.trust-indicators {
+  padding: 2rem 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.trust-item {
+  padding: 1rem;
+  transition: transform 0.3s ease;
+}
+
+.trust-item:hover {
+  transform: translateY(-5px);
+}
+
+.trust-icon {
+  font-size: 2rem;
+  color: #0d6efd;
+  margin-bottom: 0.5rem;
+}
+
+.trust-text {
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
+  .jumbotron {
+    padding: 2rem 1rem;
+    text-align: center;
+  }
+
+  .jumbotron h1.display-4 {
+    font-size: 2rem;
+    margin-top: 1.5rem;
+  }
+
+  .jumbotron img {
+    margin-bottom: 1.5rem;
+  }
+
   .search-toggle-container .btn {
     padding: 0.5rem 1.5rem;
+  }
+
+  .feature-card {
+    padding: 1.5rem;
+  }
+
+  .feature-icon-wrapper {
+    width: 60px;
+    height: 60px;
+  }
+
+  .feature-icon {
+    font-size: 1.5rem;
+  }
+
+  .feature-stats {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .trust-indicators {
+    margin-top: 2rem;
   }
 }

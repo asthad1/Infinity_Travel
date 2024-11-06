@@ -5,7 +5,8 @@ import HotelSearchForm from '../components/HotelSearchForm';
 import travelImage from '../assets/images/ladyonboat.jpg';
 import NotificationBanner from '../components/NotificationBanner';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlane, faHotel } from '@fortawesome/free-solid-svg-icons';
+import { faPlane, faHotel, faCrown, faCheck, faStar, faShieldAlt, faHeadset, faMoneyBillWave, faUserShield } from '@fortawesome/free-solid-svg-icons';
+
 
 function Home() {
   const [searchType, setSearchType] = useState('flights'); // 'flights' or 'hotels'
@@ -74,32 +75,152 @@ function Home() {
       </div>
 
       {/* Features Section */}
-      <div className="container mt-5">
-        <div className="row features-section">
-          <div className="col-md-4 mb-4 d-flex align-items-stretch">
-            <div className="card text-center feature-card">
-              <div className="card-body">
-                <i className="fas fa-plane fa-3x mb-3"></i>
-                <h5 className="card-title">Best Prices on Flights</h5>
-                <p className="card-text">Find the cheapest flights to your dream destination.</p>
+      <div className="container mt-5 features-container">
+        <h2 className="text-center mb-5">
+          Why Choose Infinity Travel?
+          <div className="title-underline"></div>
+        </h2>
+        
+        <div className="row features-section g-4">
+          {/* Flight Features */}
+          <div className="col-md-4">
+            <div className="feature-card">
+              <div className="feature-icon-wrapper">
+                <FontAwesomeIcon icon={faPlane} className="feature-icon" />
+              </div>
+              <div className="feature-content">
+                <h3 className="feature-title">Best Flight Deals</h3>
+                <p className="feature-description">
+                  Save up to 40% on flights worldwide. Price match guarantee with free cancellation on most airlines.
+                </p>
+                <ul className="feature-highlights">
+                  <li>
+                    <FontAwesomeIcon icon={faCheck} className="text-success" />
+                    Price match guarantee
+                  </li>
+                  <li>
+                    <FontAwesomeIcon icon={faCheck} className="text-success" />
+                    24/7 flight tracking
+                  </li>
+                  <li>
+                    <FontAwesomeIcon icon={faCheck} className="text-success" />
+                    Flexible booking options
+                  </li>
+                </ul>
+                <div className="feature-stats">
+                  <div className="stat">
+                    <span className="stat-number">500+</span>
+                    <span className="stat-label">Airlines</span>
+                  </div>
+                  <div className="stat">
+                    <span className="stat-number">1M+</span>
+                    <span className="stat-label">Happy Travelers</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          <div className="col-md-4 mb-4 d-flex align-items-stretch">
-            <div className="card text-center feature-card">
-              <div className="card-body">
-                <i className="fas fa-hotel fa-3x mb-3"></i>
-                <h5 className="card-title">Plan Your Trip</h5>
-                <p className="card-text">Book hotels, flights, and activities with ease.</p>
+
+          {/* Hotel Features */}
+          <div className="col-md-4">
+            <div className="feature-card">
+              <div className="feature-icon-wrapper hotel-icon">
+                <FontAwesomeIcon icon={faHotel} className="feature-icon" />
+              </div>
+              <div className="feature-content">
+                <h3 className="feature-title">Luxury Stays</h3>
+                <p className="feature-description">
+                  From boutique hotels to luxury resorts. Verified reviews and virtual tours for confident booking.
+                </p>
+                <ul className="feature-highlights">
+                  <li>
+                    <FontAwesomeIcon icon={faCheck} className="text-success" />
+                    Best price guarantee
+                  </li>
+                  <li>
+                    <FontAwesomeIcon icon={faCheck} className="text-success" />
+                    Free cancellation
+                  </li>
+                  <li>
+                    <FontAwesomeIcon icon={faCheck} className="text-success" />
+                    Verified reviews
+                  </li>
+                </ul>
+                <div className="feature-stats">
+                  <div className="stat">
+                    <span className="stat-number">100K+</span>
+                    <span className="stat-label">Properties</span>
+                  </div>
+                  <div className="stat">
+                    <span className="stat-number">4.8/5</span>
+                    <span className="stat-label">Avg. Rating</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          <div className="col-md-4 mb-4 d-flex align-items-stretch">
-            <div className="card text-center feature-card">
-              <div className="card-body">
-                <i className="fas fa-tags fa-3x mb-3"></i>
-                <h5 className="card-title">Exclusive Deals</h5>
-                <p className="card-text">Get access to exclusive discounts and offers.</p>
+
+          {/* Rewards Features */}
+          <div className="col-md-4">
+            <div className="feature-card">
+              <div className="feature-icon-wrapper rewards-icon">
+                <FontAwesomeIcon icon={faCrown} className="feature-icon" />
+              </div>
+              <div className="feature-content">
+                <h3 className="feature-title">Exclusive Rewards</h3>
+                <p className="feature-description">
+                  Join our rewards program for instant perks. Earn points on every booking and unlock premium benefits.
+                </p>
+                <ul className="feature-highlights">
+                  <li>
+                    <FontAwesomeIcon icon={faCheck} className="text-success" />
+                    Member-only deals
+                  </li>
+                  <li>
+                    <FontAwesomeIcon icon={faCheck} className="text-success" />
+                    Points never expire
+                  </li>
+                  <li>
+                    <FontAwesomeIcon icon={faCheck} className="text-success" />
+                    Priority support
+                  </li>
+                </ul>
+                <div className="feature-badge">
+                  <span className="badge bg-primary">
+                    <FontAwesomeIcon icon={faStar} className="me-1" />
+                    Premium Benefits
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Trust Indicators */}
+        <div className="trust-indicators mt-5">
+          <div className="row text-center g-3">
+            <div className="col-6 col-md-3">
+              <div className="trust-item">
+                <FontAwesomeIcon icon={faShieldAlt} className="trust-icon" />
+                <div className="trust-text">Secure Booking</div>
+              </div>
+            </div>
+            <div className="col-6 col-md-3">
+              <div className="trust-item">
+                <FontAwesomeIcon icon={faHeadset} className="trust-icon" />
+                <div className="trust-text">24/7 Support</div>
+              </div>
+            </div>
+            <div className="col-6 col-md-3">
+              <div className="trust-item">
+                <FontAwesomeIcon icon={faMoneyBillWave} className="trust-icon" />
+                <div className="trust-text">Best Price Guarantee</div>
+              </div>
+            </div>
+            <div className="col-6 col-md-3">
+              <div className="trust-item">
+                <FontAwesomeIcon icon={faUserShield} className="trust-icon" />
+                <div className="trust-text">Privacy Protected</div>
               </div>
             </div>
           </div>

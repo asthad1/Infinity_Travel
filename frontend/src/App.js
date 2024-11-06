@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import Login from './components/Login';
 import Register from './components/Register';
 import Home from './pages/Home';
@@ -70,6 +71,7 @@ function App() {
           
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
+        <Footer />
       </Router>
     </FlightProvider>
   );
