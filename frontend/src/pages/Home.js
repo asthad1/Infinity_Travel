@@ -1,10 +1,15 @@
-import React from 'react';
-import './Home.css';  // Custom CSS for styling
-import FlightSearchForm from '../components/FlightSearchForm';  
-import travelImage from '../assets/images/ladyonboat.jpg';  // Import image
-import NotificationBanner from '../components/NotificationBanner'; // Import NotificationBanner
+import React, { useState } from 'react';
+import './Home.css';
+import FlightSearchForm from '../components/FlightSearchForm';
+import HotelSearchForm from '../components/HotelSearchForm';
+import travelImage from '../assets/images/ladyonboat.jpg';
+import NotificationBanner from '../components/NotificationBanner';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlane, faHotel } from '@fortawesome/free-solid-svg-icons';
 
 function Home() {
+  const [searchType, setSearchType] = useState('flights'); // 'flights' or 'hotels'
+
   // Retrieve user information from localStorage
   const user = JSON.parse(localStorage.getItem('user'));
 
@@ -35,9 +40,37 @@ function Home() {
         </div>
       </div>
 
-      {/* Flight Search Section */}
-      <div className="container my-5">  {/* Add margin to ensure space between sections */}
-        <FlightSearchForm />
+      {/* Search Type Toggle */}
+      <div className="container my-4">
+        <div className="search-toggle-container text-center">
+          <div className="btn-group" role="group" aria-label="Search type toggle">
+            <button
+              type="button"
+              className={`btn ${searchType === 'flights' ? 'btn-primary' : 'btn-outline-primary'}`}
+              onClick={() => setSearchType('flights')}
+            >
+              <FontAwesomeIcon icon={faPlane} className="me-2" />
+              Flights
+            </button>
+            <button
+              type="button"
+              className={`btn ${searchType === 'hotels' ? 'btn-primary' : 'btn-outline-primary'}`}
+              onClick={() => setSearchType('hotels')}
+            >
+              <FontAwesomeIcon icon={faHotel} className="me-2" />
+              Hotels
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Search Section */}
+      <div className="container my-4">
+        {searchType === 'flights' ? (
+          <FlightSearchForm />
+        ) : (
+          <HotelSearchForm />
+        )}
       </div>
 
       {/* Features Section */}
