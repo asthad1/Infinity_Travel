@@ -122,8 +122,7 @@ class Coupon(BaseModel, db.Model):
     coupon_id = Column(Integer, primary_key=True)
     coupon_code = Column(String(15), nullable=False, unique=True)
     coupon_code_name = Column(String(50), nullable=False, unique=True)
-    discount_percentage = Column(Float, nullable=True)
-    discount_amount = Column(Float, nullable=True)
+    discount_amount = Column(Float, nullable=False)
     start_date = Column(DateTime, nullable=False)
     end_date = Column(DateTime, nullable=False)
     minimum_order_amount = Column(Float, nullable=True)
@@ -189,6 +188,40 @@ class SavedSearch(BaseModel, db.Model):
             'to_country': self.to_country,
             'from_city': self.from_city,
             'to_city': self.to_city
+        }
+
+class SearchMetrics(db.Model):
+    __tablename__ = 'search_metrics'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=True)
+    user_role = db.Column(db.String(50), default='guest')
+    from_airport = db.Column(db.String(5), nullable=False)
+    to_airport = db.Column(db.String(5), nullable=False)
+    departure_date = db.Column(db.Date, nullable=False)
+    return_date = db.Column(db.Date, nullable=True)
+    travelers = db.Column(db.Integer, default=1)
+    roundtrip = db.Column(db.Boolean, default=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    max_stops = db.Column(db.Integer, nullable=True)
+    preferred_airline = db.Column(db.String(100), nullable=True)
+    max_price = db.Column(db.Numeric(10, 2), nullable=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'user_role': self.user_role,
+            'from_airport': self.from_airport,
+            'to_airport': self.to_airport,
+            'departure_date': self.departure_date,
+            'return_date': self.return_date,
+            'travelers': self.travelers,
+            'roundtrip': self.roundtrip,
+            'timestamp': self.timestamp,
+            'max_stops': self.max_stops,
+            'preferred_airline': self.preferred_airline,
+            'max_price': float(self.max_price) if self.max_price else None,
         }
 
 class CouponRedemption(db.Model):
