@@ -290,7 +290,7 @@ const HotelSearchForm = () => {
 
             {/* Search Button */}
             <div className="col-md-6 col-lg-1 d-flex align-items-end">
-              <button type="submit" className="btn btn-primary w-100" disabled={isLoading}>
+              <button type="submit" className="btn btn-primary custom-search-button" disabled={isLoading}>
                 Search
               </button>
             </div>

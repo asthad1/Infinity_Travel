@@ -63,6 +63,10 @@
   transform: scale(1.05);
 }
 
+.custom-search-button {
+  height: 2.7rem;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .hotel-card .card-img-top {
