@@ -1,61 +1,123 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHotel, faCalendarAlt, faUser, faStar, faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons';
 import Select from 'react-select';
 import { Card, Modal, Button } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import './HotelSearchForm.css';
 
-// Mock data for cities
-const cityOptions = [
-  { value: 'nyc', label: 'New York, NY' },
-  { value: 'sfo', label: 'San Francisco, CA' },
-  { value: 'mia', label: 'Miami, FL' },
-  { value: 'lax', label: 'Los Angeles, CA' },
-  { value: 'chi', label: 'Chicago, IL' },
-  { value: 'bos', label: 'Boston, MA' },
-  { value: 'sea', label: 'Seattle, WA' },
-  { value: 'den', label: 'Denver, CO' }
-];
-
-// Mock hotel data with expanded properties
 const mockHotels = {
-  'nyc': [
+  // New York (ID: 12)
+  12: [
     {
       id: 1,
-      name: 'The Grand Plaza Hotel',
-      rating: 4.5,
-      pricePerNight: 299,
+      name: 'The Plaza New York',
+      rating: 4.8,
+      pricePerNight: 599,
       image: '/api/placeholder/400/250',
-      amenities: ['Pool', 'Spa', 'Restaurant', 'Gym', 'Free Wi-Fi'],
-      address: '123 Broadway, New York, NY',
-      neighborhood: 'Midtown Manhattan',
-      reviewCount: 1250
+      amenities: ['5-Star Dining', 'Spa', 'Luxury Suites', 'Central Park Views', 'Butler Service'],
+      neighborhood: 'Central Park South',
+      reviewCount: 2150
     },
     {
       id: 2,
-      name: 'Central Park View Inn',
-      rating: 4.2,
-      pricePerNight: 259,
+      name: 'Manhattan Sky Hotel',
+      rating: 4.5,
+      pricePerNight: 299,
       image: '/api/placeholder/400/250',
-      amenities: ['Restaurant', 'Business Center', 'Gym', 'Free Wi-Fi'],
-      address: '456 5th Avenue, New York, NY',
-      neighborhood: 'Upper East Side',
-      reviewCount: 890
+      amenities: ['Rooftop Bar', 'Gym', 'Restaurant', 'Business Center', 'Free Wi-Fi'],
+      neighborhood: 'Times Square',
+      reviewCount: 1890
     }
   ],
-  'sfo': [
+  // Los Angeles (ID: 11)
+  11: [
     {
       id: 3,
-      name: 'Bay Area Luxury Hotel',
+      name: 'Beverly Hills Luxury Resort',
       rating: 4.7,
+      pricePerNight: 499,
+      image: '/api/placeholder/400/250',
+      amenities: ['Pool', 'Spa', 'Celebrity Chef Restaurant', 'Valet Parking', 'Tennis Courts'],
+      neighborhood: 'Beverly Hills',
+      reviewCount: 1750
+    },
+    {
+      id: 4,
+      name: 'Santa Monica Beach Hotel',
+      rating: 4.4,
+      pricePerNight: 329,
+      image: '/api/placeholder/400/250',
+      amenities: ['Beachfront', 'Pool', 'Yoga Classes', 'Ocean View Restaurant', 'Bike Rentals'],
+      neighborhood: 'Santa Monica',
+      reviewCount: 2100
+    }
+  ],
+  // Paris (ID: 24)
+  24: [
+    {
+      id: 5,
+      name: 'Le Grand Paris Palace',
+      rating: 4.9,
+      pricePerNight: 799,
+      image: '/api/placeholder/400/250',
+      amenities: ['Eiffel Tower Views', 'Michelin Star Restaurant', 'Luxury Spa', 'Concierge', 'Airport Transfer'],
+      neighborhood: 'Champs-Élysées',
+      reviewCount: 1580
+    }
+  ],
+  // Tokyo (ID: 36)
+  36: [
+    {
+      id: 6,
+      name: 'Tokyo Sky Tower Hotel',
+      rating: 4.6,
+      pricePerNight: 450,
+      image: '/api/placeholder/400/250',
+      amenities: ['Sky Lounge', 'Japanese Garden', 'Sushi Restaurant', 'Tea Ceremony Room', 'Robot Concierge'],
+      neighborhood: 'Shinjuku',
+      reviewCount: 2300
+    }
+  ],
+  // Dubai (ID: 50)
+  50: [
+    {
+      id: 7,
+      name: 'Burj Al Arab View Resort',
+      rating: 4.9,
+      pricePerNight: 899,
+      image: '/api/placeholder/400/250',
+      amenities: ['Private Beach', 'Infinity Pool', 'Helipad', 'Gold-Plated Furnishings', 'Underwater Restaurant'],
+      neighborhood: 'Jumeirah Beach',
+      reviewCount: 1950
+    }
+  ],
+  // San Francisco (ID: 14)
+  14: [
+    {
+      id: 8,
+      name: 'Bay Area Deluxe Hotel',
+      rating: 4.5,
       pricePerNight: 399,
       image: '/api/placeholder/400/250',
-      amenities: ['Pool', 'Spa', 'Restaurant', 'Bar', 'Ocean View'],
-      address: '789 Market Street, San Francisco, CA',
-      neighborhood: 'Financial District',
-      reviewCount: 2100
+      amenities: ['Bay Views', 'Wine Bar', 'Tech Hub', 'Bike Rentals', 'Gourmet Restaurant'],
+      neighborhood: 'Fisherman\'s Wharf',
+      reviewCount: 1670
+    }
+  ],
+  // Miami (ID: 16)
+  16: [
+    {
+      id: 9,
+      name: 'South Beach Paradise Resort',
+      rating: 4.7,
+      pricePerNight: 459,
+      image: '/api/placeholder/400/250',
+      amenities: ['Private Beach', 'Infinity Pool', 'Nightclub', 'Spa', 'Beach Service'],
+      neighborhood: 'South Beach',
+      reviewCount: 2200
     }
   ]
 };
@@ -63,6 +125,11 @@ const mockHotels = {
 const HotelSearchForm = () => {
   const navigate = useNavigate();
   const user = useSelector((state) => state.user);
+  
+  // State management
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [selectedState, setSelectedState] = useState(null);
   const [destination, setDestination] = useState(null);
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
@@ -72,6 +139,62 @@ const HotelSearchForm = () => {
   const [selectedHotel, setSelectedHotel] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Add helper function for location display
+  const getDisplayLocation = () => {
+    if (!destination) return '';
+    const state = states.find(s => s.value === selectedState?.value);
+    return `${destination.label}${state ? `, ${state.label}` : ''}`;
+  };
+
+  // Fetch states and cities on component mount
+  useEffect(() => {
+    const fetchStatesAndCities = async () => {
+      try {
+        setIsLoading(true);
+        const [statesResponse, citiesResponse] = await Promise.all([
+          axios.get('http://localhost:9001/api/states'),
+          axios.get('http://localhost:9001/api/cities')
+        ]);
+
+        const formattedStates = statesResponse.data.map(state => ({
+          value: state.id,
+          label: state.state_name
+        }));
+
+        const formattedCities = citiesResponse.data.map(city => ({
+          value: city.id,
+          label: city.city_name,
+          state_id: city.state_id
+        }));
+
+        setStates(formattedStates);
+        setCities(formattedCities);
+      } catch (error) {
+        console.error('Error fetching locations:', error);
+        setErrorMessage('Error loading location data. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStatesAndCities();
+  }, []);
+
+  // Filter cities based on selected state
+  const filteredCityOptions = selectedState
+    ? cities.filter(city => city.state_id === selectedState.value).map(city => ({
+        value: city.value,
+        label: `${city.label}, ${selectedState.label}`
+      }))
+    : cities.map(city => {
+        const cityState = states.find(state => state.value === city.state_id);
+        return {
+          value: city.value,
+          label: `${city.label}, ${cityState ? cityState.label : ''}`
+        };
+      });
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -93,8 +216,10 @@ const HotelSearchForm = () => {
     const hotels = mockHotels[destination.value] || [];
     const results = hotels.map(hotel => ({
       ...hotel,
+      address: `${hotel.neighborhood}, ${getDisplayLocation()}`,
       totalPrice: calculateTotalPrice(hotel.pricePerNight, checkIn, checkOut)
     }));
+    
     setSearchResults(results);
     setShowResults(true);
   };
@@ -122,22 +247,44 @@ const HotelSearchForm = () => {
         
         <form onSubmit={handleSearch} className="p-3">
           <div className="row g-3">
+            {/* State Selection */}
             <div className="col-md-6 col-lg-3">
               <label className="form-label">
                 <FontAwesomeIcon icon={faMapMarkerAlt} className="me-2" />
-                Destination <span className="text-danger">*</span>
+                State
               </label>
               <Select
-                options={cityOptions}
+                options={states}
+                value={selectedState}
+                onChange={(option) => {
+                  setSelectedState(option);
+                  setDestination(null);
+                }}
+                placeholder="Select State"
+                isClearable={true}
+                className="hotel-select"
+                isDisabled={isLoading}
+              />
+            </div>
+
+            {/* City Selection */}
+            <div className="col-md-6 col-lg-3">
+              <label className="form-label">
+                <FontAwesomeIcon icon={faMapMarkerAlt} className="me-2" />
+                City <span className="text-danger">*</span>
+              </label>
+              <Select
+                options={filteredCityOptions}
                 value={destination}
                 onChange={setDestination}
                 placeholder="Select City"
                 isClearable={true}
                 className="hotel-select"
+                isDisabled={isLoading}
               />
             </div>
 
-            <div className="col-md-6 col-lg-3">
+            <div className="col-md-6 col-lg-2">
               <label className="form-label">
                 <FontAwesomeIcon icon={faCalendarAlt} className="me-2" />
                 Check-in <span className="text-danger">*</span>
@@ -151,7 +298,7 @@ const HotelSearchForm = () => {
               />
             </div>
 
-            <div className="col-md-6 col-lg-3">
+            <div className="col-md-6 col-lg-2">
               <label className="form-label">
                 <FontAwesomeIcon icon={faCalendarAlt} className="me-2" />
                 Check-out <span className="text-danger">*</span>
@@ -165,7 +312,7 @@ const HotelSearchForm = () => {
               />
             </div>
 
-            <div className="col-md-6 col-lg-2">
+            <div className="col-md-6 col-lg-1">
               <label className="form-label">
                 <FontAwesomeIcon icon={faUser} className="me-2" />
                 Guests
@@ -180,8 +327,8 @@ const HotelSearchForm = () => {
               />
             </div>
 
-            <div className="col-md-12 col-lg-1 d-flex align-items-end">
-              <button type="submit" className="btn btn-primary w-100">
+            <div className="col-md-6 col-lg-1 d-flex align-items-end">
+              <button type="submit" className="btn btn-primary w-100" disabled={isLoading}>
                 Search
               </button>
             </div>
@@ -196,14 +343,14 @@ const HotelSearchForm = () => {
 
         {showResults && (
           <div className="mt-4">
-            <h3 className="mb-3">Available Hotels in {destination.label}</h3>
+            <h3 className="mb-3">Available Hotels in {getDisplayLocation()}</h3>
             <div className="row g-4">
               {searchResults.length > 0 ? (
                 searchResults.map((hotel) => (
                   <div key={hotel.id} className="col-md-6 col-lg-4">
                     <Card className="h-100 hotel-card shadow-sm">
                       <Card.Img variant="top" src={hotel.image} alt={hotel.name} />
-                      <Card.Body>
+                      <Card.Body className="d-flex flex-column">
                         <Card.Title className="d-flex justify-content-between align-items-start">
                           <span>{hotel.name}</span>
                           <span className="badge bg-primary">
@@ -213,7 +360,7 @@ const HotelSearchForm = () => {
                         </Card.Title>
                         <p className="text-muted small mb-2">
                           <FontAwesomeIcon icon={faMapMarkerAlt} className="me-1" />
-                          {hotel.neighborhood}
+                          {hotel.address}
                         </p>
                         <div className="mb-3">
                           {hotel.amenities.map((amenity, index) => (
@@ -246,7 +393,7 @@ const HotelSearchForm = () => {
               ) : (
                 <div className="col">
                   <p className="text-center text-muted">
-                    No hotels available for the selected dates in {destination.label}.
+                    No hotels available for the selected dates in {getDisplayLocation()}.
                   </p>
                 </div>
               )}
@@ -265,10 +412,10 @@ const HotelSearchForm = () => {
                 <p className="mb-2">{selectedHotel.address}</p>
                 <div className="mb-3">
                   <div className="mb-2">
-                    <strong>Check-in:</strong> {new Date(checkIn).toLocaleDateString()}
+                    <strong>Check-in:</strong> {checkIn && new Date(checkIn).toLocaleDateString()}
                   </div>
                   <div className="mb-2">
-                    <strong>Check-out:</strong> {new Date(checkOut).toLocaleDateString()}
+                    <strong>Check-out:</strong> {checkOut && new Date(checkOut).toLocaleDateString()}
                   </div>
                   <div>
                     <strong>Guests:</strong> {guests}
