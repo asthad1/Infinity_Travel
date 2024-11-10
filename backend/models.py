@@ -255,3 +255,11 @@ class BookedFlight(BaseModel, db.Model):
     total_price = Column(Float, nullable=False)
     payment_method = Column(String, nullable=False)  # e.g., "Credit Card", "PayPal", "Google Pay"
     booking_date = Column(DateTime, default=datetime.utcnow)
+
+class EmailNotifications(db.Model):
+    __tablename__ = 'email_notifications'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    email = Column(String, nullable=False)

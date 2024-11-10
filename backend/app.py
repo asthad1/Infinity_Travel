@@ -1160,36 +1160,83 @@ def confirmation():
         return jsonify({"booking": booking_details}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+#===================Send email notifications========================
+
+# Create a new email notification
+@app.route('/api/email_notifications', methods=['POST'])
+def create_email_notifications():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    email = data.get('email')
     
-@app.route('/api/booked_flights', methods=['GET'])
-def get_booked_flights():
+    # Ensure both user_id and email are provided
+    if not user_id or not email:
+        return jsonify({"error": "user_id and email are required"}), 400
+    
+    # Create new EmailNotifications entry
+    email_notification = EmailNotifications(user_id=user_id, email=email)
+    db.session.add(email_notification)
+    db.session.commit()
+    
+    return jsonify({"message": "Email notification created successfully"}), 201
+
+
+# Retrieve all email notifications for a user
+@app.route('/api/email_notifications', methods=['GET'])
+def get_email_notifications():
     user_id = request.args.get('user_id')
     
     if not user_id:
-        return jsonify({"error": "User ID is required"}), 400
+        return jsonify({"error": "user_id is required"}), 400
 
-    try:
-        flights = BookedFlight.query.filter_by(user_id=user_id).all()
-        flight_data = [
-            {
-                "id": flight.id,
-                "airline": flight.airline,
-                "flight_number": flight.flight_number,
-                "departure_airport": flight.from_airport,
-                "destination_airport": flight.to_airport,
-                "departure_time": flight.departure_date.isoformat(),
-                "arrival_time": flight.arrival_date.isoformat(),
-                "duration": flight.duration,
-                "price": flight.price,
-                "travelers": flight.travelers,
-                "total_price": flight.total_price,
-                "payment_method": flight.payment_method,
-            }
-            for flight in flights
-        ]
-        return jsonify(flight_data), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500   
+    # Filter email notifications by user_id
+    email_notifications = EmailNotifications.query.filter_by(user_id=user_id).all()
+    results = [{"user_id": en.user_id, "email": en.email} for en in email_notifications]
+    
+    return jsonify(results), 200
+
+# Update an existing email notification
+@app.route('/api/email_notifications', methods=['PUT'])
+def update_email_notifications():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    email = data.get('email')
+    
+    # Ensure both user_id and email are provided
+    if not user_id or not email:
+        return jsonify({"error": "user_id and email are required"}), 400
+    
+    # Find the existing email notification by user_id
+    email_notification = EmailNotifications.query.filter_by(user_id=user_id).first()
+    if not email_notification:
+        return jsonify({"error": "Email notification not found"}), 404
+    
+    # Update email field
+    email_notification.email = email
+    db.session.commit()
+    
+    return jsonify({"message": "Email notification updated successfully"}), 200
+ 
+# Delete an email notification
+@app.route('/api/email_notifications', methods=['DELETE'])
+def delete_email_notifications():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    
+    # Ensure user_id is provided
+    if not user_id:
+        return jsonify({"error": "user_id is required"}), 400
+    
+    # Find and delete the email notification by user_id
+    email_notification = EmailNotifications.query.filter_by(user_id=user_id).first()
+    if not email_notification:
+        return jsonify({"error": "Email notification not found"}), 404
+    
+    db.session.delete(email_notification)
+    db.session.commit()
+    
+    return jsonify({"message": "Email notification deleted successfully"}), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9001, debug=True)
