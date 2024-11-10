@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Login from './components/Login';
@@ -20,6 +20,7 @@ import MetricsPage from './pages/Metrics';
 import PaymentGateway from './pages/PaymentGateway';
 import { FlightProvider } from './context/FlightContext';
 import MyRentals from './components/MyRentals';
+import ThingsToDo from './components/ThingsToDo';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(() => {
@@ -67,6 +68,7 @@ function App() {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/payment-gateway" element={<PaymentGateway />} />
           <Route path="/my-rentals" element={<MyRentals />} />
+          <Route path="/things-to-do" element={<ThingsToDo />} />
           {/* Admin-only routes */}
           <Route path="/coupons" element={currentUser?.role === 'admin' ? <CouponsPage /> : <Navigate to="/" />} />
           <Route path="/metrics" element={currentUser?.role === 'admin' ? <MetricsPage /> : <Navigate to="/" />} />
