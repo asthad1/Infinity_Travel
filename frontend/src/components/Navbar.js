@@ -95,6 +95,9 @@ function Navbar({ user }) {
                     <li><Link className="dropdown-item" to="/profile">Change Password</Link></li>
                     <li><Link className="dropdown-item" to="/my-favorites">My Favorites</Link></li>
                     <li>
+                      <Link className="dropdown-item" to="/my-rentals">My Rentals</Link>
+                    </li>
+                    <li>
                       <Link
                         className="dropdown-item d-flex justify-content-between align-items-center"
                         to="/my-flights"

@@ -2,79 +2,85 @@
 .rental-card {
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
     height: 100%;
-  }
-  
-  .rental-card:hover {
+}
+
+.rental-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
-  }
-  
-  .rental-card .card-img-top {
+}
+
+.rental-card .card-img-top {
     height: 200px;
     object-fit: cover;
-  }
-  
-  .rental-card .badge {
+}
+
+.rental-card .badge {
     font-weight: 500;
     padding: 0.5em 0.8em;
-  }
-  
-  .rental-card .card-title {
+}
+
+.rental-card .card-title {
     font-size: 1.2rem;
     margin-bottom: 0.75rem;
     color: #2c3e50;
-  }
-  
-  .rental-select .select__control {
+}
+
+.rental-select .select__control {
     border-color: #ced4da;
     border-radius: 0.25rem;
-  }
-  
-  .rental-select .select__control:hover {
+}
+
+.rental-select .select__control:hover {
     border-color: #86b7fe;
-  }
-  
-  .rental-select .select__control--is-focused {
+}
+
+.rental-select .select__control--is-focused {
     box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
     border-color: #86b7fe;
-  }
-  
-  .rental-card .text-muted {
+}
+
+.rental-card .text-muted {
     color: #6c757d !important;
-  }
-  
-  .rental-card .btn-primary {
+}
+
+.rental-card .btn-primary {
     padding: 0.5rem 1.5rem;
-  }
-  
-  .rental-card .badge.bg-light {
+}
+
+.rental-card .badge.bg-light {
     background-color: #f8f9fa !important;
     border: 1px solid #dee2e6;
-  }
-  
-  .rental-image {
+}
+
+.rental-image {
     height: 250px;
     object-fit: cover;
     object-position: center;
     transition: transform 0.3s ease;
-  }
-  
-  .rental-image:hover {
+}
+
+.rental-image:hover {
     transform: scale(1.05);
-  }
-  
-  .custom-search-button {
+}
+
+.custom-search-button {
     height: 2.7rem;
-  }
-  
-  /* Responsive adjustments */
-  @media (max-width: 768px) {
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
     .rental-card .card-img-top {
-      height: 180px;
+        height: 180px;
     }
-  
+
     .rental-card .card-title {
-      font-size: 1.1rem;
+        font-size: 1.1rem;
     }
-  }
-  
+}
+
+.modal-body {
+    background-size: cover;
+    background-position: center;
+    color: white;
+    padding: 20px;
+}

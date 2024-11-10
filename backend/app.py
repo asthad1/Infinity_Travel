@@ -1465,34 +1465,33 @@ def book_rental():
     rental_id = data.get('rental_id')
     user_id = data.get('user_id')
     pickup_date = data.get('pickup_date')
+    pickup_time = data.get('pickup_time')  # Retrieve pickup_time
     drop_off_date = data.get('drop_off_date')
-    
-    # Validate inputs
-    if not all([rental_id, user_id, pickup_date, drop_off_date]):
+    dropoff_time = data.get('dropoff_time')  # Retrieve dropoff_time
+
+    if not all([rental_id, user_id, pickup_date, pickup_time, drop_off_date, dropoff_time]):
         return jsonify({"error": "Missing required booking information"}), 400
 
-    # Fetch rental and calculate total price
     rental = Rental.query.get(rental_id)
     if not rental:
         return jsonify({"error": "Rental not found"}), 404
 
-    # Calculate number of days and total price
-    from datetime import datetime
-    pickup = datetime.strptime(pickup_date, '%Y-%m-%d')
-    drop_off = datetime.strptime(drop_off_date, '%Y-%m-%d')
-    days = (drop_off - pickup).days
+    pickup_datetime = datetime.strptime(f"{pickup_date} {pickup_time}", '%Y-%m-%d %H:%M')
+    dropoff_datetime = datetime.strptime(f"{drop_off_date} {dropoff_time}", '%Y-%m-%d %H:%M')
+    days = (dropoff_datetime - pickup_datetime).days
 
     if days < 1:
         return jsonify({"error": "Drop-off date must be after pickup date"}), 400
 
     total_price = days * rental.price_per_day
 
-    # Create booking record
-    booking = RentalBooking(
+    booking = BookedRental(
         rental_id=rental_id,
         user_id=user_id,
-        pickup_date=pickup,
-        drop_off_date=drop_off,
+        pickup_date=pickup_datetime.date(),
+        pickup_time=pickup_datetime.time(),  # Save pickup_time
+        drop_off_date=dropoff_datetime.date(),
+        dropoff_time=dropoff_datetime.time(),  # Save dropoff_time
         total_price=total_price
     )
 
@@ -1504,9 +1503,32 @@ def book_rental():
         "booking_id": booking.id,
         "rental_id": rental_id,
         "pickup_date": pickup_date,
+        "pickup_time": pickup_time,
         "drop_off_date": drop_off_date,
+        "dropoff_time": dropoff_time,
         "total_price": total_price
     })
+
+
+@app.route('/api/rentals/my-rentals/<int:user_id>', methods=['GET'])
+def get_user_rentals(user_id):
+    try:
+        rentals = BookedRental.query.filter_by(user_id=user_id).all()
+        rental_data = [{
+            "id": rental.id,
+            "rental_id": rental.rental_id,
+            "pickup_date": rental.pickup_date,
+            "pickup_time": rental.pickup_time.strftime("%H:%M"),  # Include pickup_time
+            "drop_off_date": rental.drop_off_date,
+            "dropoff_time": rental.dropoff_time.strftime("%H:%M"),  # Include dropoff_time
+            "total_price": float(rental.total_price),
+            "rental_name": rental.rental.name
+        } for rental in rentals]
+
+        return jsonify(rental_data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9001, debug=True)

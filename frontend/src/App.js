@@ -19,6 +19,7 @@ import CouponsPage from './pages/Coupons';
 import MetricsPage from './pages/Metrics';
 import PaymentGateway from './pages/PaymentGateway';
 import { FlightProvider } from './context/FlightContext';
+import MyRentals from './components/MyRentals';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(() => {
@@ -65,6 +66,7 @@ function App() {
           <Route path="/flights" element={<FlightSearchForm />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/payment-gateway" element={<PaymentGateway />} />
+          <Route path="/my-rentals" element={<MyRentals />} />
           {/* Admin-only routes */}
           <Route path="/coupons" element={currentUser?.role === 'admin' ? <CouponsPage /> : <Navigate to="/" />} />
           <Route path="/metrics" element={currentUser?.role === 'admin' ? <MetricsPage /> : <Navigate to="/" />} />

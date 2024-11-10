@@ -394,3 +394,19 @@ class RentalBooking(db.Model):
 
     def __repr__(self):
         return f'<RentalBooking {self.id} for Rental {self.rental_id}>'
+
+
+class BookedRental(db.Model):
+    __tablename__ = 'booked_rentals'
+    id = db.Column(db.Integer, primary_key=True)
+    rental_id = db.Column(db.Integer, db.ForeignKey('rentals.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    pickup_date = db.Column(db.Date, nullable=False)
+    pickup_time = db.Column(db.Time, nullable=False)  # Add pickup_time
+    drop_off_date = db.Column(db.Date, nullable=False)
+    dropoff_time = db.Column(db.Time, nullable=False)  # Add dropoff_time
+    total_price = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    rental = db.relationship('Rental', backref=db.backref('booked_rentals', lazy=True))
+    user = db.relationship('User', backref=db.backref('booked_rentals', lazy=True))
