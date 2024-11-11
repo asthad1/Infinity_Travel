@@ -15,12 +15,26 @@ from extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
 import logging
 from datetime import datetime
+from operator import itemgetter
+from flask import jsonify
 
 # Load environment variables
 # load_dotenv()
 
+# Near the top of your file, after the Flask app initialization
 app = Flask(__name__)
-CORS(app)
+
+# Update the CORS configuration
+CORS(app, resources={
+    r"/api/*": {
+        "origins": ["http://localhost:3000"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True
+    }
+})
+
+# Rest of your configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://infinity_travel_owner:q9urkfXI7nGg@ep-spring-frost-a4siuz5k.us-east-1.aws.neon.tech/infinity_travel?sslmode=require'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(message)s')
@@ -1528,6 +1542,84 @@ def get_user_rentals(user_id):
         return jsonify(rental_data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+
+@app.route('/api/combined-bookings/<int:user_id>', methods=['GET'])
+def get_combined_bookings(user_id):
+    try:
+        print(f"Fetching bookings for user ID: {user_id}")  # Debug log
+        
+        # Get rentals
+        rentals = BookedRental.query.filter_by(user_id=user_id).all()
+        print(f"Found {len(rentals)} rentals")  # Debug log
+        rental_bookings = [{
+            "id": rental.id,
+            "type": "rental",
+            "rental_id": rental.rental_id,
+            "name": rental.rental.name,
+            "start_date": rental.pickup_date.isoformat(),
+            "end_date": rental.drop_off_date.isoformat(),
+            "price": float(rental.total_price),
+            "details": {
+                "pickup_time": rental.pickup_time.strftime("%H:%M"),
+                "dropoff_time": rental.dropoff_time.strftime("%H:%M")
+            }
+            } for rental in rentals]
+
+        # Get hotel bookings
+        hotel_bookings = HotelBooking.query.filter_by(user_id=user_id).all()
+        print(f"Found {len(hotel_bookings)} hotel bookings")  # Debug log
+        hotel_data = [{
+            "id": booking.id,
+            "type": "hotel",
+            "name": booking.hotel.name,
+            "start_date": booking.check_in_date.isoformat(),
+            "end_date": booking.check_out_date.isoformat(),
+            "price": float(booking.total_price),
+            "details": {
+                "num_guests": booking.num_guests,
+                "room_count": booking.room_count,
+                "status": booking.status
+            }
+        } for booking in hotel_bookings]
+
+        # Get flight bookings
+        flights = BookedFlight.query.filter_by(user_id=user_id).all()
+        print(f"Found {len(flights)} flights")  # Debug log
+        flight_data = [{
+            "id": flight.id,
+            "type": "flight",
+            "name": f"{flight.airline} {flight.flight_number}",
+            "start_date": flight.departure_date.isoformat(),
+            "end_date": flight.arrival_date.isoformat(),
+            "price": float(flight.total_price),
+            "details": {
+                "airline": flight.airline,
+                "flight_number": flight.flight_number,
+                "from": flight.from_airport,
+                "to": flight.to_airport,
+                "duration": flight.duration,
+                "travelers": flight.travelers,
+                "payment_method": flight.payment_method
+            }
+        } for flight in flights]
+
+        # Combine all bookings
+        all_bookings = rental_bookings + hotel_data + flight_data
+
+        # Sort by start_date in descending order and get the 5 most recent
+        sorted_bookings = sorted(
+            all_bookings,
+            key=lambda x: x['start_date'],
+            reverse=True
+        )
+
+        print(f"Returning {len(sorted_bookings)} total bookings")  # Debug log
+        return jsonify(sorted_bookings), 200
+
+    except Exception as e:
+        print(f"Error in get_combined_bookings: {str(e)}")  # Debug log
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == '__main__':
