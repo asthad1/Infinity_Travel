@@ -355,3 +355,58 @@ class HotelReview(BaseModel, db.Model):
 
     def __repr__(self):
         return f'<HotelReview {self.id} by {self.user.name} for {self.hotel.name}>'
+    
+
+class Rental(db.Model):
+    __tablename__ = 'rentals'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    price_per_day = db.Column(db.Float, nullable=False)
+    pickup_city_id = db.Column(db.Integer, db.ForeignKey('cities.id'), nullable=False)
+    drop_off_city_id = db.Column(db.Integer, db.ForeignKey('cities.id'), nullable=False)
+    available_from = db.Column(db.DateTime, nullable=False)
+    available_until = db.Column(db.DateTime, nullable=False)
+    min_driver_age = db.Column(db.Integer, nullable=False)
+
+    # Relationships
+    pickup_city = db.relationship("City", foreign_keys=[pickup_city_id])
+    drop_off_city = db.relationship("City", foreign_keys=[drop_off_city_id])
+
+    def __repr__(self):
+        return f'<Rental {self.id} - {self.name} from {self.pickup_city.city_name} to {self.drop_off_city.city_name} available from {self.available_from} to {self.available_until}>'
+    
+
+
+class RentalBooking(db.Model):
+    __tablename__ = 'rental_bookings'
+
+    id = db.Column(db.Integer, primary_key=True)
+    rental_id = db.Column(db.Integer, db.ForeignKey('rentals.id'), nullable=False)
+    user_id = db.Column(db.Integer, nullable=False)  # Assuming user info is available
+    pickup_date = db.Column(db.Date, nullable=False)
+    drop_off_date = db.Column(db.Date, nullable=False)
+    total_price = db.Column(db.Float, nullable=False)
+    booking_date = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    # Relationships
+    rental = db.relationship("Rental", backref="bookings")
+
+    def __repr__(self):
+        return f'<RentalBooking {self.id} for Rental {self.rental_id}>'
+
+
+class BookedRental(db.Model):
+    __tablename__ = 'booked_rentals'
+    id = db.Column(db.Integer, primary_key=True)
+    rental_id = db.Column(db.Integer, db.ForeignKey('rentals.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    pickup_date = db.Column(db.Date, nullable=False)
+    pickup_time = db.Column(db.Time, nullable=False)  # Add pickup_time
+    drop_off_date = db.Column(db.Date, nullable=False)
+    dropoff_time = db.Column(db.Time, nullable=False)  # Add dropoff_time
+    total_price = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    rental = db.relationship('Rental', backref=db.backref('booked_rentals', lazy=True))
+    user = db.relationship('User', backref=db.backref('booked_rentals', lazy=True))

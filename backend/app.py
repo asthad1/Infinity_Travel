@@ -677,6 +677,57 @@ def view_shared_search(url):
     }), 200
 
 
+@app.route('/api/places', methods=['GET'])
+def get_places():
+    # Replace the sample data with actual data as needed
+    places = [
+        {
+            'id': 1,
+            'name': 'Place 1',
+            'description': 'Description of Place 1',
+            'location': 'Location of Place 1',
+            # ...additional fields...
+        },
+        {
+            'id': 2,
+            'name': 'Place 2',
+            'description': 'Description of Place 2',
+            'location': 'Location of Place 2',
+            # ...additional fields...
+        },
+        # ...more places...
+    ]
+    return jsonify(places), 200
+
+
+@app.route('/api/places/search', methods=['GET'])
+def search_places():
+    city = request.args.get('city')
+    if not city:
+        return jsonify({'error': 'City parameter is required'}), 400
+
+    # Sample data - replace with actual data retrieval logic
+    places = [
+        {
+            'id': 1,
+            'name': f'Attraction 1 in {city}',
+            'description': f'Description of Attraction 1 in {city}',
+            'location': f'{city}',
+            # ...additional fields...
+        },
+        {
+            'id': 2,
+            'name': f'Attraction 2 in {city}',
+            'description': f'Description of Attraction 2 in {city}',
+            'location': f'{city}',
+            # ...additional fields...
+        },
+        # ...more places...
+    ]
+
+    return jsonify(places), 200
+
+
 # ===================== CRUD FOR COUPON MODEL ===================== #
 
 # GET all coupons
@@ -1421,7 +1472,114 @@ def get_hotel_reviews(hotel_id):
         'stay_date': review.stay_date.isoformat(),
         'created': review.created.isoformat()
     } for review in reviews]), 200
-    
+
+
+@app.route('/api/rentals/search', methods=['POST'])
+def search_rentals():
+    data = request.get_json()
+    pickup_city = data.get('pickupLocation')
+    drop_off_city = data.get('dropOffLocation')
+    pickup_date = data.get('pickupDate')
+    drop_off_date = data.get('dropOffDate')
+    pickup_time = data.get('pickupTime')
+    drop_off_time = data.get('dropOffTime')
+    driver_age = data.get('driverAge')
+
+    rentals = Rental.query.filter(
+        Rental.pickup_city_id == pickup_city,
+        Rental.drop_off_city_id == drop_off_city,
+        Rental.available_from <= f"{pickup_date} {pickup_time}",
+        Rental.available_until >= f"{drop_off_date} {drop_off_time}",
+        Rental.min_driver_age <= driver_age
+    ).all()
+
+    rental_data = [
+        {
+            "id": rental.id,
+            "name": rental.name,
+            "price_per_day": rental.price_per_day,
+            "pickup_city": rental.pickup_city.city_name,
+            "drop_off_city": rental.drop_off_city.city_name,
+            "available_from": rental.available_from,
+            "available_until": rental.available_until
+        }
+        for rental in rentals
+    ]
+
+    return jsonify(rental_data)
+
+
+
+@app.route('/api/rentals/book', methods=['POST'])
+def book_rental():
+    data = request.get_json()
+    rental_id = data.get('rental_id')
+    user_id = data.get('user_id')
+    pickup_date = data.get('pickup_date')
+    pickup_time = data.get('pickup_time')  # Retrieve pickup_time
+    drop_off_date = data.get('drop_off_date')
+    dropoff_time = data.get('dropoff_time')  # Retrieve dropoff_time
+
+    if not all([rental_id, user_id, pickup_date, pickup_time, drop_off_date, dropoff_time]):
+        return jsonify({"error": "Missing required booking information"}), 400
+
+    rental = Rental.query.get(rental_id)
+    if not rental:
+        return jsonify({"error": "Rental not found"}), 404
+
+    pickup_datetime = datetime.strptime(f"{pickup_date} {pickup_time}", '%Y-%m-%d %H:%M')
+    dropoff_datetime = datetime.strptime(f"{drop_off_date} {dropoff_time}", '%Y-%m-%d %H:%M')
+    days = (dropoff_datetime - pickup_datetime).days
+
+    if days < 1:
+        return jsonify({"error": "Drop-off date must be after pickup date"}), 400
+
+    total_price = days * rental.price_per_day
+
+    booking = BookedRental(
+        rental_id=rental_id,
+        user_id=user_id,
+        pickup_date=pickup_datetime.date(),
+        pickup_time=pickup_datetime.time(),  # Save pickup_time
+        drop_off_date=dropoff_datetime.date(),
+        dropoff_time=dropoff_datetime.time(),  # Save dropoff_time
+        total_price=total_price
+    )
+
+    db.session.add(booking)
+    db.session.commit()
+
+    return jsonify({
+        "message": "Booking successful",
+        "booking_id": booking.id,
+        "rental_id": rental_id,
+        "pickup_date": pickup_date,
+        "pickup_time": pickup_time,
+        "drop_off_date": drop_off_date,
+        "dropoff_time": dropoff_time,
+        "total_price": total_price
+    })
+
+
+@app.route('/api/rentals/my-rentals/<int:user_id>', methods=['GET'])
+def get_user_rentals(user_id):
+    try:
+        rentals = BookedRental.query.filter_by(user_id=user_id).all()
+        rental_data = [{
+            "id": rental.id,
+            "rental_id": rental.rental_id,
+            "pickup_date": rental.pickup_date,
+            "pickup_time": rental.pickup_time.strftime("%H:%M"),  # Include pickup_time
+            "drop_off_date": rental.drop_off_date,
+            "dropoff_time": rental.dropoff_time.strftime("%H:%M"),  # Include dropoff_time
+            "total_price": float(rental.total_price),
+            "rental_name": rental.rental.name
+        } for rental in rentals]
+
+        return jsonify(rental_data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=9001, debug=True)
