@@ -4,20 +4,12 @@ import { useLocation } from 'react-router-dom';
 function ThingsToDo() {
   const location = useLocation();
   const { departureAirport } = location.state || {};
-
-  if (!departureAirport) {
-    return null; // Do not display anything if departureAirport is null
-  }
-
-  const [activities, setActivities] = useState({
-    kids: [],
-    history: [],
-    adventure: []
-  });
+  const [places, setPlaces] = useState([]);
+  const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const extractLocationInfo = (airportLabel) => {
+  const extractCityName = (airportLabel) => {
     // Handle cases like "Los Angeles International (LAX)"
     const cityName = airportLabel
       .split('(')[0] // Split by opening parenthesis and take first part
@@ -25,103 +17,134 @@ function ThingsToDo() {
       .replace(/\bAirport\b/gi, '') // Remove "Airport"
       .trim(); // Remove extra spaces
 
-    // Map cities to their countries - expand this map as needed
-    const cityToCountry = {
-      'Los Angeles': 'United States',
-      'New York': 'United States',
-      'London': 'United Kingdom',
-      'Paris': 'France',
-      // Add more mappings as needed
-    };
-
-    const country = cityToCountry[cityName] || 'Unknown Country';
-    return { city: cityName, country };
+    return cityName;
   };
 
   useEffect(() => {
-    const fetchActivities = async () => {
-      try {
-        const apiKey = 'd5af62e8a7msh29814d697f1a42ap11e339jsn1928849f1bb8';
-        const cityName = extractLocationInfo(departureAirport.label).city;
-        console.log('Searching for activities in:', cityName);
+    let isLoaded = false;
+    let googleMapsScript = null;
 
-        // Use the correct endpoint to search for location
-        const locationResponse = await fetch(
-          `https://tripadvisor16.p.rapidapi.com/api/v1/restaurant/searchRestaurants?locationId=32655`, // Hard-coded LA location ID
-          {
-            headers: {
-              'x-rapidapi-host': 'tripadvisor16.p.rapidapi.com',
-              'x-rapidapi-key': apiKey
-            }
-          }
+    const loadGoogleMapsScript = () => {
+      // Check if script is already in process of loading
+      const existingScript = document.getElementById('google-maps-script');
+      if (existingScript) {
+        return;
+      }
+
+      googleMapsScript = document.createElement('script');
+      googleMapsScript.id = 'google-maps-script';
+      googleMapsScript.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyA7hVesv-ePyj9hF1pzy78gQAV2BoI0YZs&libraries=places&callback=Function.prototype`;
+      googleMapsScript.async = true;
+      googleMapsScript.defer = true;
+
+      googleMapsScript.addEventListener('load', () => {
+        isLoaded = true;
+        fetchPlaces();
+      });
+
+      document.body.appendChild(googleMapsScript);
+    };
+
+    const fetchPlaces = () => {
+      if (!departureAirport?.label || !isLoaded) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const cityName = extractCityName(departureAirport.label);
+        const bounds = new window.google.maps.LatLngBounds(
+          new window.google.maps.LatLng(0, 0),  // Dummy bounds
+          new window.google.maps.LatLng(0, 0)
         );
         
-        if (!locationResponse.ok) {
-          throw new Error(`Location API error: ${locationResponse.status}`);
-        }
-
-        const locationData = await locationResponse.json();
-        console.log('Location data:', locationData); // Debug log
-
-        // Categories for Los Angeles
-        const categories = {
-          kids: {
-            locationId: '32655',
-            tag: 'family-friendly'
-          },
-          history: {
-            locationId: '32655',
-            tag: 'historical'
-          },
-          adventure: {
-            locationId: '32655',
-            tag: 'attractions'
-          }
-        };
-
-        const fetchCategory = async (categoryInfo) => {
-          const response = await fetch(
-            `https://tripadvisor16.p.rapidapi.com/api/v1/restaurant/searchRestaurants?locationId=${categoryInfo.locationId}&category=${categoryInfo.tag}`,
-            {
-              headers: {
-                'x-rapidapi-host': 'tripadvisor16.p.rapidapi.com',
-                'x-rapidapi-key': apiKey
-              }
-            }
-          );
-          
-          if (!response.ok) {
-            throw new Error(`Category API error: ${response.status}`);
-          }
-          
-          const data = await response.json();
-          return data?.data?.data || [];
-        };
-
-        // Fetch all categories
-        const [kidsData, historyData, adventureData] = await Promise.all([
-          fetchCategory(categories.kids),
-          fetchCategory(categories.history),
-          fetchCategory(categories.adventure)
-        ]);
-
-        setActivities({
-          kids: kidsData,
-          history: historyData,
-          adventure: adventureData
+        const center = new window.google.maps.LatLng(0, 0); // Dummy center
+        const map = new window.google.maps.Map(document.createElement('div'), {
+          center,
+          bounds,
+          zoom: 15
         });
-        setLoading(false);
+
+        const service = new window.google.maps.places.PlacesService(map);
+
+        // Search for bars
+        const barRequest = {
+          query: `bars in ${cityName}`,
+          bounds: bounds
+        };
+
+        service.textSearch(barRequest, (results, status) => {
+          if (status === window.google.maps.places.PlacesServiceStatus.OK) {
+            // Transform the data and limit to 5 results
+            const transformedPlaces = results.slice(0, 5).map(place => ({
+              displayName: { text: place.name },
+              formattedAddress: place.formatted_address,
+              rating: place.rating,
+              userRatingCount: place.user_ratings_total,
+              editorialSummary: { text: place.editorial_summary?.overview },
+              photos: place.photos ? [{ 
+                reference: place.photos[0].photo_reference 
+              }] : [],
+              regularOpeningHours: {
+                openNow: place.opening_hours?.open_now
+              }
+            }));
+
+            setPlaces(transformedPlaces);
+          } else {
+            setError('No bar results found');
+          }
+          setLoading(false);
+        });
+
+        // Search for restaurants
+        const restaurantRequest = {
+          query: `restaurants in ${cityName}`,
+          bounds: bounds
+        };
+
+        service.textSearch(restaurantRequest, (results, status) => {
+          if (status === window.google.maps.places.PlacesServiceStatus.OK) {
+            const transformedRestaurants = results.slice(0, 5).map(place => ({
+              name: place.name,
+              formattedAddress: place.formatted_address,
+              rating: place.rating,
+              userRatingCount: place.user_ratings_total,
+              photos: place.photos ? [{ 
+                reference: place.photos[0].photo_reference 
+              }] : [],
+              openNow: place.opening_hours?.open_now,
+            }));
+            setRestaurants(transformedRestaurants);
+          } else {
+            setError('No restaurant results found');
+          }
+        });
+
       } catch (err) {
-        console.error('Error fetching activities:', err);
-        setError(`Failed to load activities: ${err.message}`);
+        console.error('Error fetching places:', err);
+        setError(`Failed to load places: ${err.message}`);
         setLoading(false);
       }
     };
 
-    if (departureAirport?.label) {
-      fetchActivities();
+    if (!window.google) {
+      loadGoogleMapsScript();
+    } else {
+      fetchPlaces();
     }
+
+    return () => {
+      // Cleanup on unmount
+      if (googleMapsScript) {
+        googleMapsScript.remove();
+      }
+    };
   }, [departureAirport]);
+
+  if (!departureAirport) {
+    return null;
+  }
 
   if (loading) {
     return (
@@ -141,47 +164,93 @@ function ThingsToDo() {
     );
   }
 
-  const renderActivityList = (items, category) => (
-    <div className="card mb-4">
-      <div className="card-header">
-        <h3>{category}</h3>
-      </div>
-      <ul className="list-group list-group-flush">
-        {items.map((item) => (
-          <li key={item.restaurantsId || item.locationId} className="list-group-item">
-            <div className="d-flex justify-content-between align-items-start">
-              <div>
-                <h5 className="mb-1">{item.name}</h5>
-                {item.establishmentTypeAndCuisineTags && (
-                  <p className="mb-1 text-muted">
-                    {item.establishmentTypeAndCuisineTags.join(' • ')}
-                  </p>
-                )}
-              </div>
-              <span className="badge bg-primary rounded-pill">
-                Rating: {item.averageRating || 'N/A'}
-                {item.userReviewCount && ` (${item.userReviewCount} reviews)`}
-              </span>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-
   return (
     <div className="container mt-4">
-      <h1 className="mb-4">
-        Things to do in {extractLocationInfo(departureAirport.label).city} ({extractLocationInfo(departureAirport.label).country})
-      </h1>
+      <h1 className="mb-4">Bars in {extractCityName(departureAirport.label)}</h1>
       
-      {renderActivityList(activities.kids, 'For Kids')}
-      {renderActivityList(activities.history, 'History')}
-      {renderActivityList(activities.adventure, 'Adventure')}
-
-      {Object.values(activities).every(arr => arr.length === 0) && (
+      {places.length > 0 ? (
+        <div className="row g-4">
+          {places.map((place, index) => (
+            <div key={index} className="col-md-6 col-lg-4">
+              <div className="card h-100">
+                {place.photos?.[0]?.reference && (
+                  <img 
+                    src={`http://localhost:9001/api/places/photo?photo_reference=${place.photos[0].reference}&maxwidth=400`}
+                    className="card-img-top"
+                    alt={place.displayName?.text}
+                    style={{ height: '200px', objectFit: 'cover' }}
+                  />
+                )}
+                <div className="card-body">
+                  <h5 className="card-title">{place.displayName?.text}</h5>
+                  <p className="card-text text-muted">
+                    <small>{place.formattedAddress}</small>
+                  </p>
+                  {place.editorialSummary?.text && (
+                    <p className="card-text">{place.editorialSummary.text}</p>
+                  )}
+                  <div className="d-flex justify-content-between align-items-center">
+                    <div className="rating">
+                      <span className="badge bg-primary">
+                        ⭐ {place.rating} ({place.userRatingCount} reviews)
+                      </span>
+                    </div>
+                    {place.regularOpeningHours?.openNow !== undefined && (
+                      <span className={`badge ${place.regularOpeningHours.openNow ? 'bg-success' : 'bg-danger'}`}>
+                        {place.regularOpeningHours.openNow ? 'Open' : 'Closed'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
         <div className="alert alert-info" role="alert">
-          No activities found for this location.
+          No bars found in this location.
+        </div>
+      )}
+
+      <h1 className="mb-4">Restaurants in {extractCityName(departureAirport.label)}</h1>
+      {restaurants.length > 0 ? (
+        <div className="row g-4">
+          {restaurants.map((place, index) => (
+            <div key={index} className="col-md-6 col-lg-4">
+              <div className="card h-100">
+                {place.photos?.[0]?.reference && (
+                  <img 
+                    src={`http://localhost:9001/api/places/photo?photo_reference=${place.photos[0].reference}&maxwidth=400`}
+                    className="card-img-top"
+                    alt={place.name}
+                    style={{ height: '200px', objectFit: 'cover' }}
+                  />
+                )}
+                <div className="card-body">
+                  <h5 className="card-title">{place.name}</h5>
+                  <p className="card-text text-muted">
+                    <small>{place.formattedAddress}</small>
+                  </p>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <div className="rating">
+                      <span className="badge bg-primary">
+                        ⭐ {place.rating} ({place.userRatingCount} reviews)
+                      </span>
+                    </div>
+                    {place.openNow !== undefined && (
+                      <span className={`badge ${place.openNow ? 'bg-success' : 'bg-danger'}`}>
+                        {place.openNow ? 'Open' : 'Closed'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="alert alert-info" role="alert">
+          No restaurants found in this location.
         </div>
       )}
     </div>

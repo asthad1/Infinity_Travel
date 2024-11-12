@@ -677,6 +677,57 @@ def view_shared_search(url):
     }), 200
 
 
+@app.route('/api/places', methods=['GET'])
+def get_places():
+    # Replace the sample data with actual data as needed
+    places = [
+        {
+            'id': 1,
+            'name': 'Place 1',
+            'description': 'Description of Place 1',
+            'location': 'Location of Place 1',
+            # ...additional fields...
+        },
+        {
+            'id': 2,
+            'name': 'Place 2',
+            'description': 'Description of Place 2',
+            'location': 'Location of Place 2',
+            # ...additional fields...
+        },
+        # ...more places...
+    ]
+    return jsonify(places), 200
+
+
+@app.route('/api/places/search', methods=['GET'])
+def search_places():
+    city = request.args.get('city')
+    if not city:
+        return jsonify({'error': 'City parameter is required'}), 400
+
+    # Sample data - replace with actual data retrieval logic
+    places = [
+        {
+            'id': 1,
+            'name': f'Attraction 1 in {city}',
+            'description': f'Description of Attraction 1 in {city}',
+            'location': f'{city}',
+            # ...additional fields...
+        },
+        {
+            'id': 2,
+            'name': f'Attraction 2 in {city}',
+            'description': f'Description of Attraction 2 in {city}',
+            'location': f'{city}',
+            # ...additional fields...
+        },
+        # ...more places...
+    ]
+
+    return jsonify(places), 200
+
+
 # ===================== CRUD FOR COUPON MODEL ===================== #
 
 # GET all coupons
