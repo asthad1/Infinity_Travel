@@ -28,7 +28,7 @@ class User(BaseModel, db.Model):
     password = Column(String(255), nullable=False)
     role = Column(String(50), nullable=False)  # To denote user type
     membership_number = db.Column(db.String(45), unique=True, nullable=False)
-    
+
     redemptions = relationship('CouponRedemption', back_populates='user')
 
 
@@ -64,6 +64,7 @@ class Country(BaseModel, db.Model):
     country_code = Column(String(100), nullable=False, unique=True)
     created = Column(DateTime, default=datetime.utcnow)
     modified = Column(DateTime, onupdate=datetime.utcnow)
+
 
 class City(BaseModel, db.Model):
     __tablename__ = 'cities'
@@ -132,7 +133,7 @@ class Coupon(BaseModel, db.Model):
     user_roles = Column(String(50), nullable=True)  # Customer, Vendor, etc.
     # Holiday, First-time User, etc.
     discount_type = Column(String(50), nullable=True)
-    
+
     redemptions = relationship('CouponRedemption', back_populates='coupon')
 
 
@@ -160,7 +161,7 @@ class SavedSearch(BaseModel, db.Model):
     # Last search results
     last_search_date = Column(DateTime, nullable=True)
     last_minimum_price = Column(Integer, nullable=True)
-    
+
     # New fields for country and city
     from_country = Column(String(100), nullable=True)  # Country of origin
     to_country = Column(String(100), nullable=True)    # Destination country
@@ -189,6 +190,7 @@ class SavedSearch(BaseModel, db.Model):
             'from_city': self.from_city,
             'to_city': self.to_city
         }
+
 
 class SearchMetrics(db.Model):
     __tablename__ = 'search_metrics'
@@ -224,12 +226,14 @@ class SearchMetrics(db.Model):
             'max_price': float(self.max_price) if self.max_price else None,
         }
 
+
 class CouponRedemption(db.Model):
     __tablename__ = 'coupon_redemptions'
-    
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    coupon_id = Column(Integer, ForeignKey('coupons.coupon_id'), nullable=False)
+    coupon_id = Column(Integer, ForeignKey(
+        'coupons.coupon_id'), nullable=False)
     redeemed_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -253,7 +257,8 @@ class BookedFlight(BaseModel, db.Model):
     travelers = Column(Integer, nullable=False)
     discount_applied = Column(Float, default=0.0)  # Total discount in dollars
     total_price = Column(Float, nullable=False)
-    payment_method = Column(String, nullable=False)  # e.g., "Credit Card", "PayPal", "Google Pay"
+    # e.g., "Credit Card", "PayPal", "Google Pay"
+    payment_method = Column(String, nullable=False)
     booking_date = Column(DateTime, default=datetime.utcnow)
 
 class EmailNotifications(db.Model):
@@ -263,3 +268,97 @@ class EmailNotifications(db.Model):
     
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     email = Column(String, nullable=False)
+
+class Hotel(BaseModel, db.Model):
+    __tablename__ = 'hotels'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255), nullable=False)
+    city_id = Column(Integer, ForeignKey('cities.id'), nullable=False)
+    address = Column(String(255), nullable=False)
+    neighborhood = Column(String(100), nullable=True)
+    rating = Column(Float, nullable=False)  # e.g., 4.5
+    price_per_night = Column(Float, nullable=False)
+    description = Column(String(1000), nullable=True)
+    check_in_time = Column(String(50), nullable=False,
+                           default='15:00')  # Standard check-in time
+    check_out_time = Column(String(50), nullable=False,
+                            default='11:00')  # Standard check-out time
+    total_rooms = Column(Integer, nullable=False)
+    available_rooms = Column(Integer, nullable=False)
+    # Store as comma-separated list
+    amenities = Column(String(500), nullable=True)
+    # Store as comma-separated URLs
+    images = Column(String(1000), nullable=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    created = Column(DateTime, default=datetime.utcnow)
+    modified = Column(DateTime, onupdate=datetime.utcnow)
+    is_active = Column(Boolean, default=True)
+
+    # Relationships
+    city = relationship('City', backref='hotels')
+
+    def __repr__(self):
+        return f'<Hotel {self.name} in {self.city.city_name}>'
+
+    def to_dict(self):
+        base_dict = super().to_dict()
+        # Convert amenities string to list
+        if base_dict['amenities']:
+            base_dict['amenities'] = base_dict['amenities'].split(',')
+        # Convert images string to list
+        if base_dict['images']:
+            base_dict['images'] = base_dict['images'].split(',')
+        return base_dict
+
+
+class HotelBooking(BaseModel, db.Model):
+    __tablename__ = 'hotel_bookings'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    hotel_id = Column(Integer, ForeignKey('hotels.id'), nullable=False)
+    check_in_date = Column(Date, nullable=False)
+    check_out_date = Column(Date, nullable=False)
+    num_guests = Column(Integer, nullable=False)
+    room_count = Column(Integer, nullable=False, default=1)
+    total_price = Column(Float, nullable=False)
+    discount_applied = Column(Float, default=0.0)
+    payment_method = Column(String(50), nullable=False)
+    booking_date = Column(DateTime, default=datetime.utcnow)
+    # confirmed, cancelled, completed
+    status = Column(String(20), nullable=False, default='confirmed')
+    special_requests = Column(String(500), nullable=True)
+
+    # Relationships
+    user = relationship('User', backref='hotel_bookings')
+    hotel = relationship('Hotel', backref='bookings')
+
+    def __repr__(self):
+        return f'<HotelBooking {self.id} for {self.user.name} at {self.hotel.name}>'
+
+
+class HotelReview(BaseModel, db.Model):
+    __tablename__ = 'hotel_reviews'
+
+    id = Column(Integer, primary_key=True)
+    hotel_id = Column(Integer, ForeignKey('hotels.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    booking_id = Column(Integer, ForeignKey(
+        'hotel_bookings.id'), nullable=False)
+    rating = Column(Float, nullable=False)  # 1-5 stars
+    review_text = Column(String(1000), nullable=True)
+    stay_date = Column(Date, nullable=False)
+    created = Column(DateTime, default=datetime.utcnow)
+    modified = Column(DateTime, onupdate=datetime.utcnow)
+    # Verified if there's a matching booking
+    is_verified = Column(Boolean, default=True)
+
+    # Relationships
+    hotel = relationship('Hotel', backref='reviews')
+    user = relationship('User', backref='hotel_reviews')
+    booking = relationship('HotelBooking', backref='review')
+
+    def __repr__(self):
+        return f'<HotelReview {self.id} by {self.user.name} for {self.hotel.name}>'

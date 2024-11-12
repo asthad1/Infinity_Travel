@@ -1,0 +1,79 @@
+/* HotelSearch.css */
+.hotel-card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  height: 100%;
+}
+
+.hotel-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+}
+
+.hotel-card .card-img-top {
+  height: 200px;
+  object-fit: cover;
+}
+
+.hotel-card .badge {
+  font-weight: 500;
+  padding: 0.5em 0.8em;
+}
+
+.hotel-card .card-title {
+  font-size: 1.2rem;
+  margin-bottom: 0.75rem;
+  color: #2c3e50;
+}
+
+.hotel-select .select__control {
+  border-color: #ced4da;
+  border-radius: 0.25rem;
+}
+
+.hotel-select .select__control:hover {
+  border-color: #86b7fe;
+}
+
+.hotel-select .select__control--is-focused {
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  border-color: #86b7fe;
+}
+
+.hotel-card .text-muted {
+  color: #6c757d !important;
+}
+
+.hotel-card .btn-primary {
+  padding: 0.5rem 1.5rem;
+}
+
+.hotel-card .badge.bg-light {
+  background-color: #f8f9fa !important;
+  border: 1px solid #dee2e6;
+}
+
+.hotel-image {
+  height: 250px;
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.3s ease;
+}
+
+.hotel-image:hover {
+  transform: scale(1.05);
+}
+
+.custom-search-button {
+  height: 2.7rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .hotel-card .card-img-top {
+    height: 180px;
+  }
+
+  .hotel-card .card-title {
+    font-size: 1.1rem;
+  }
+}

@@ -1,1 +1,154 @@
 /* Support.css */
+
+.support-page {
+  background-color: #f8f9fa;
+  min-height: calc(100vh - 60px);
+  /* Adjust based on your navbar height */
+}
+
+/* Hero Section */
+.support-hero {
+  padding: 3rem 0;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.support-hero h1 {
+  color: white;
+  font-size: 2.8rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.support-hero .lead {
+  font-size: 1.2rem;
+  opacity: 0.9;
+}
+
+/* Support Cards */
+.support-card {
+  border: none;
+  border-radius: 16px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  background: white;
+  overflow: hidden;
+}
+
+.support-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+}
+
+.icon-wrapper {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0d6efd, #0dcaf0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  transition: transform 0.3s ease;
+}
+
+.support-card:hover .icon-wrapper {
+  transform: scale(1.1);
+}
+
+.email-icon {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+}
+
+.phone-icon {
+  background: linear-gradient(135deg, #e67e22, #d35400);
+}
+
+.support-icon {
+  font-size: 2rem;
+  color: white;
+}
+
+.support-title {
+  color: #2c3e50;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.support-text {
+  color: #6c757d;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.contact-info {
+  margin: 1rem 0;
+}
+
+.contact-info p {
+  color: #2c3e50;
+  margin: 0.5rem 0;
+}
+
+.support-btn {
+  padding: 0.75rem 2rem;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.support-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(13, 110, 253, 0.2);
+}
+
+.card-content {
+  margin-bottom: 1.5rem;
+}
+
+.support-card .card-body {
+  padding: 1.5rem;
+  height: 100%;
+}
+
+/* Update the contact-info margins */
+.contact-info {
+  margin: 1rem 0 0 0;
+}
+
+.contact-info p:last-child {
+  margin-bottom: 0;
+}
+
+/* Remove the margin-bottom from support-text since it's handled by card-content */
+.support-text {
+  margin-bottom: 0;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .support-hero {
+    padding: 2rem 0;
+    border-radius: 0 0 12px 12px;
+  }
+
+  .support-hero h1 {
+    font-size: 2rem;
+  }
+
+  .support-title {
+    font-size: 1.3rem;
+  }
+
+  .icon-wrapper {
+    width: 60px;
+    height: 60px;
+  }
+
+  .support-icon {
+    font-size: 1.5rem;
+  }
+}

@@ -1196,6 +1196,238 @@ def get_booked_flights():
         return jsonify(flight_data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500   
+    
+    
+# ===================== CRUD FOR HOTEL MODEL ===================== #
+
+@app.route('/api/hotels', methods=['GET'])
+def get_hotels():
+    hotels = Hotel.query.all()
+    return jsonify([{
+        'id': hotel.id,
+        'name': hotel.name,
+        'city_id': hotel.city_id,
+        'address': hotel.address,
+        'neighborhood': hotel.neighborhood,
+        'rating': hotel.rating,
+        'price_per_night': hotel.price_per_night,
+        'amenities': hotel.amenities.split(',') if hotel.amenities else [],
+        'total_rooms': hotel.total_rooms,
+        'available_rooms': hotel.available_rooms,
+        'images': hotel.images.split(',') if hotel.images else [],
+        'description': hotel.description,
+        'latitude': hotel.latitude,
+        'longitude': hotel.longitude
+    } for hotel in hotels]), 200
+
+
+@app.route('/api/hotels/<int:hotel_id>', methods=['GET'])
+def get_hotel(hotel_id):
+    hotel = Hotel.query.get_or_404(hotel_id)
+    return jsonify(hotel.to_dict()), 200
+
+
+@app.route('/api/hotels', methods=['POST'])
+def create_hotel():
+    data = request.json
+    new_hotel = Hotel(
+        name=data['name'],
+        city_id=data['city_id'],
+        address=data['address'],
+        neighborhood=data.get('neighborhood'),
+        rating=data['rating'],
+        price_per_night=data['price_per_night'],
+        description=data.get('description'),
+        check_in_time=data.get('check_in_time', '15:00'),
+        check_out_time=data.get('check_out_time', '11:00'),
+        total_rooms=data['total_rooms'],
+        available_rooms=data['total_rooms'],
+        amenities=','.join(data.get('amenities', [])),
+        images=','.join(data.get('images', [])),
+        latitude=data.get('latitude'),
+        longitude=data.get('longitude')
+    )
+    db.session.add(new_hotel)
+    db.session.commit()
+    return jsonify(new_hotel.to_dict()), 201
+
+
+@app.route('/api/hotels/<int:hotel_id>', methods=['PUT'])
+def update_hotel(hotel_id):
+    hotel = Hotel.query.get_or_404(hotel_id)
+    data = request.json
+
+    for key, value in data.items():
+        if key == 'amenities' and value:
+            value = ','.join(value)
+        if key == 'images' and value:
+            value = ','.join(value)
+        if hasattr(hotel, key):
+            setattr(hotel, key, value)
+
+    db.session.commit()
+    return jsonify(hotel.to_dict()), 200
+
+
+@app.route('/api/hotels/<int:hotel_id>', methods=['DELETE'])
+def delete_hotel(hotel_id):
+    hotel = Hotel.query.get_or_404(hotel_id)
+    db.session.delete(hotel)
+    db.session.commit()
+    return jsonify({'message': 'Hotel deleted'}), 200
+
+# ===================== HOTEL SEARCH ENDPOINT ===================== #
+
+
+@app.route('/api/hotels/search', methods=['POST'])
+def search_hotels():
+    data = request.json
+    city_id = data.get('city_id')
+    check_in = data.get('check_in')
+    check_out = data.get('check_out')
+    guests = data.get('guests', 1)
+
+    if not all([city_id, check_in, check_out]):
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    # Convert dates to datetime objects
+    check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
+    check_out_date = datetime.strptime(check_out, '%Y-%m-%d').date()
+
+    # Basic validation
+    if check_out_date <= check_in_date:
+        return jsonify({'error': 'Check-out date must be after check-in date'}), 400
+
+    # Calculate number of nights
+    nights = (check_out_date - check_in_date).days
+
+    # Query hotels with availability
+    hotels = Hotel.query.filter(
+        Hotel.city_id == city_id,
+        Hotel.available_rooms >= guests,
+        Hotel.is_active == True
+    ).all()
+
+    # Format response with calculated total price
+    results = [{
+        'id': hotel.id,
+        'name': hotel.name,
+        'rating': hotel.rating,
+        'address': hotel.address,
+        'neighborhood': hotel.neighborhood,
+        'amenities': hotel.amenities.split(',') if hotel.amenities else [],
+        'price_per_night': hotel.price_per_night,
+        'total_price': hotel.price_per_night * nights,
+        'available_rooms': hotel.available_rooms,
+        'images': hotel.images.split(',') if hotel.images else [],
+        'description': hotel.description,
+        'check_in_time': hotel.check_in_time,
+        'check_out_time': hotel.check_out_time
+    } for hotel in hotels]
+
+    return jsonify(results), 200
+
+# ===================== HOTEL BOOKING ENDPOINTS ===================== #
+
+
+@app.route('/api/hotel-bookings', methods=['POST'])
+def book_hotel():
+    data = request.json
+
+    # Validate required fields
+    required_fields = ['user_id', 'hotel_id', 'check_in_date', 'check_out_date',
+                       'num_guests', 'payment_method']
+    if not all(field in data for field in required_fields):
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    # Verify hotel availability
+    hotel = Hotel.query.get_or_404(data['hotel_id'])
+    if hotel.available_rooms < data['room_count']:
+        return jsonify({'error': 'Not enough rooms available'}), 400
+
+    # Calculate total price
+    check_in_date = datetime.strptime(data['check_in_date'], '%Y-%m-%d').date()
+    check_out_date = datetime.strptime(
+        data['check_out_date'], '%Y-%m-%d').date()
+    nights = (check_out_date - check_in_date).days
+    total_price = hotel.price_per_night * nights * data['room_count']
+
+    # Create booking
+    booking = HotelBooking(
+        user_id=data['user_id'],
+        hotel_id=data['hotel_id'],
+        check_in_date=check_in_date,
+        check_out_date=check_out_date,
+        num_guests=data['num_guests'],
+        room_count=data.get('room_count', 1),
+        total_price=total_price,
+        discount_applied=data.get('discount_applied', 0.0),
+        payment_method=data['payment_method'],
+        special_requests=data.get('special_requests'),
+        status='confirmed'
+    )
+
+    # Update hotel availability
+    hotel.available_rooms -= data['room_count']
+
+    try:
+        db.session.add(booking)
+        db.session.commit()
+        return jsonify(booking.to_dict()), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/hotel-bookings/<int:user_id>', methods=['GET'])
+def get_user_hotel_bookings(user_id):
+    bookings = HotelBooking.query.filter_by(user_id=user_id).all()
+    return jsonify([{
+        'id': booking.id,
+        'hotel_name': booking.hotel.name,
+        'check_in_date': booking.check_in_date.isoformat(),
+        'check_out_date': booking.check_out_date.isoformat(),
+        'num_guests': booking.num_guests,
+        'room_count': booking.room_count,
+        'total_price': booking.total_price,
+        'status': booking.status,
+        'booking_date': booking.booking_date.isoformat()
+    } for booking in bookings]), 200
+
+# ===================== HOTEL REVIEW ENDPOINTS ===================== #
+
+
+@app.route('/api/hotel-reviews', methods=['POST'])
+def create_hotel_review():
+    data = request.json
+    booking = HotelBooking.query.get_or_404(data['booking_id'])
+
+    review = HotelReview(
+        hotel_id=booking.hotel_id,
+        user_id=booking.user_id,
+        booking_id=booking.id,
+        rating=data['rating'],
+        review_text=data.get('review_text'),
+        stay_date=booking.check_out_date
+    )
+
+    db.session.add(review)
+    db.session.commit()
+    return jsonify(review.to_dict()), 201
+
+
+@app.route('/api/hotels/<int:hotel_id>/reviews', methods=['GET'])
+def get_hotel_reviews(hotel_id):
+    reviews = HotelReview.query.filter_by(hotel_id=hotel_id).all()
+    return jsonify([{
+        'id': review.id,
+        'user_name': review.user.name,
+        'rating': review.rating,
+        'review_text': review.review_text,
+        'stay_date': review.stay_date.isoformat(),
+        'created': review.created.isoformat()
+    } for review in reviews]), 200
+    
 
 #===================Send email notifications========================
 
