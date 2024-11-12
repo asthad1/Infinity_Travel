@@ -9,15 +9,10 @@ function ThingsToDo() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const extractCityName = (airportLabel) => {
-    // Handle cases like "Los Angeles International (LAX)"
-    const cityName = airportLabel
-      .split('(')[0] // Split by opening parenthesis and take first part
-      .replace(/\bInternational\b/gi, '') // Remove "International"
-      .replace(/\bAirport\b/gi, '') // Remove "Airport"
-      .trim(); // Remove extra spaces
-
-    return cityName;
+  const extractAirportCode = (airportLabel) => {
+    // Extract code from format like "John F. Kennedy International (JFK)"
+    const match = airportLabel.match(/\(([A-Z]{3})\)/);
+    return match ? match[1] : airportLabel;
   };
 
   useEffect(() => {
@@ -52,7 +47,7 @@ function ThingsToDo() {
       }
 
       try {
-        const cityName = extractCityName(departureAirport.label);
+        const airportCode = extractAirportCode(departureAirport.label);
         const bounds = new window.google.maps.LatLngBounds(
           new window.google.maps.LatLng(0, 0),  // Dummy bounds
           new window.google.maps.LatLng(0, 0)
@@ -67,9 +62,9 @@ function ThingsToDo() {
 
         const service = new window.google.maps.places.PlacesService(map);
 
-        // Search for bars
+        // Search for bars near the airport
         const barRequest = {
-          query: `bars in ${cityName}`,
+          query: `bars near ${airportCode} airport`,
           bounds: bounds
         };
 
@@ -97,9 +92,9 @@ function ThingsToDo() {
           setLoading(false);
         });
 
-        // Search for restaurants
+        // Search for restaurants near the airport
         const restaurantRequest = {
-          query: `restaurants in ${cityName}`,
+          query: `restaurants near ${airportCode} airport`,
           bounds: bounds
         };
 
@@ -166,7 +161,7 @@ function ThingsToDo() {
 
   return (
     <div className="container mt-4">
-      <h1 className="mb-4">Bars in {extractCityName(departureAirport.label)}</h1>
+      <h1 className="mb-4">Bars near {departureAirport.label}</h1>
       
       {places.length > 0 ? (
         <div className="row g-4">
@@ -212,7 +207,7 @@ function ThingsToDo() {
         </div>
       )}
 
-      <h1 className="mb-4">Restaurants in {extractCityName(departureAirport.label)}</h1>
+      <h1 className="mb-4">Restaurants near {departureAirport.label}</h1>
       {restaurants.length > 0 ? (
         <div className="row g-4">
           {restaurants.map((place, index) => (
