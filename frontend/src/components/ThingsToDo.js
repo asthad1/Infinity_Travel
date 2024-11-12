@@ -16,124 +16,157 @@ function ThingsToDo() {
   };
 
   useEffect(() => {
-    let isLoaded = false;
-    let googleMapsScript = null;
+    let mounted = true;
+    let retryCount = 0;
+    const maxRetries = 3;
 
     const loadGoogleMapsScript = () => {
-      // Check if script is already in process of loading
-      const existingScript = document.getElementById('google-maps-script');
-      if (existingScript) {
-        return;
-      }
+      return new Promise((resolve, reject) => {
+        if (window.google) {
+          resolve(window.google);
+          return;
+        }
 
-      googleMapsScript = document.createElement('script');
-      googleMapsScript.id = 'google-maps-script';
-      googleMapsScript.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyA7hVesv-ePyj9hF1pzy78gQAV2BoI0YZs&libraries=places&callback=Function.prototype`;
-      googleMapsScript.async = true;
-      googleMapsScript.defer = true;
+        const existingScript = document.getElementById('google-maps-script');
+        if (existingScript) {
+          existingScript.addEventListener('load', () => resolve(window.google));
+          return;
+        }
 
-      googleMapsScript.addEventListener('load', () => {
-        isLoaded = true;
-        fetchPlaces();
+        const script = document.createElement('script');
+        script.id = 'google-maps-script';
+        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyA7hVesv-ePyj9hF1pzy78gQAV2BoI0YZs&libraries=places`;
+        script.async = true;
+        script.defer = true;
+
+        script.addEventListener('load', () => resolve(window.google));
+        script.addEventListener('error', (e) => reject(e));
+
+        document.body.appendChild(script);
       });
-
-      document.body.appendChild(googleMapsScript);
     };
 
-    const fetchPlaces = () => {
-      if (!departureAirport?.label || !isLoaded) {
+    const searchPlaces = async () => {
+      if (!departureAirport?.label) {
         setLoading(false);
         return;
       }
 
       try {
-        const airportCode = extractAirportCode(departureAirport.label);
-        const bounds = new window.google.maps.LatLngBounds(
-          new window.google.maps.LatLng(0, 0),  // Dummy bounds
-          new window.google.maps.LatLng(0, 0)
-        );
+        const google = await loadGoogleMapsScript();
         
-        const center = new window.google.maps.LatLng(0, 0); // Dummy center
-        const map = new window.google.maps.Map(document.createElement('div'), {
-          center,
-          bounds,
+        if (!mounted) return;
+
+        const airportCode = extractAirportCode(departureAirport.label);
+        const geocoder = new google.maps.Geocoder();
+
+        // First, geocode the airport to get its location
+        const geocodeResult = await new Promise((resolve, reject) => {
+          geocoder.geocode({ address: `${airportCode} airport` }, (results, status) => {
+            if (status === google.maps.GeocoderStatus.OK) {
+              resolve(results[0].geometry.location);
+            } else {
+              reject(new Error('Could not find airport location'));
+            }
+          });
+        });
+
+        const location = geocodeResult;
+        const bounds = new google.maps.LatLngBounds(
+          new google.maps.LatLng(
+            location.lat() - 0.1,
+            location.lng() - 0.1
+          ),
+          new google.maps.LatLng(
+            location.lat() + 0.1,
+            location.lng() + 0.1
+          )
+        );
+
+        const map = new google.maps.Map(document.createElement('div'), {
+          center: location,
+          bounds: bounds,
           zoom: 15
         });
 
-        const service = new window.google.maps.places.PlacesService(map);
+        const service = new google.maps.places.PlacesService(map);
 
-        // Search for bars near the airport
-        const barRequest = {
-          query: `bars near ${airportCode} airport`,
-          bounds: bounds
-        };
-
-        service.textSearch(barRequest, (results, status) => {
-          if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-            // Transform the data and limit to 5 results
-            const transformedPlaces = results.slice(0, 5).map(place => ({
-              displayName: { text: place.name },
-              formattedAddress: place.formatted_address,
-              rating: place.rating,
-              userRatingCount: place.user_ratings_total,
-              editorialSummary: { text: place.editorial_summary?.overview },
-              photos: place.photos ? [{ 
-                reference: place.photos[0].photo_reference 
-              }] : [],
-              regularOpeningHours: {
-                openNow: place.opening_hours?.open_now
+        // Search for bars and restaurants in parallel
+        const [barResults, restaurantResults] = await Promise.all([
+          new Promise((resolve) => {
+            service.textSearch({
+              query: `bars near ${airportCode} airport`,
+              location: location,
+              radius: 5000
+            }, (results, status) => {
+              if (status === google.maps.places.PlacesServiceStatus.OK) {
+                resolve(results);
+              } else {
+                resolve([]);
               }
-            }));
+            });
+          }),
+          new Promise((resolve) => {
+            service.textSearch({
+              query: `restaurants near ${airportCode} airport`,
+              location: location,
+              radius: 5000
+            }, (results, status) => {
+              if (status === google.maps.places.PlacesServiceStatus.OK) {
+                resolve(results);
+              } else {
+                resolve([]);
+              }
+            });
+          })
+        ]);
 
-            setPlaces(transformedPlaces);
-          } else {
-            setError('No bar results found');
-          }
-          setLoading(false);
-        });
+        if (!mounted) return;
 
-        // Search for restaurants near the airport
-        const restaurantRequest = {
-          query: `restaurants near ${airportCode} airport`,
-          bounds: bounds
-        };
+        // Transform and set results
+        if (barResults.length > 0) {
+          setPlaces(barResults.slice(0, 5).map(place => ({
+            displayName: { text: place.name },
+            formattedAddress: place.formatted_address,
+            rating: place.rating,
+            userRatingCount: place.user_ratings_total,
+            editorialSummary: { text: place.editorial_summary?.overview },
+            photos: place.photos ? [{ reference: place.photos[0].photo_reference }] : [],
+            regularOpeningHours: { openNow: place.opening_hours?.open_now }
+          })));
+        }
 
-        service.textSearch(restaurantRequest, (results, status) => {
-          if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-            const transformedRestaurants = results.slice(0, 5).map(place => ({
-              name: place.name,
-              formattedAddress: place.formatted_address,
-              rating: place.rating,
-              userRatingCount: place.user_ratings_total,
-              photos: place.photos ? [{ 
-                reference: place.photos[0].photo_reference 
-              }] : [],
-              openNow: place.opening_hours?.open_now,
-            }));
-            setRestaurants(transformedRestaurants);
-          } else {
-            setError('No restaurant results found');
-          }
-        });
+        if (restaurantResults.length > 0) {
+          setRestaurants(restaurantResults.slice(0, 5).map(place => ({
+            name: place.name,
+            formattedAddress: place.formatted_address,
+            rating: place.rating,
+            userRatingCount: place.user_ratings_total,
+            photos: place.photos ? [{ reference: place.photos[0].photo_reference }] : [],
+            openNow: place.opening_hours?.open_now,
+          })));
+        }
 
+        setError(null);
       } catch (err) {
         console.error('Error fetching places:', err);
-        setError(`Failed to load places: ${err.message}`);
-        setLoading(false);
+        if (retryCount < maxRetries) {
+          retryCount++;
+          setTimeout(searchPlaces, 1000); // Retry after 1 second
+        } else {
+          setError(`Failed to load places: ${err.message}`);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
-    if (!window.google) {
-      loadGoogleMapsScript();
-    } else {
-      fetchPlaces();
-    }
+    searchPlaces();
 
     return () => {
-      // Cleanup on unmount
-      if (googleMapsScript) {
-        googleMapsScript.remove();
-      }
+      mounted = false;
     };
   }, [departureAirport]);
 
