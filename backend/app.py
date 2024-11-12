@@ -21,12 +21,26 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+from operator import itemgetter
+from flask import jsonify
 
 # Load environment variables
 # load_dotenv()
 
+# Near the top of your file, after the Flask app initialization
 app = Flask(__name__)
-CORS(app)
+
+# Update the CORS configuration
+CORS(app, resources={
+    r"/api/*": {
+        "origins": ["http://localhost:3000"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True
+    }
+})
+
+# Rest of your configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://infinity_travel_owner:q9urkfXI7nGg@ep-spring-frost-a4siuz5k.us-east-1.aws.neon.tech/infinity_travel?sslmode=require'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(message)s')
@@ -681,6 +695,57 @@ def view_shared_search(url):
         'state_name': favorite.state_name,
         'city_name': favorite.city_name
     }), 200
+
+
+@app.route('/api/places', methods=['GET'])
+def get_places():
+    # Replace the sample data with actual data as needed
+    places = [
+        {
+            'id': 1,
+            'name': 'Place 1',
+            'description': 'Description of Place 1',
+            'location': 'Location of Place 1',
+            # ...additional fields...
+        },
+        {
+            'id': 2,
+            'name': 'Place 2',
+            'description': 'Description of Place 2',
+            'location': 'Location of Place 2',
+            # ...additional fields...
+        },
+        # ...more places...
+    ]
+    return jsonify(places), 200
+
+
+@app.route('/api/places/search', methods=['GET'])
+def search_places():
+    city = request.args.get('city')
+    if not city:
+        return jsonify({'error': 'City parameter is required'}), 400
+
+    # Sample data - replace with actual data retrieval logic
+    places = [
+        {
+            'id': 1,
+            'name': f'Attraction 1 in {city}',
+            'description': f'Description of Attraction 1 in {city}',
+            'location': f'{city}',
+            # ...additional fields...
+        },
+        {
+            'id': 2,
+            'name': f'Attraction 2 in {city}',
+            'description': f'Description of Attraction 2 in {city}',
+            'location': f'{city}',
+            # ...additional fields...
+        },
+        # ...more places...
+    ]
+
+    return jsonify(places), 200
 
 
 # ===================== CRUD FOR COUPON MODEL ===================== #
@@ -1427,7 +1492,192 @@ def get_hotel_reviews(hotel_id):
         'stay_date': review.stay_date.isoformat(),
         'created': review.created.isoformat()
     } for review in reviews]), 200
-    
+
+
+@app.route('/api/rentals/search', methods=['POST'])
+def search_rentals():
+    data = request.get_json()
+    pickup_city = data.get('pickupLocation')
+    drop_off_city = data.get('dropOffLocation')
+    pickup_date = data.get('pickupDate')
+    drop_off_date = data.get('dropOffDate')
+    pickup_time = data.get('pickupTime')
+    drop_off_time = data.get('dropOffTime')
+    driver_age = data.get('driverAge')
+
+    rentals = Rental.query.filter(
+        Rental.pickup_city_id == pickup_city,
+        Rental.drop_off_city_id == drop_off_city,
+        Rental.available_from <= f"{pickup_date} {pickup_time}",
+        Rental.available_until >= f"{drop_off_date} {drop_off_time}",
+        Rental.min_driver_age <= driver_age
+    ).all()
+
+    rental_data = [
+        {
+            "id": rental.id,
+            "name": rental.name,
+            "price_per_day": rental.price_per_day,
+            "pickup_city": rental.pickup_city.city_name,
+            "drop_off_city": rental.drop_off_city.city_name,
+            "available_from": rental.available_from,
+            "available_until": rental.available_until
+        }
+        for rental in rentals
+    ]
+
+    return jsonify(rental_data)
+
+
+
+@app.route('/api/rentals/book', methods=['POST'])
+def book_rental():
+    data = request.get_json()
+    rental_id = data.get('rental_id')
+    user_id = data.get('user_id')
+    pickup_date = data.get('pickup_date')
+    pickup_time = data.get('pickup_time')  # Retrieve pickup_time
+    drop_off_date = data.get('drop_off_date')
+    dropoff_time = data.get('dropoff_time')  # Retrieve dropoff_time
+
+    if not all([rental_id, user_id, pickup_date, pickup_time, drop_off_date, dropoff_time]):
+        return jsonify({"error": "Missing required booking information"}), 400
+
+    rental = Rental.query.get(rental_id)
+    if not rental:
+        return jsonify({"error": "Rental not found"}), 404
+
+    pickup_datetime = datetime.strptime(f"{pickup_date} {pickup_time}", '%Y-%m-%d %H:%M')
+    dropoff_datetime = datetime.strptime(f"{drop_off_date} {dropoff_time}", '%Y-%m-%d %H:%M')
+    days = (dropoff_datetime - pickup_datetime).days
+
+    if days < 1:
+        return jsonify({"error": "Drop-off date must be after pickup date"}), 400
+
+    total_price = days * rental.price_per_day
+
+    booking = BookedRental(
+        rental_id=rental_id,
+        user_id=user_id,
+        pickup_date=pickup_datetime.date(),
+        pickup_time=pickup_datetime.time(),  # Save pickup_time
+        drop_off_date=dropoff_datetime.date(),
+        dropoff_time=dropoff_datetime.time(),  # Save dropoff_time
+        total_price=total_price
+    )
+
+    db.session.add(booking)
+    db.session.commit()
+
+    return jsonify({
+        "message": "Booking successful",
+        "booking_id": booking.id,
+        "rental_id": rental_id,
+        "pickup_date": pickup_date,
+        "pickup_time": pickup_time,
+        "drop_off_date": drop_off_date,
+        "dropoff_time": dropoff_time,
+        "total_price": total_price
+    })
+
+
+@app.route('/api/rentals/my-rentals/<int:user_id>', methods=['GET'])
+def get_user_rentals(user_id):
+    try:
+        rentals = BookedRental.query.filter_by(user_id=user_id).all()
+        rental_data = [{
+            "id": rental.id,
+            "rental_id": rental.rental_id,
+            "pickup_date": rental.pickup_date,
+            "pickup_time": rental.pickup_time.strftime("%H:%M"),  # Include pickup_time
+            "drop_off_date": rental.drop_off_date,
+            "dropoff_time": rental.dropoff_time.strftime("%H:%M"),  # Include dropoff_time
+            "total_price": float(rental.total_price),
+            "rental_name": rental.rental.name
+        } for rental in rentals]
+
+        return jsonify(rental_data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@app.route('/api/combined-bookings/<int:user_id>', methods=['GET'])
+def get_combined_bookings(user_id):
+    try:
+        print(f"Fetching bookings for user ID: {user_id}")  # Debug log
+        
+        # Get rentals
+        rentals = BookedRental.query.filter_by(user_id=user_id).all()
+        print(f"Found {len(rentals)} rentals")  # Debug log
+        rental_bookings = [{
+            "id": rental.id,
+            "type": "rental",
+            "rental_id": rental.rental_id,
+            "name": rental.rental.name,
+            "start_date": rental.pickup_date.isoformat(),
+            "end_date": rental.drop_off_date.isoformat(),
+            "price": float(rental.total_price),
+            "details": {
+                "pickup_time": rental.pickup_time.strftime("%H:%M"),
+                "dropoff_time": rental.dropoff_time.strftime("%H:%M")
+            }
+            } for rental in rentals]
+
+        # Get hotel bookings
+        hotel_bookings = HotelBooking.query.filter_by(user_id=user_id).all()
+        print(f"Found {len(hotel_bookings)} hotel bookings")  # Debug log
+        hotel_data = [{
+            "id": booking.id,
+            "type": "hotel",
+            "name": booking.hotel.name,
+            "start_date": booking.check_in_date.isoformat(),
+            "end_date": booking.check_out_date.isoformat(),
+            "price": float(booking.total_price),
+            "details": {
+                "num_guests": booking.num_guests,
+                "room_count": booking.room_count,
+                "status": booking.status
+            }
+        } for booking in hotel_bookings]
+
+        # Get flight bookings
+        flights = BookedFlight.query.filter_by(user_id=user_id).all()
+        print(f"Found {len(flights)} flights")  # Debug log
+        flight_data = [{
+            "id": flight.id,
+            "type": "flight",
+            "name": f"{flight.airline} {flight.flight_number}",
+            "start_date": flight.departure_date.isoformat(),
+            "end_date": flight.arrival_date.isoformat(),
+            "price": float(flight.total_price),
+            "details": {
+                "airline": flight.airline,
+                "flight_number": flight.flight_number,
+                "from": flight.from_airport,
+                "to": flight.to_airport,
+                "duration": flight.duration,
+                "travelers": flight.travelers,
+                "payment_method": flight.payment_method
+            }
+        } for flight in flights]
+
+        # Combine all bookings
+        all_bookings = rental_bookings + hotel_data + flight_data
+
+        # Sort by start_date in descending order and get the 5 most recent
+        sorted_bookings = sorted(
+            all_bookings,
+            key=lambda x: x['start_date'],
+            reverse=True
+        )
+
+        print(f"Returning {len(sorted_bookings)} total bookings")  # Debug log
+        return jsonify(sorted_bookings), 200
+
+    except Exception as e:
+        print(f"Error in get_combined_bookings: {str(e)}")  # Debug log
+        return jsonify({"error": str(e)}), 500
+
 
 #===================Send email notifications========================
 

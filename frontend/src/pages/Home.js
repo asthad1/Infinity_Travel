@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import './Home.css';
 import FlightSearchForm from '../components/FlightSearchForm';
 import HotelSearchForm from '../components/HotelSearchForm';
+import RentalSearchForm from '../components/RentalSearchForm';
 import travelImage from '../assets/images/ladyonboat.jpg';
 import NotificationBanner from '../components/NotificationBanner';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlane, faHotel, faCrown, faCheck, faStar, faShieldAlt, faHeadset, faMoneyBillWave, faUserShield } from '@fortawesome/free-solid-svg-icons';
+import { faPlane, faHotel, faCrown, faCheck, faStar, faShieldAlt, faHeadset, faMoneyBillWave, faUserShield, faCar } from '@fortawesome/free-solid-svg-icons';
 
 
 function Home() {
@@ -61,6 +62,14 @@ function Home() {
               <FontAwesomeIcon icon={faHotel} className="me-2" />
               Hotels
             </button>
+            <button
+              type="button"
+              className={`btn ${searchType === 'rentals' ? 'btn-primary' : 'btn-outline-primary'}`}
+              onClick={() => setSearchType('rentals')}
+            >
+              <FontAwesomeIcon icon={faCar} className="me-2" />
+              Rentals
+            </button>
           </div>
         </div>
       </div>
@@ -69,10 +78,13 @@ function Home() {
       <div className="container my-4">
         {searchType === 'flights' ? (
           <FlightSearchForm />
-        ) : (
+        ) : searchType === 'hotels' ? (
           <HotelSearchForm />
+        ) : (
+          <RentalSearchForm />
         )}
       </div>
+
 
       {/* Features Section */}
       <div className="container mt-5 features-container">

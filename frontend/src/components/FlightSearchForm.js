@@ -4,6 +4,7 @@ import './FlightSearchForm.css';
 import FlightFilter from './FlightFilter';
 import FlightSearchResults from './FlightSearchResults';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { setFilteredFlights, setErrorMessage } from '../store/flightsSlice';
 import { setDepartureAirport, setDestinationAirport, setDepartureDate, setTravelers } from '../store/searchSlice';
 // import { saveSearch } from '../store/savedSearchesSlice';
@@ -14,6 +15,7 @@ import { faPlaneDeparture, faPlaneArrival, faCalendarAlt, faUser } from '@fortaw
 
 function FlightSearchForm() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   // Redux state
   const departureAirport = useSelector((state) => state.search.departureAirport);
@@ -194,6 +196,14 @@ function FlightSearchForm() {
       });
   };
 
+  const handleThingsToDo = () => {
+    if (!departureAirport) {
+      dispatch(setErrorMessage('Please select a departure airport.'));
+      return;
+    }
+    navigate('/things-to-do', { state: { departureAirport } });
+  };
+
   return (
     <div className="container mt-5 p-4 border rounded shadow-sm">
       <h2 className="mb-4 text-center">Search Flights</h2>
@@ -330,6 +340,13 @@ function FlightSearchForm() {
             disabled={isSaving}
           >
             {isSaving ? 'Saving...' : 'Save Search'}
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline-primary btn-lg"
+            onClick={handleThingsToDo}
+          >
+            Things to do
           </button>
         </div>
 
