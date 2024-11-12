@@ -7,3 +7,5 @@ Flask-SQLAlchemy==3.1.1
 Flask-Cors==5.0.0
 faker==30.3.0
 python-dotenv==1.0.1
+sendgrid==6.11.0
+apscheduler==3.10.4
