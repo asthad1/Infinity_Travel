@@ -1547,11 +1547,16 @@ def get_user_rentals(user_id):
 @app.route('/api/combined-bookings/<int:user_id>', methods=['GET'])
 def get_combined_bookings(user_id):
     try:
-        print(f"Fetching bookings for user ID: {user_id}")  # Debug log
+        # Get current date at midnight UTC
+        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        print(f"Current UTC date for filtering: {today}")  # Debug log
         
         # Get rentals
-        rentals = BookedRental.query.filter_by(user_id=user_id).all()
-        print(f"Found {len(rentals)} rentals")  # Debug log
+        rentals = BookedRental.query.filter(
+            BookedRental.user_id == user_id,
+            BookedRental.pickup_date >= today
+        ).all()
+        
         rental_bookings = [{
             "id": rental.id,
             "type": "rental",
@@ -1564,11 +1569,14 @@ def get_combined_bookings(user_id):
                 "pickup_time": rental.pickup_time.strftime("%H:%M"),
                 "dropoff_time": rental.dropoff_time.strftime("%H:%M")
             }
-            } for rental in rentals]
+        } for rental in rentals]
 
         # Get hotel bookings
-        hotel_bookings = HotelBooking.query.filter_by(user_id=user_id).all()
-        print(f"Found {len(hotel_bookings)} hotel bookings")  # Debug log
+        hotel_bookings = HotelBooking.query.filter(
+            HotelBooking.user_id == user_id,
+            HotelBooking.check_in_date >= today
+        ).all()
+        
         hotel_data = [{
             "id": booking.id,
             "type": "hotel",
@@ -1584,8 +1592,11 @@ def get_combined_bookings(user_id):
         } for booking in hotel_bookings]
 
         # Get flight bookings
-        flights = BookedFlight.query.filter_by(user_id=user_id).all()
-        print(f"Found {len(flights)} flights")  # Debug log
+        flights = BookedFlight.query.filter(
+            BookedFlight.user_id == user_id,
+            BookedFlight.departure_date >= today
+        ).all()
+        
         flight_data = [{
             "id": flight.id,
             "type": "flight",
@@ -1607,14 +1618,16 @@ def get_combined_bookings(user_id):
         # Combine all bookings
         all_bookings = rental_bookings + hotel_data + flight_data
 
-        # Sort by start_date in descending order and get the 5 most recent
+        # Sort by start_date
         sorted_bookings = sorted(
             all_bookings,
-            key=lambda x: x['start_date'],
-            reverse=True
+            key=lambda x: x['start_date']
         )
 
-        print(f"Returning {len(sorted_bookings)} total bookings")  # Debug log
+        print(f"Found {len(sorted_bookings)} upcoming bookings")  # Debug log
+        for booking in sorted_bookings:
+            print(f"Booking: {booking['type']} - {booking['start_date']}")  # Debug log
+            
         return jsonify(sorted_bookings), 200
 
     except Exception as e:

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { createEmailContent } from './emailTemplate';
-import './MyBookings.css'; 
 
 const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -19,13 +18,17 @@ const MyBookings = () => {
         }
 
         const response = await axios.get(`http://localhost:9001/api/combined-bookings/${user.user_id}`);
-
-        // Filter bookings from yesterday to the future
+        
+        // Get current date at midnight UTC
         const today = new Date();
-        today.setDate(today.getDate() - 1);
-        const recentBookings = response.data.filter(booking =>
-          new Date(booking.start_date) >= today
-        );
+        today.setUTCHours(0, 0, 0, 0);
+
+        const recentBookings = response.data.filter(booking => {
+          // Parse the booking date and set to midnight UTC
+          const bookingDate = new Date(booking.start_date);
+          bookingDate.setUTCHours(0, 0, 0, 0);
+          return bookingDate >= today;
+        });
 
         // Sort bookings by date in ascending order
         const sortedBookings = recentBookings.sort(
@@ -62,18 +65,30 @@ const MyBookings = () => {
     );
   };
 
+  // Date formatting helper function
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    const options = {
       weekday: 'long',
+      year: 'numeric',
       month: 'long',
       day: 'numeric',
-      year: 'numeric'
+      timeZone: 'UTC'  // Ensure consistent timezone handling
+    };
+    return new Date(dateString).toLocaleDateString('en-US', options);
+  };
+
+  // Time formatting helper function
+  const formatTime = (timeString) => {
+    return new Date(timeString).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'UTC'
     });
   };
 
   if (loading) return <div className="text-center p-4">Loading...</div>;
   if (error) return <div className="text-center text-red-500 p-4">{error}</div>;
-  if (!bookings.length) return <div className="text-center p-4">No recent bookings found</div>;
+  if (!bookings.length) return <div className="text-center p-4">No upcoming bookings found</div>;
 
   // Group bookings by date
   const groupedBookings = bookings.reduce((acc, booking) => {
