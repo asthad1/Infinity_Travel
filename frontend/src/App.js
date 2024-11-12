@@ -19,6 +19,7 @@ import CouponsPage from './pages/Coupons';
 import MetricsPage from './pages/Metrics';
 import PaymentGateway from './pages/PaymentGateway';
 import { FlightProvider } from './context/FlightContext';
+import AddEmails from './components/AddEmails';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(() => {
@@ -57,6 +58,7 @@ function App() {
           <Route path="/profile" element={currentUser ? <Profile /> : <Navigate to="/login" />} />
           <Route path="/register" element={<Register />} />
           <Route path="/support" element={<Support />} />
+          <Route path="/addemails" element={<AddEmails />} />
           <Route path="/my-favorites" element={currentUser ? <MyFavorites /> : <Navigate to="/login" />} />
           <Route path="/savedflights" element={<SavedFlights />} />
           <Route path="/shared-flights/:flightId" element={<SharedFlightDetails />} />
