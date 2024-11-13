@@ -22,7 +22,7 @@ const MyBookings = () => {
 
         // Filter bookings from yesterday to the future
         const today = new Date();
-        today.setDate(today.getDate() - 1);
+        today.setUTCHours(0, 0, 0, 0); 
         const recentBookings = response.data.filter(booking =>
           new Date(booking.start_date) >= today
         );
@@ -63,11 +63,21 @@ const MyBookings = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    const options = {
       weekday: 'long',
+      year: 'numeric',
       month: 'long',
       day: 'numeric',
-      year: 'numeric'
+      timeZone: 'UTC'  // Explicitly handles UTC timezone
+    };
+    return new Date(dateString).toLocaleDateString('en-US', options);
+  };
+
+  const formatTime = (timeString) => {
+    return new Date(timeString).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'UTC'
     });
   };
 
