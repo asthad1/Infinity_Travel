@@ -1547,14 +1547,9 @@ def get_user_rentals(user_id):
 @app.route('/api/combined-bookings/<int:user_id>', methods=['GET'])
 def get_combined_bookings(user_id):
     try:
-        # Get current date at midnight UTC
-        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-        print(f"Current UTC date for filtering: {today}")  # Debug log
-        
-        # Get rentals
+        # Get all rentals for the user without date filtering
         rentals = BookedRental.query.filter(
-            BookedRental.user_id == user_id,
-            BookedRental.pickup_date >= today
+            BookedRental.user_id == user_id
         ).all()
         
         rental_bookings = [{
@@ -1571,10 +1566,9 @@ def get_combined_bookings(user_id):
             }
         } for rental in rentals]
 
-        # Get hotel bookings
+        # Get all hotel bookings
         hotel_bookings = HotelBooking.query.filter(
-            HotelBooking.user_id == user_id,
-            HotelBooking.check_in_date >= today
+            HotelBooking.user_id == user_id
         ).all()
         
         hotel_data = [{
@@ -1591,10 +1585,9 @@ def get_combined_bookings(user_id):
             }
         } for booking in hotel_bookings]
 
-        # Get flight bookings
+        # Get all flight bookings
         flights = BookedFlight.query.filter(
-            BookedFlight.user_id == user_id,
-            BookedFlight.departure_date >= today
+            BookedFlight.user_id == user_id
         ).all()
         
         flight_data = [{
@@ -1623,15 +1616,11 @@ def get_combined_bookings(user_id):
             all_bookings,
             key=lambda x: x['start_date']
         )
-
-        print(f"Found {len(sorted_bookings)} upcoming bookings")  # Debug log
-        for booking in sorted_bookings:
-            print(f"Booking: {booking['type']} - {booking['start_date']}")  # Debug log
             
         return jsonify(sorted_bookings), 200
 
     except Exception as e:
-        print(f"Error in get_combined_bookings: {str(e)}")  # Debug log
+        print(f"Error in get_combined_bookings: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 
