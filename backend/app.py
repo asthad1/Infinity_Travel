@@ -1188,7 +1188,8 @@ def book_flight():
             discount_applied=data['discount_applied'],
             total_price=data['total_price'],
             payment_method=data['payment_method'],
-            booking_date=datetime.utcnow()
+            booking_date=datetime.utcnow(),
+            status='confirmed'
         )
 
         # Add and commit the booking to the database
@@ -1255,6 +1256,7 @@ def get_booked_flights():
                 "travelers": flight.travelers,
                 "total_price": flight.total_price,
                 "payment_method": flight.payment_method,
+                "status": flight.status,
             }
             for flight in flights
         ]
