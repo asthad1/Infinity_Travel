@@ -1719,7 +1719,8 @@ def get_combined_bookings(user_id):
                 "to": flight.to_airport,
                 "duration": flight.duration,
                 "travelers": flight.travelers,
-                "payment_method": flight.payment_method
+                "payment_method": flight.payment_method,
+                "status": flight.status
             }
         } for flight in flights]
 

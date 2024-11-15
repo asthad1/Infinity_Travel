@@ -39,7 +39,11 @@ function MyFlights() {
         const response = await axios.get('http://localhost:9001/api/booked_flights', {
           params: { user_id: user.user_id },
         });
-        setFlights(response.data);
+
+        // Filter flights with status 'confirmed'
+        const confirmedFlights = response.data.filter(flight => flight.status === 'confirmed');
+
+        setFlights(confirmedFlights);
       } catch (error) {
         console.error('Error fetching booked flights:', error);
       }
