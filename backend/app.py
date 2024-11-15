@@ -1,5 +1,3 @@
-import threading
-import time
 from flask import Flask, jsonify, request, redirect, current_app
 from flask_sqlalchemy import SQLAlchemy
 # Import the text, cast function and Date attribute
@@ -16,11 +14,7 @@ from models import *
 from extensions import db
 from werkzeug.security import generate_password_hash, check_password_hash
 import logging
-from datetime import datetime, timedelta
-from apscheduler.schedulers.background import BackgroundScheduler
-
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+from datetime import datetime
 from operator import itemgetter
 from flask import jsonify
 
@@ -697,57 +691,6 @@ def view_shared_search(url):
     }), 200
 
 
-@app.route('/api/places', methods=['GET'])
-def get_places():
-    # Replace the sample data with actual data as needed
-    places = [
-        {
-            'id': 1,
-            'name': 'Place 1',
-            'description': 'Description of Place 1',
-            'location': 'Location of Place 1',
-            # ...additional fields...
-        },
-        {
-            'id': 2,
-            'name': 'Place 2',
-            'description': 'Description of Place 2',
-            'location': 'Location of Place 2',
-            # ...additional fields...
-        },
-        # ...more places...
-    ]
-    return jsonify(places), 200
-
-
-@app.route('/api/places/search', methods=['GET'])
-def search_places():
-    city = request.args.get('city')
-    if not city:
-        return jsonify({'error': 'City parameter is required'}), 400
-
-    # Sample data - replace with actual data retrieval logic
-    places = [
-        {
-            'id': 1,
-            'name': f'Attraction 1 in {city}',
-            'description': f'Description of Attraction 1 in {city}',
-            'location': f'{city}',
-            # ...additional fields...
-        },
-        {
-            'id': 2,
-            'name': f'Attraction 2 in {city}',
-            'description': f'Description of Attraction 2 in {city}',
-            'location': f'{city}',
-            # ...additional fields...
-        },
-        # ...more places...
-    ]
-
-    return jsonify(places), 200
-
-
 # ===================== CRUD FOR COUPON MODEL ===================== #
 
 # GET all coupons
@@ -1231,7 +1174,7 @@ def confirmation():
         return jsonify({"booking": booking_details}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
+    
 @app.route('/api/booked_flights', methods=['GET'])
 def get_booked_flights():
     user_id = request.args.get('user_id')
@@ -1604,14 +1547,9 @@ def get_user_rentals(user_id):
 @app.route('/api/combined-bookings/<int:user_id>', methods=['GET'])
 def get_combined_bookings(user_id):
     try:
-        # Get current date at midnight UTC
-        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-        print(f"Current UTC date for filtering: {today}")  # Debug log
-        
-        # Get rentals
+        # Get all rentals for the user without date filtering
         rentals = BookedRental.query.filter(
-            BookedRental.user_id == user_id,
-            BookedRental.pickup_date >= today
+            BookedRental.user_id == user_id
         ).all()
         
         rental_bookings = [{
@@ -1628,10 +1566,9 @@ def get_combined_bookings(user_id):
             }
         } for rental in rentals]
 
-        # Get hotel bookings
+        # Get all hotel bookings
         hotel_bookings = HotelBooking.query.filter(
-            HotelBooking.user_id == user_id,
-            HotelBooking.check_in_date >= today
+            HotelBooking.user_id == user_id
         ).all()
         
         hotel_data = [{
@@ -1648,10 +1585,9 @@ def get_combined_bookings(user_id):
             }
         } for booking in hotel_bookings]
 
-        # Get flight bookings
+        # Get all flight bookings
         flights = BookedFlight.query.filter(
-            BookedFlight.user_id == user_id,
-            BookedFlight.departure_date >= today
+            BookedFlight.user_id == user_id
         ).all()
         
         flight_data = [{
@@ -1680,262 +1616,13 @@ def get_combined_bookings(user_id):
             all_bookings,
             key=lambda x: x['start_date']
         )
-
-        print(f"Found {len(sorted_bookings)} upcoming bookings")  # Debug log
-        for booking in sorted_bookings:
-            print(f"Booking: {booking['type']} - {booking['start_date']}")  # Debug log
             
         return jsonify(sorted_bookings), 200
 
     except Exception as e:
-        print(f"Error in get_combined_bookings: {str(e)}")  # Debug log
+        print(f"Error in get_combined_bookings: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 
-#===================Send email notifications========================
-
-# Create a new email notification
-@app.route('/api/email_notifications', methods=['POST'])
-def create_email_notifications():
-    data = request.get_json()
-    user_id = data.get('user_id')
-    email = data.get('email')
-    
-    # Ensure both user_id and email are provided
-    if not user_id or not email:
-        return jsonify({"error": "user_id and email are required"}), 400
-    
-    # Create new EmailNotifications entry
-    email_notification = EmailNotifications(user_id=user_id, email=email)
-    db.session.add(email_notification)
-    db.session.commit()
-    
-    return jsonify({"message": "Email notification created successfully"}), 201
-
-# Retrieve all email notifications for a user
-@app.route('/api/email_notifications', methods=['GET'])
-def get_email_notifications():
-    user_id = request.args.get('user_id')
-    
-    if not user_id:
-        return jsonify({"error": "user_id is required"}), 400
-
-    # Filter email notifications by user_id
-    email_notifications = EmailNotifications.query.filter_by(user_id=user_id).all()
-    results = [{"user_id": en.user_id, "email": en.email} for en in email_notifications]
-    
-    return jsonify(results), 200
-
-# Update an existing email notification
-@app.route('/api/email_notifications', methods=['PUT'])
-def update_email_notifications():
-    data = request.get_json()
-    user_id = data.get('user_id')
-    email = data.get('email')
-    
-    # Ensure both user_id and email are provided
-    if not user_id or not email:
-        return jsonify({"error": "user_id and email are required"}), 400
-    
-    # Find the existing email notification by user_id
-    email_notification = EmailNotifications.query.filter_by(user_id=user_id).first()
-    if not email_notification:
-        return jsonify({"error": "Email notification not found"}), 404
-    
-    # Update email field
-    email_notification.email = email
-    db.session.commit()
-    
-    return jsonify({"message": "Email notification updated successfully"}), 200
- 
-# Delete an email notification
-@app.route('/api/email_notifications', methods=['DELETE'])
-def delete_email_notifications():
-    data = request.get_json()
-    user_id = data.get('user_id')
-    
-    # Ensure user_id is provided
-    if not user_id:
-        return jsonify({"error": "user_id is required"}), 400
-    
-    # Find and delete the email notification by user_id
-    email_notification = EmailNotifications.query.filter_by(user_id=user_id).first()
-    if not email_notification:
-        return jsonify({"error": "Email notification not found"}), 404
-    
-    db.session.delete(email_notification)
-    db.session.commit()
-    
-    return jsonify({"message": "Email notification deleted successfully"}), 200
-
-@app.route('/api/send_email_notifications', methods=['POST'])
-def send_email_notifications():
-    user_id = request.json.get('user_id')
-    booking_id = request.json.get('booking_id')
-
-    if not user_id or not booking_id:
-        return jsonify({"error": "user_id and booking_id are required"}), 400
-
-    # Step 1: Retrieve booking details from the confirmation API
-    with current_app.test_request_context(f'/api/confirmation?booking_id={booking_id}', method='GET'):
-        response = confirmation()
-        if isinstance(response, tuple):
-            booking_response, status_code = response
-        else:
-            status_code = 200
-
-    if status_code != 200:
-        return jsonify({"error": "Failed to retrieve booking details"}), 500
-
-    booking_data = booking_response.get_json().get("booking")
-    if not booking_data:
-        return jsonify({"error": "Booking data not found"}), 404
-
-    # Step 2: Retrieve emails to notify for this user
-    with current_app.test_request_context(f'/api/email_notifications?user_id={user_id}', method='GET'):
-        response = get_email_notifications()
-        if isinstance(response, tuple):
-            email_notifications_response, status_code = response
-        else:
-            status_code = 200
-    
-    if status_code != 200:
-        return jsonify({"error": "Failed to retrieve email notifications"}), 500
-
-    emails_to_notify = email_notifications_response.get_json()
-    if not emails_to_notify:
-        return jsonify({"message": "No emails to notify"}), 200
-
-    # Step 3: Compose email content with booking details
-    errors = []
-    for item in emails_to_notify:
-        email = item.get("email")
-        if not email:
-            continue
-
-        user = User.query.get(user_id)
-
-        # Format email content with booking details
-        message = Mail(
-            from_email='adityars@vt.edu',
-            to_emails=email,
-            subject="Booking Confirmation",
-            html_content=f"""
-                <strong>Dear {user.name},</strong><br>
-                Your booking for flight {booking_data['flight_number']} with {booking_data['airline']} 
-                from {booking_data['from_airport']} to {booking_data['to_airport']} has been confirmed!<br>
-                <br><strong>Booking Details:</strong><br>
-                Departure: {booking_data['departure_date']}<br>
-                Arrival: {booking_data['arrival_date']}<br>
-                Duration: {booking_data['duration']}<br>
-                Travelers: {booking_data['travelers']}<br>
-                Total Price: ${booking_data['total_price']}<br>
-                Payment Method: {booking_data['payment_method']}<br>
-                <br>Thank you for booking with us!
-            """
-        )
-
-        # Step 4: Send the email
-        try:
-            sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
-            response = sg.send(message)
-            print(f"Email sent to {email} - Status: {response.status_code}")
-        except Exception as e:
-            print(f"Failed to send email to {email}: {e}")
-            errors.append({"email": email, "error": str(e)})
-
-    if errors:
-        return jsonify({"message": "Some emails failed to send", "errors": errors}), 207
-    else:
-        return jsonify({"message": "Emails sent successfully"}), 200
-
-def send_reminder_emails():
-     with app.app_context():
-        print("Running send_reminder_emails....")
-        # Calculate the date two days from now
-        reminder_date = datetime.utcnow()
-        reminder_date_start = reminder_date.replace(hour=0, minute=0, second=0, microsecond=0)
-        reminder_date = datetime.utcnow() + timedelta(days=2)
-        reminder_date_end = reminder_date.replace(hour=23, minute=59, second=59, microsecond=999999)
-        
-        print("Sending the remainders from " + str(reminder_date_start) + " to " + str(reminder_date_end))
-        # Query for all booked flights departing two days from now
-        try:
-            
-            flights = BookedFlight.query.filter(
-                BookedFlight.departure_date.between(reminder_date_start, reminder_date_end)
-            ).all()
-            print(flights)
-            
-            if not flights:
-                return jsonify({"message": "No flights scheduled for departure in two days."}), 200
-            
-            # Collect users and their associated emails
-            user_emails = {}
-            for flight in flights:
-                user_id = flight.user_id
-
-                # Check if we've already retrieved emails for this user
-                if user_id not in user_emails:
-                    with current_app.test_request_context(f'/api/email_notifications?user_id={user_id}', method='GET'):
-                        response = get_email_notifications()
-                        if isinstance(response, tuple):
-                            email_notifications_response, status_code = response
-                        else:
-                            status_code = 200
-
-                    if status_code != 200:
-                        continue  # Skip this user if emails couldn't be retrieved
-
-                    emails = email_notifications_response.get_json()
-                    user_emails[user_id] = [email['email'] for email in emails]
-
-                # Send reminder emails to each email for this user
-                errors = []
-                print(user_emails[user_id])
-                for email in user_emails[user_id]:
-                    message = Mail(
-                        from_email='adityars@vt.edu',
-                        to_emails=email,
-                        subject=f"Reminder: Upcoming Flight {flight.flight_number} with {flight.airline}",
-                        html_content=f"""
-                            <strong>Dear User,</strong><br>
-                            This is a reminder that you have an upcoming flight:<br><br>
-                            <strong>Flight Details:</strong><br>
-                            Airline: {flight.airline}<br>
-                            Flight Number: {flight.flight_number}<br>
-                            Departure: {flight.from_airport} at {flight.departure_date}<br>
-                            Arrival: {flight.to_airport} at {flight.arrival_date}<br>
-                            Duration: {flight.duration}<br>
-                            Travelers: {flight.travelers}<br>
-                            <br>Safe travels!<br>
-                            Best regards,<br> Your Booking Team
-                        """
-                    )
-
-                    try:
-                        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
-                        response = sg.send(message)
-                        print(f"Reminder email sent to {email} - Status: {response.status_code}")
-                    except Exception as e:
-                        print(f"Failed to send email to {email}: {e}")
-                        errors.append({"email": email, "flight_id": flight.id, "error": str(e)})
-
-            if errors:
-                return jsonify({"message": "Some emails failed to send", "errors": errors}), 207
-            else:
-                return jsonify({"message": "Reminder emails sent successfully"}), 200
-
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
-
-def start_post_startup_task():
-    # Give the server time to fully start up (adjust the sleep time if necessary)
-    time.sleep(5)  # Wait 5 seconds after the server starts
-    send_reminder_emails()  # Invoke your function
-
 if __name__ == '__main__':
-    # Start the post-startup task in a separate thread
-    thread = threading.Thread(target=start_post_startup_task)
-    thread.start()
     app.run(host='0.0.0.0', port=9001, debug=True)
