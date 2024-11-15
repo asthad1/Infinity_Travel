@@ -60,6 +60,9 @@ function Navbar({ user }) {
                 <li className="nav-item">
                   <Link className="nav-link" to="/metrics">Metrics</Link>
                 </li>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/revenue">Revenue</Link>
+                </li>
               </>
             )}
             <li className="nav-item">

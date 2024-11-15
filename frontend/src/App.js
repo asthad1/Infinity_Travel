@@ -23,6 +23,7 @@ import MyRentals from './components/MyRentals';
 import ThingsToDo from './components/ThingsToDo';
 import MyBookings from './components/MyBookings';
 import AddEmails from './components/AddEmails';
+import AdminRevenue from './pages/AdminRevenue';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(() => {
@@ -72,10 +73,11 @@ function App() {
           <Route path="/payment-gateway" element={<PaymentGateway />} />
           <Route path="/my-rentals" element={<MyRentals />} />
           <Route path="/things-to-do" element={<ThingsToDo />} />
+          <Route path="/my-bookings" element={<MyBookings />} />
           {/* Admin-only routes */}
           <Route path="/coupons" element={currentUser?.role === 'admin' ? <CouponsPage /> : <Navigate to="/" />} />
           <Route path="/metrics" element={currentUser?.role === 'admin' ? <MetricsPage /> : <Navigate to="/" />} />
-          <Route path="/my-bookings" element={<MyBookings />} />
+          <Route path="/revenue" element={currentUser?.role === 'admin' ? <AdminRevenue /> : <Navigate to="/" />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>
