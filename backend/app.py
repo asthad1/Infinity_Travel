@@ -1200,6 +1200,54 @@ def book_flight():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+    
+
+@app.route('/api/cancel_flight', methods=['POST'])
+def cancel_flight():
+    try:
+        data = request.get_json()
+        booking_id = data.get('booking_id')
+
+        if not booking_id:
+            return jsonify({"error": "Booking ID is required"}), 400
+
+        booking = BookedFlight.query.get(booking_id)
+
+        if not booking:
+            return jsonify({"error": "Booking not found"}), 404
+
+        # Check if the flight is already canceled
+        if booking.status == 'canceled':
+            return jsonify({"message": "Flight is already canceled"}), 400
+
+        # Calculate refund based on the flight's departure time
+        current_time = datetime.utcnow()
+        time_to_departure = booking.departure_date - current_time
+
+        if time_to_departure.total_seconds() > 14400:  # > 4 hours
+            refund_amount = booking.total_price
+            refund_policy = "Full refund"
+        elif 7200 <= time_to_departure.total_seconds() <= 14400:  # 2-4 hours
+            refund_amount = booking.total_price * 0.5
+            refund_policy = "50% refund"
+        else:  # < 2 hours
+            refund_amount = 0
+            refund_policy = "No refund"
+
+        # Update booking status
+        booking.status = 'canceled'
+        db.session.commit()
+
+        return jsonify({
+            "message": "Flight canceled successfully",
+            "refund_amount": refund_amount,
+            "refund_policy": refund_policy,
+            "status": booking.status
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route('/api/confirmation', methods=['GET'])
 def confirmation():
