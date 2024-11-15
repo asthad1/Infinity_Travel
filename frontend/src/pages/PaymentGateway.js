@@ -72,6 +72,8 @@ function PaymentGateway() {
 
       if (response.status === 201) {
         alert('Payment confirmed and booking stored successfully!');
+        // Trigger email notification API
+        await axios.post('http://localhost:9001/api/send_email_notifications', { user_id: userId, booking_id: response.data.booking_id });
         navigate('/my-flights');
       }
     } catch (error) {

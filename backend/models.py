@@ -261,6 +261,13 @@ class BookedFlight(BaseModel, db.Model):
     payment_method = Column(String, nullable=False)
     booking_date = Column(DateTime, default=datetime.utcnow)
 
+class EmailNotifications(db.Model):
+    __tablename__ = 'email_notifications'
+    
+    id = Column(Integer, primary_key=True, index=True)
+    
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    email = Column(String, nullable=False)
 
 class Hotel(BaseModel, db.Model):
     __tablename__ = 'hotels'
@@ -410,3 +417,4 @@ class BookedRental(db.Model):
 
     rental = db.relationship('Rental', backref=db.backref('booked_rentals', lazy=True))
     user = db.relationship('User', backref=db.backref('booked_rentals', lazy=True))
+

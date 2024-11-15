@@ -21,14 +21,13 @@ function Navbar({ user }) {
   const handleLogout = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('user_id');
-    localStorage.removeItem('notificationCount'); // Optional: Clear notification count on logout
-    dispatch(setUser(null)); // Reset user state
+    localStorage.removeItem('notificationCount');
+    dispatch(setUser(null));
     navigate('/login');
     window.location.reload();
   };
 
   const handleMyFlightsClick = () => {
-    // Reset notification count when "My Flights" is clicked
     localStorage.setItem('notificationCount', 0);
     setNotificationCount(0);
   };
@@ -53,12 +52,12 @@ function Navbar({ user }) {
             <li className="nav-item">
               <Link className="nav-link" to="/">Home</Link>
             </li>
-            {user?.role === 'admin' && ( // Only show Coupons link for admin
+            {user?.role === 'admin' && (
               <>
                 <li className="nav-item">
                   <Link className="nav-link" to="/coupons">Coupons</Link>
                 </li>
-                <li className="nav-item"> {/* Metrics link */}
+                <li className="nav-item">
                   <Link className="nav-link" to="/metrics">Metrics</Link>
                 </li>
               </>
@@ -93,15 +92,19 @@ function Navbar({ user }) {
                   </a>
                   <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                     <li><Link className="dropdown-item" to="/profile">Change Password</Link></li>
+                    <li><Link className="dropdown-item" to="/addemails">Add Emails</Link></li>
                     <li><Link className="dropdown-item" to="/my-favorites">My Favorites</Link></li>
                     <li>
                       <Link className="dropdown-item" to="/my-rentals">My Rentals</Link>
                     </li>
                     <li>
+                      <Link className="dropdown-item" to="/my-bookings">My Bookings</Link>
+                    </li>
+                    <li>
                       <Link
                         className="dropdown-item d-flex justify-content-between align-items-center"
                         to="/my-flights"
-                        onClick={handleMyFlightsClick} // Add click handler here
+                        onClick={handleMyFlightsClick}
                       >
                         <span>My Flights</span>
                         {notificationCount > 0 && (
