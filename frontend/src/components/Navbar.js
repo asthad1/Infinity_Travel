@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
 import { setUser } from '../store/userSlice';
+import { setTravelCredit } from '../store/travelCreditSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUserCircle, faTrophy, faWallet } from '@fortawesome/free-solid-svg-icons';
 import { useFlightContext } from '../context/FlightContext';
@@ -12,16 +13,16 @@ function Navbar({ user }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [notificationCount, setNotificationCount] = useState(0);
-  const [travelCredit, setTravelCredit] = useState(0); 
+  const travelCredit = useSelector((state) => state.travelCredit.balance); // Redux state
   const { totalFlightPrice } = useFlightContext();
 
-  // Fetch travel credits for the user
+  // Fetch travel credit and update Redux state
   useEffect(() => {
     const fetchTravelCredit = async () => {
       try {
         if (user?.user_id) {
           const response = await axios.get(`http://localhost:9001/api/travel_credits/${user.user_id}`);
-          setTravelCredit(response.data.balance);
+          dispatch(setTravelCredit(response.data.balance));
         }
       } catch (error) {
         console.error('Error fetching travel credit:', error);
@@ -29,7 +30,7 @@ function Navbar({ user }) {
     };
 
     fetchTravelCredit();
-  }, [user]);
+  }, [user, dispatch]);
 
   // Fetch notification count
   useEffect(() => {

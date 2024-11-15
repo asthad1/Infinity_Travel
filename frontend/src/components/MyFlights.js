@@ -10,6 +10,8 @@ import {
 import Notifications from './Notifications';
 import './MyFlights.css';
 import { useFlightContext } from '../context/FlightContext';
+import { useDispatch } from 'react-redux';
+import { updateTravelCredit } from '../store/travelCreditSlice';
 
 const airlineImages = {
   'Air France': require('../assets/images/airlines/air-france.jpg'),
@@ -30,6 +32,7 @@ function MyFlights() {
   const [message, setMessage] = useState('');
   const user = JSON.parse(localStorage.getItem('user'));
   const { setTotalFlightPrice } = useFlightContext();
+  const dispatch = useDispatch(); // Use Redux dispatch
 
   useEffect(() => {
     const fetchFlights = async () => {
@@ -85,6 +88,7 @@ function MyFlights() {
     const refundAmount = flight.total_price * refundPercentage;
 
     try {
+      // Cancel the flight
       const cancelResponse = await axios.post('http://localhost:9001/api/cancel_flight', {
         booking_id: flight.id,
       });
@@ -93,11 +97,16 @@ function MyFlights() {
         throw new Error('Failed to cancel flight');
       }
 
+      // Update travel credit
       await axios.post('http://localhost:9001/api/travel_credit', {
         user_id: user.user_id,
         credit_change: refundAmount,
       });
 
+      // Dispatch Redux action to update travel credit
+      dispatch(updateTravelCredit(refundAmount));
+
+      // Update flight list and display success message
       setFlights((prevFlights) => prevFlights.filter((f) => f.id !== flight.id));
       setMessage(
         `Flight ${flight.flight_number} has been canceled. A refund of $${refundAmount.toFixed(
