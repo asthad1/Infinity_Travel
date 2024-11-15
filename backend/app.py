@@ -1985,6 +1985,53 @@ def start_post_startup_task():
     # Give the server time to fully start up (adjust the sleep time if necessary)
     time.sleep(5)  # Wait 5 seconds after the server starts
     send_reminder_emails()  # Invoke your function
+    
+## =================== Travel Credit ========================
+
+@app.route('/api/travel_credit', methods=['POST'])
+def update_travel_credit():
+    """
+    Update or add travel credit for a user.
+    The credit balance cannot be negative.
+    """
+    data = request.get_json()
+    user_id = data.get('user_id')
+    # Positive to add, negative to subtract
+    credit_change = data.get('credit_change')
+
+    if not user_id or credit_change is None:
+        return jsonify({'error': 'user_id and credit_change are required'}), 400
+
+    try:
+        # Fetch or create a TravelCredit entry for the user
+        travel_credit = TravelCredit.query.filter_by(user_id=user_id).first()
+
+        if not travel_credit:
+            if credit_change < 0:
+                return jsonify({'error': 'Cannot subtract credit for a new user entry'}), 400
+            travel_credit = TravelCredit(
+                user_id=user_id, balance=credit_change)
+            db.session.add(travel_credit)
+        else:
+            # Ensure the balance does not go negative
+            new_balance = travel_credit.balance + credit_change
+            if new_balance < 0:
+                return jsonify({'error': 'Insufficient credit balance'}), 400
+            travel_credit.balance = new_balance
+
+        db.session.commit()
+        return jsonify({
+            'message': 'Travel credit updated successfully',
+            'user_id': travel_credit.user_id,
+            'balance': travel_credit.balance
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+    
+## ===================Run the Flask Application========================    
 
 if __name__ == '__main__':
     # Start the post-startup task in a separate thread
