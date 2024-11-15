@@ -3,16 +3,35 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../store/userSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUserCircle, faTrophy } from '@fortawesome/free-solid-svg-icons';
+import { faUserCircle, faTrophy, faWallet } from '@fortawesome/free-solid-svg-icons';
 import { useFlightContext } from '../context/FlightContext';
+import axios from 'axios';
 import './Navbar.css';
 
 function Navbar({ user }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [notificationCount, setNotificationCount] = useState(0);
+  const [travelCredit, setTravelCredit] = useState(0); 
   const { totalFlightPrice } = useFlightContext();
 
+  // Fetch travel credits for the user
+  useEffect(() => {
+    const fetchTravelCredit = async () => {
+      try {
+        if (user?.user_id) {
+          const response = await axios.get(`http://localhost:9001/api/travel_credits/${user.user_id}`);
+          setTravelCredit(response.data.balance);
+        }
+      } catch (error) {
+        console.error('Error fetching travel credit:', error);
+      }
+    };
+
+    fetchTravelCredit();
+  }, [user]);
+
+  // Fetch notification count
   useEffect(() => {
     const count = localStorage.getItem('notificationCount') || 0;
     setNotificationCount(Number(count));
@@ -73,6 +92,12 @@ function Navbar({ user }) {
                   <div className="reward-points nav-link">
                     <FontAwesomeIcon icon={faTrophy} className="me-1" />
                     <span>Reward Points: {totalFlightPrice}</span>
+                  </div>
+                </li>
+                <li className="nav-item">
+                  <div className="travel-credit nav-link">
+                    <FontAwesomeIcon icon={faWallet} className="me-1" style={{ color: 'green' }} />
+                    <span>Travel Credit: ${travelCredit.toFixed(2)}</span>
                   </div>
                 </li>
                 <li className="nav-item dropdown">

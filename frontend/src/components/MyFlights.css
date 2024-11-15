@@ -158,6 +158,31 @@
   font-size: 1.1rem;
 }
 
+.cancel-flight-button {
+  background-color: #d9534f;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.cancel-flight-button:hover {
+  background-color: #c9302c;
+  transform: scale(1.02);
+}
+
+.cancel-flight-button:active {
+  background-color: #ac2925;
+  transform: scale(0.98);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .my-flights-container {

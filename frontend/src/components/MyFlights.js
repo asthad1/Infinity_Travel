@@ -1,19 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faPlaneDeparture, 
-  faPlaneArrival, 
-  faClock, 
+import {
+  faPlaneDeparture,
+  faPlaneArrival,
   faUsers,
   faDollarSign,
-  faCalendarAlt
 } from '@fortawesome/free-solid-svg-icons';
 import Notifications from './Notifications';
 import './MyFlights.css';
 import { useFlightContext } from '../context/FlightContext';
 
-// Import airline images
 const airlineImages = {
   'Air France': require('../assets/images/airlines/air-france.jpg'),
   'American Airlines': require('../assets/images/airlines/american-airlines.png'),
@@ -25,11 +22,12 @@ const airlineImages = {
   'Qatar Airways': require('../assets/images/airlines/qatar.jpg'),
   'Singapore Airlines': require('../assets/images/airlines/singapore.png'),
   'United': require('../assets/images/airlines/united.png'),
-  'default': require('../assets/images/airlines/default-logo.png')
+  default: require('../assets/images/airlines/default-logo.png'),
 };
 
 function MyFlights() {
   const [flights, setFlights] = useState([]);
+  const [message, setMessage] = useState('');
   const user = JSON.parse(localStorage.getItem('user'));
   const { setTotalFlightPrice } = useFlightContext();
 
@@ -40,9 +38,7 @@ function MyFlights() {
           params: { user_id: user.user_id },
         });
 
-        // Filter flights with status 'confirmed'
-        const confirmedFlights = response.data.filter(flight => flight.status === 'confirmed');
-
+        const confirmedFlights = response.data.filter((flight) => flight.status === 'confirmed');
         setFlights(confirmedFlights);
       } catch (error) {
         console.error('Error fetching booked flights:', error);
@@ -56,22 +52,62 @@ function MyFlights() {
 
   useEffect(() => {
     const total = flights.reduce((total, flight) => total + parseFloat(flight.total_price), 0);
-    setTotalFlightPrice(Math.round(total)); // Round to whole number
+    setTotalFlightPrice(Math.round(total));
   }, [flights, setTotalFlightPrice]);
 
-  const getAirlineLogo = (airline) => {
-    return airlineImages[airline] || airlineImages.default;
-  };
+  const getAirlineLogo = (airline) => airlineImages[airline] || airlineImages.default;
 
-  const formatDateTime = (dateTimeString) => {
-    return new Date(dateTimeString).toLocaleString('en-US', {
+  const formatDateTime = (dateTimeString) =>
+    new Date(dateTimeString).toLocaleString('en-US', {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
       hour: 'numeric',
       minute: 'numeric',
-      hour12: true
+      hour12: true,
     });
+
+  const handleCancelFlight = async (flight) => {
+    const now = new Date();
+    const departureTime = new Date(flight.departure_time);
+    const timeDifference = (departureTime - now) / (1000 * 60 * 60);
+
+    let refundPercentage = 0;
+    if (timeDifference > 4) {
+      refundPercentage = 1; // Full refund
+    } else if (timeDifference >= 2 && timeDifference <= 4) {
+      refundPercentage = 0.5; // 50% refund
+    } else {
+      setMessage(`Flight ${flight.flight_number} cannot be canceled (less than 2 hours to departure).`);
+      return;
+    }
+
+    const refundAmount = flight.total_price * refundPercentage;
+
+    try {
+      const cancelResponse = await axios.post('http://localhost:9001/api/cancel_flight', {
+        booking_id: flight.id,
+      });
+
+      if (cancelResponse.data.status !== 'canceled') {
+        throw new Error('Failed to cancel flight');
+      }
+
+      await axios.post('http://localhost:9001/api/travel_credit', {
+        user_id: user.user_id,
+        credit_change: refundAmount,
+      });
+
+      setFlights((prevFlights) => prevFlights.filter((f) => f.id !== flight.id));
+      setMessage(
+        `Flight ${flight.flight_number} has been canceled. A refund of $${refundAmount.toFixed(
+          2
+        )} has been issued as travel credit.`
+      );
+    } catch (error) {
+      console.error('Error canceling flight or updating travel credit:', error);
+      setMessage('An error occurred while canceling the flight. Please try again.');
+    }
   };
 
   if (flights.length === 0) {
@@ -88,25 +124,19 @@ function MyFlights() {
 
   return (
     <div className="my-flights-container">
+      {message && <div className="notification-banner">{message}</div>}
       <Notifications flights={flights} />
       <h2 className="page-title">My Booked Flights</h2>
       <div className="flights-grid">
         {flights.map((flight, index) => (
           <div key={index} className="flight-card">
             <div className="airline-header">
-              <img 
-                src={getAirlineLogo(flight.airline)} 
-                alt={flight.airline} 
-                className="airline-logo"
-              />
-              <div className="flight-number">
-                Flight {flight.flight_number}
-              </div>
+              <img src={getAirlineLogo(flight.airline)} alt={flight.airline} className="airline-logo" />
+              <div className="flight-number">Flight {flight.flight_number}</div>
             </div>
-            
+
             <div className="flight-details">
               <div className="route-info">
-                <h5>From: </h5>
                 <div className="departure">
                   <FontAwesomeIcon icon={faPlaneDeparture} className="icon" />
                   <div className="location">
@@ -114,13 +144,12 @@ function MyFlights() {
                     <p>{formatDateTime(flight.departure_time)}</p>
                   </div>
                 </div>
-                
+
                 <div className="duration">
                   <div className="duration-line"></div>
                   <span>{flight.duration}</span>
                 </div>
-                
-                <h5>To: </h5>
+
                 <div className="arrival">
                   <FontAwesomeIcon icon={faPlaneArrival} className="icon" />
                   <div className="location">
@@ -140,6 +169,13 @@ function MyFlights() {
                   <span>${flight.total_price}</span>
                 </div>
               </div>
+
+              <button
+                className="cancel-flight-button"
+                onClick={() => handleCancelFlight(flight)}
+              >
+                Cancel Flight
+              </button>
             </div>
           </div>
         ))}

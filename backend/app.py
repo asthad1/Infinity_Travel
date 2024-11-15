@@ -1204,6 +1204,9 @@ def book_flight():
 
 @app.route('/api/cancel_flight', methods=['POST'])
 def cancel_flight():
+    """
+    Cancel a booked flight and issue a refund based on the time-to-departure policy.
+    """
     try:
         data = request.get_json()
         booking_id = data.get('booking_id')
@@ -1216,9 +1219,8 @@ def cancel_flight():
         if not booking:
             return jsonify({"error": "Booking not found"}), 404
 
-        # Check if the flight is already canceled
-        if booking.status == 'canceled':
-            return jsonify({"message": "Flight is already canceled"}), 400
+        if booking.status != 'confirmed':
+            return jsonify({"message": "Flight cannot be canceled as it is not confirmed"}), 400
 
         # Calculate refund based on the flight's departure time
         current_time = datetime.utcnow()
@@ -1238,16 +1240,51 @@ def cancel_flight():
         booking.status = 'canceled'
         db.session.commit()
 
+        # Issue refund as travel credit only if refund_amount > 0
+        if refund_amount > 0:
+            credit_response = update_travel_credit_internal(
+                user_id=booking.user_id, credit_change=refund_amount
+            )
+            if credit_response.get("error"):
+                raise Exception(credit_response["error"])
+
         return jsonify({
-            "message": "Flight canceled successfully",
+            "message": f"Flight {booking.flight_number} canceled successfully",
             "refund_amount": refund_amount,
             "refund_policy": refund_policy,
             "status": booking.status
         }), 200
     except Exception as e:
         db.session.rollback()
+        app.logger.error(f"Error canceling flight: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
+
+def update_travel_credit_internal(user_id, credit_change):
+    """
+    Internal utility function to update travel credit.
+    """
+    try:
+        travel_credit = TravelCredit.query.filter_by(user_id=user_id).first()
+
+        if not travel_credit:
+            if credit_change < 0:
+                return {"error": "Cannot subtract credit for a new user entry"}
+            travel_credit = TravelCredit(
+                user_id=user_id, balance=credit_change)
+            db.session.add(travel_credit)
+        else:
+            new_balance = travel_credit.balance + credit_change
+            if new_balance < 0:
+                return {"error": "Insufficient credit balance"}
+            travel_credit.balance = new_balance
+
+        db.session.commit()
+        return {"message": "Travel credit updated successfully", "balance": travel_credit.balance}
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error updating travel credit: {str(e)}")
+        return {"error": str(e)}
 
 @app.route('/api/confirmation', methods=['GET'])
 def confirmation():
@@ -1290,7 +1327,13 @@ def get_booked_flights():
         return jsonify({"error": "User ID is required"}), 400
 
     try:
-        flights = BookedFlight.query.filter_by(user_id=user_id).all()
+        # Fetch only confirmed flights for the given user ID
+        flights = BookedFlight.query.filter_by(user_id=user_id, status='confirmed').all()        
+        
+        # Check if the user has any confirmed flights
+        if not flights:
+            return jsonify({"message": "No confirmed flights found for this user"}), 404
+        
         flight_data = [
             {
                 "id": flight.id,
@@ -1988,6 +2031,7 @@ def start_post_startup_task():
     
 ## =================== Travel Credit ========================
 
+
 @app.route('/api/travel_credit', methods=['POST'])
 def update_travel_credit():
     """
@@ -1996,14 +2040,12 @@ def update_travel_credit():
     """
     data = request.get_json()
     user_id = data.get('user_id')
-    # Positive to add, negative to subtract
     credit_change = data.get('credit_change')
 
     if not user_id or credit_change is None:
         return jsonify({'error': 'user_id and credit_change are required'}), 400
 
     try:
-        # Fetch or create a TravelCredit entry for the user
         travel_credit = TravelCredit.query.filter_by(user_id=user_id).first()
 
         if not travel_credit:
@@ -2013,7 +2055,6 @@ def update_travel_credit():
                 user_id=user_id, balance=credit_change)
             db.session.add(travel_credit)
         else:
-            # Ensure the balance does not go negative
             new_balance = travel_credit.balance + credit_change
             if new_balance < 0:
                 return jsonify({'error': 'Insufficient credit balance'}), 400
@@ -2025,10 +2066,11 @@ def update_travel_credit():
             'user_id': travel_credit.user_id,
             'balance': travel_credit.balance
         }), 200
-
     except Exception as e:
         db.session.rollback()
+        app.logger.error(f"Error updating travel credit: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
 
     
 ## ===================Run the Flask Application========================    
