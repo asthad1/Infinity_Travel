@@ -1274,7 +1274,8 @@ def confirmation():
             "discount_applied": booking.discount_applied,
             "total_price": booking.total_price,
             "payment_method": booking.payment_method,
-            "booking_date": booking.booking_date
+            "booking_date": booking.booking_date,
+            "status": booking.status
         }
 
         return jsonify({"booking": booking_details}), 200
