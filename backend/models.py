@@ -259,7 +259,8 @@ class BookedFlight(BaseModel, db.Model):
     total_price = Column(Float, nullable=False)
     # e.g., "Credit Card", "PayPal", "Google Pay"
     payment_method = Column(String, nullable=False)
-    booking_date = Column(DateTime, default=datetime.utcnow)
+    booking_date = Column(DateTime, default=datetime.now())
+    status = Column(String, default='confirmed')
 
 class EmailNotifications(db.Model):
     __tablename__ = 'email_notifications'
@@ -418,3 +419,16 @@ class BookedRental(db.Model):
     rental = db.relationship('Rental', backref=db.backref('booked_rentals', lazy=True))
     user = db.relationship('User', backref=db.backref('booked_rentals', lazy=True))
 
+
+class TravelCredit(BaseModel, db.Model):
+    __tablename__ = 'travel_credits'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'),
+                     nullable=False, unique=True)
+    balance = Column(Float, nullable=False, default=0.0)
+    updated_at = Column(DateTime, default=datetime.utcnow,
+                        onupdate=datetime.utcnow)
+
+    user = relationship('User', backref=db.backref(
+        'travel_credit', uselist=False))

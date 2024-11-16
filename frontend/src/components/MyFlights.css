@@ -5,6 +5,33 @@
   margin: 0 auto;
 }
 
+/* Banner Styling */
+.flight-notification-banner {
+  top: 0;
+  z-index: 1000;
+  background-color: #d4edda;
+  /* Light green background for success */
+  color: #155724;
+  /* Dark green text for success */
+  padding: 1rem;
+  border: 1px solid #c3e6cb;
+  border-radius: 5px;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.flight-notification-banner.error {
+  background-color: #f8d7da;
+  /* Light red background for error */
+  color: #721c24;
+  /* Dark red text for error */
+  border: 1px solid #f5c6cb;
+}
+
+/* Page Title */
 .page-title {
   color: #2c3e50;
   font-size: 2rem;
@@ -13,6 +40,7 @@
   text-align: center;
 }
 
+/* Flights Grid */
 .flights-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
@@ -20,6 +48,7 @@
   padding: 1rem;
 }
 
+/* Flight Card */
 .flight-card {
   background: white;
   border-radius: 12px;
@@ -33,6 +62,7 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
+/* Airline Header */
 .airline-header {
   display: flex;
   align-items: center;
@@ -53,6 +83,7 @@
   font-weight: 500;
 }
 
+/* Flight Details */
 .flight-details {
   padding: 1.5rem;
 }
@@ -115,6 +146,7 @@
   right: 0;
 }
 
+/* Flight Info */
 .flight-info {
   display: flex;
   justify-content: space-between;
@@ -156,6 +188,36 @@
 .empty-flights-content p {
   color: #6c757d;
   font-size: 1.1rem;
+}
+
+/* Cancel Flight Button */
+.cancel-flight-button {
+  background-color: #ff6b6b;
+  /* Vibrant red */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  margin-top: 1rem;
+  width: 100%;
+  letter-spacing: 0.5px;
+}
+
+.cancel-flight-button:hover {
+  background-color: #ff3b3b;
+  /* Slightly darker red */
+  transform: scale(1.02);
+}
+
+.cancel-flight-button:active {
+  background-color: #e62929;
+  /* Even darker red */
+  transform: scale(0.98);
 }
 
 /* Responsive Design */

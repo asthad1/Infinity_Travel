@@ -129,9 +129,9 @@ const FlightSearchResults = ({ flights, travelers }) => {
 
           <div className="flight-main-content">
             <div className="departure-info">
-              <div className="flight-time">{new Date(flight.departure_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+              <div className="flight-time">{flight.departure_time.split(' ')[1]}</div> {/* Extract time */}
               <div className="flight-location">{flight.departure_airport}</div>
-              <div className="flight-date">{new Date(flight.departure_time).toLocaleDateString()}</div>
+              <div className="flight-date">{flight.departure_time.split(' ')[0]}</div> {/* Extract date */}
             </div>
 
             <div className="flight-duration">
@@ -141,9 +141,9 @@ const FlightSearchResults = ({ flights, travelers }) => {
             </div>
 
             <div className="arrival-info">
-              <div className="flight-time">{new Date(flight.arrival_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+              <div className="flight-time">{flight.arrival_time.split(' ')[1]}</div> {/* Extract time */}
               <div className="flight-location">{flight.destination_airport}</div>
-              <div className="flight-date">{new Date(flight.arrival_time).toLocaleDateString()}</div>
+              <div className="flight-date">{flight.arrival_time.split(' ')[0]}</div> {/* Extract date */}
             </div>
           </div>
 
