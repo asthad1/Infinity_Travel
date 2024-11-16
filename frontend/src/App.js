@@ -6,6 +6,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import Home from './pages/Home';
 import MyFlights from './components/MyFlights';
+import MyHotels from './components/MyHotels';
 import Profile from './components/Profile';
 import Support from './pages/Support';
 import MyFavorites from './components/MyFavorites';
@@ -19,6 +20,7 @@ import CouponsPage from './pages/Coupons';
 import MetricsPage from './pages/Metrics';
 import PaymentGateway from './pages/PaymentGateway';
 import { FlightProvider } from './context/FlightContext';
+import { HotelProvider } from './context/HotelContext';
 import MyRentals from './components/MyRentals';
 import ThingsToDo from './components/ThingsToDo';
 
@@ -50,12 +52,14 @@ function App() {
 
   return (
     <FlightProvider>
+      <HotelProvider>
       <Router>
         <Navbar user={currentUser} notificationCount={notificationCount} />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login setCurrentUser={setCurrentUser} />} />
           <Route path="/my-flights" element={currentUser ? <MyFlights /> : <Navigate to="/login" />} />
+          <Route path="/my-hotels" element={currentUser ? <MyHotels /> : <Navigate to="/login" />} />
           <Route path="/profile" element={currentUser ? <Profile /> : <Navigate to="/login" />} />
           <Route path="/register" element={<Register />} />
           <Route path="/support" element={<Support />} />
@@ -76,6 +80,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>
+      </HotelProvider>
     </FlightProvider>
   );
 }
