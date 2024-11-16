@@ -1240,7 +1240,8 @@ def cancel_flight():
         if not booking_id:
             return jsonify({"error": "Booking ID is required"}), 400
 
-        booking = BookedFlight.query.get(booking_id)
+        # Use `db.session.get` instead of `Query.get` for SQLAlchemy 2.0 compatibility
+        booking = db.session.get(BookedFlight, booking_id)
 
         if not booking:
             return jsonify({"error": "Booking not found"}), 404
@@ -1249,7 +1250,7 @@ def cancel_flight():
             return jsonify({"message": "Flight cannot be canceled as it is not confirmed"}), 400
 
         current_time = datetime.now()
-        departure_time = datetime.strptime(booking.departure_date, '%Y-%m-%d %H:%M:%S')
+        departure_time = booking.departure_date  # departure_date is already a datetime object
         time_to_departure = departure_time - current_time
 
         if time_to_departure.total_seconds() > 14400:  # > 4 hours
@@ -1261,7 +1262,6 @@ def cancel_flight():
         else:  # < 2 hours
             refund_amount = 0
             refund_policy = "No refund"
-
 
         # Update booking status
         booking.status = 'canceled'
