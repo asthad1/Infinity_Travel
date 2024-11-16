@@ -1,5 +1,3 @@
-// MyFlights.js
-
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -20,18 +18,19 @@ const airlineImages = {
   'American Airlines': require('../assets/images/airlines/american-airlines.png'),
   'British Airways': require('../assets/images/airlines/british.png'),
   'Cathay Pacific': require('../assets/images/airlines/cathay.jpg'),
-  Delta: require('../assets/images/airlines/delta.png'),
-  Emirates: require('../assets/images/airlines/emirates.png'),
-  Lufthansa: require('../assets/images/airlines/lufthansa.png'),
+  'Delta': require('../assets/images/airlines/delta.png'),
+  'Emirates': require('../assets/images/airlines/emirates.png'),
+  'Lufthansa': require('../assets/images/airlines/lufthansa.png'),
   'Qatar Airways': require('../assets/images/airlines/qatar.jpg'),
   'Singapore Airlines': require('../assets/images/airlines/singapore.png'),
-  United: require('../assets/images/airlines/united.png'),
-  default: require('../assets/images/airlines/default-logo.png'),
+  'United': require('../assets/images/airlines/united.png'),
+  'default': require('../assets/images/airlines/default-logo.png')
 };
 
 function MyFlights() {
   const [flights, setFlights] = useState([]);
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('');
   const user_id = useSelector((state) => state.user.user_id);
   const { setTotalFlightPrice } = useFlightContext();
   const dispatch = useDispatch();
@@ -63,14 +62,14 @@ function MyFlights() {
   const getAirlineLogo = (airline) => airlineImages[airline] || airlineImages.default;
 
   const formatDateTime = (dateTimeString) => {
-      return new Date(dateTimeString).toLocaleString('en-US', {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true,
-      });
+    return new Date(dateTimeString).toLocaleString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
   };
 
   const handleCancelFlight = async (flight) => {
@@ -81,6 +80,8 @@ function MyFlights() {
 
     let refundPercentage = 0;
     let refundMessage = '';
+    let messageType = 'success'; // Default message type
+
     if (timeDifference > 4) {
       refundPercentage = 1; // Full refund
       refundMessage = `You have received a full refund of $${(flight.total_price * refundPercentage).toFixed(
@@ -92,10 +93,9 @@ function MyFlights() {
         2
       )} as travel credit.`;
     } else {
-      setMessage(
-        `Flight ${flight.flight_number} cannot be canceled. It is less than 2 hours to departure, and cancellations are no longer allowed.`
-      );
-      return;
+      refundPercentage = 0; // No refund
+      refundMessage = `You have received no refund for this cancellation as it is less than 2 hours to departure.`;
+      messageType = 'error'; // Set message type to error for red notification
     }
 
     const refundAmount = flight.total_price * refundPercentage;
@@ -110,27 +110,35 @@ function MyFlights() {
         throw new Error('Failed to cancel flight');
       }
 
-      // Update travel credit in the backend
-      await axios.post('http://localhost:9001/api/travel_credit', {
-        user_id,
-        credit_change: refundAmount,
-      });
+      // Update travel credit in the backend only if refundAmount > 0
+      if (refundAmount > 0) {
+        await axios.post('http://localhost:9001/api/travel_credit', {
+          user_id,
+          credit_change: refundAmount,
+        });
 
-      // Dispatch Redux action to update travel credit
-      dispatch(updateTravelCredit(refundAmount));
+        // Dispatch Redux action to update travel credit
+        dispatch(updateTravelCredit(refundAmount));
+      }
 
-      // Update flight list and display success message
+      // Update flight list and display message
       setFlights((prevFlights) => prevFlights.filter((f) => f.id !== flight.id));
       setMessage(`Flight ${flight.flight_number} has been canceled. ${refundMessage}`);
+      setMessageType(messageType); // Update the message type state
     } catch (error) {
       console.error('Error canceling flight or updating travel credit:', error);
       setMessage('An error occurred while canceling the flight. Please try again.');
+      setMessageType('error'); // Set message type to error
     }
   };
 
   return (
     <div className="my-flights-container">
-      {message && <div className="flight-notification-banner">{message}</div>}
+      {message && (
+        <div className={`flight-notification-banner ${messageType === 'error' ? 'error' : ''}`}>
+          {message}
+        </div>
+      )}
       {flights.length === 0 ? (
         <div className="empty-flights-container">
           <div className="empty-flights-content">
