@@ -259,7 +259,7 @@ class BookedFlight(BaseModel, db.Model):
     total_price = Column(Float, nullable=False)
     # e.g., "Credit Card", "PayPal", "Google Pay"
     payment_method = Column(String, nullable=False)
-    booking_date = Column(DateTime, default=datetime.utcnow)
+    booking_date = Column(DateTime, default=datetime.now())
     status = Column(String, default='confirmed')
 
 class EmailNotifications(db.Model):

@@ -4,6 +4,7 @@ import searchReducer from './searchSlice';
 import flightsReducer from './flightsSlice';
 import savedSearchesReducer from './savedSearchesSlice';
 import travelCreditReducer from './travelCreditSlice';
+import notificationReducer from './notificationSlice';
 
 const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ const store = configureStore({
     flights: flightsReducer,
     savedSearches: savedSearchesReducer,
     travelCredit: travelCreditReducer,
+    notification: notificationReducer,
   },
   devTools: process.env.NODE_ENV !== 'production',
 });

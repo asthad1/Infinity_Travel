@@ -6,8 +6,7 @@
 }
 
 /* Banner Styling */
-.notification-banner {
-  position: sticky;
+.flight-notification-banner {
   top: 0;
   z-index: 1000;
   background-color: #d4edda;
@@ -24,7 +23,7 @@
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.notification-banner.error {
+.flight-notification-banner.error {
   background-color: #f8d7da;
   /* Light red background for error */
   color: #721c24;

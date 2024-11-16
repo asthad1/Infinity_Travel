@@ -1,19 +1,25 @@
-import React, { useEffect, useState } from 'react';
+// Navbar.js
+
+import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-import { setUser } from '../store/userSlice';
+import { clearUser } from '../store/userSlice';
 import { setTravelCredit } from '../store/travelCreditSlice';
+import { resetNotificationCount } from '../store/notificationSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUserCircle, faTrophy, faWallet } from '@fortawesome/free-solid-svg-icons';
 import { useFlightContext } from '../context/FlightContext';
 import axios from 'axios';
 import './Navbar.css';
 
-function Navbar({ user }) {
+function Navbar() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [notificationCount, setNotificationCount] = useState(0);
-  const travelCredit = useSelector((state) => state.travelCredit.balance); // Redux state
+
+  // Retrieve user from Redux store
+  const user = useSelector((state) => state.user);
+  const notificationCount = useSelector((state) => state.notification.count);
+  const travelCredit = useSelector((state) => state.travelCredit.balance);
   const { totalFlightPrice } = useFlightContext();
 
   // Fetch travel credit and update Redux state
@@ -32,30 +38,25 @@ function Navbar({ user }) {
     fetchTravelCredit();
   }, [user, dispatch]);
 
-  // Fetch notification count
-  useEffect(() => {
-    const count = localStorage.getItem('notificationCount') || 0;
-    setNotificationCount(Number(count));
-  }, [user]);
-
   const handleLogout = () => {
     localStorage.removeItem('user');
-    localStorage.removeItem('user_id');
-    localStorage.removeItem('notificationCount');
-    dispatch(setUser(null));
+    dispatch(clearUser());
+    dispatch(setTravelCredit(0));
+    dispatch(resetNotificationCount()); // Reset notification count
     navigate('/login');
     window.location.reload();
   };
 
   const handleMyFlightsClick = () => {
-    localStorage.setItem('notificationCount', 0);
-    setNotificationCount(0);
+    dispatch(resetNotificationCount()); // Reset notification count
   };
 
   return (
     <nav className="navbar navbar-expand-lg navbar-light bg-light">
       <div className="container-fluid">
-        <Link className="navbar-brand" to="/">Infinity Travel</Link>
+        <Link className="navbar-brand" to="/">
+          Infinity Travel
+        </Link>
         <button
           className="navbar-toggler"
           type="button"
@@ -68,24 +69,34 @@ function Navbar({ user }) {
           <span className="navbar-toggler-icon"></span>
         </button>
         <div className="collapse navbar-collapse" id="navbarNav">
+          {/* Left side navigation */}
           <ul className="navbar-nav">
             <li className="nav-item">
-              <Link className="nav-link" to="/">Home</Link>
+              <Link className="nav-link" to="/">
+                Home
+              </Link>
             </li>
             {user?.role === 'admin' && (
               <>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/coupons">Coupons</Link>
+                  <Link className="nav-link" to="/coupons">
+                    Coupons
+                  </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/metrics">Metrics</Link>
+                  <Link className="nav-link" to="/metrics">
+                    Metrics
+                  </Link>
                 </li>
               </>
             )}
             <li className="nav-item">
-              <Link className="nav-link" to="/support">Support</Link>
+              <Link className="nav-link" to="/support">
+                Support
+              </Link>
             </li>
           </ul>
+          {/* Right side navigation */}
           <ul className="navbar-nav ms-auto">
             {user && user.email ? (
               <>
@@ -101,6 +112,7 @@ function Navbar({ user }) {
                     <span>Travel Credit: ${travelCredit.toFixed(2)}</span>
                   </div>
                 </li>
+                {/* User Dropdown */}
                 <li className="nav-item dropdown">
                   <a
                     className="nav-link dropdown-toggle"
@@ -117,14 +129,30 @@ function Navbar({ user }) {
                     )}
                   </a>
                   <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                    <li><Link className="dropdown-item" to="/profile">Change Password</Link></li>
-                    <li><Link className="dropdown-item" to="/addemails">Add Emails</Link></li>
-                    <li><Link className="dropdown-item" to="/my-favorites">My Favorites</Link></li>
                     <li>
-                      <Link className="dropdown-item" to="/my-rentals">My Rentals</Link>
+                      <Link className="dropdown-item" to="/profile">
+                        Change Password
+                      </Link>
                     </li>
                     <li>
-                      <Link className="dropdown-item" to="/my-bookings">My Bookings</Link>
+                      <Link className="dropdown-item" to="/addemails">
+                        Add Emails
+                      </Link>
+                    </li>
+                    <li>
+                      <Link className="dropdown-item" to="/my-favorites">
+                        My Favorites
+                      </Link>
+                    </li>
+                    <li>
+                      <Link className="dropdown-item" to="/my-rentals">
+                        My Rentals
+                      </Link>
+                    </li>
+                    <li>
+                      <Link className="dropdown-item" to="/my-bookings">
+                        My Bookings
+                      </Link>
                     </li>
                     <li>
                       <Link
@@ -139,20 +167,33 @@ function Navbar({ user }) {
                       </Link>
                     </li>
                     <li>
-                      <Link className="dropdown-item" to="/saved-searches">Individual Flights</Link>
+                      <Link className="dropdown-item" to="/saved-searches">
+                        Individual Flights
+                      </Link>
                     </li>
-                    <li><hr className="dropdown-divider" /></li>
-                    <li><button className="dropdown-item" onClick={handleLogout}>Logout</button></li>
+                    <li>
+                      <hr className="dropdown-divider" />
+                    </li>
+                    <li>
+                      <button className="dropdown-item" onClick={handleLogout}>
+                        Logout
+                      </button>
+                    </li>
                   </ul>
                 </li>
               </>
             ) : (
               <>
+                {/* Login/Register links */}
                 <li className="nav-item">
-                  <Link className="nav-link" to="/login">Login</Link>
+                  <Link className="nav-link" to="/login">
+                    Login
+                  </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/register">Register</Link>
+                  <Link className="nav-link" to="/register">
+                    Register
+                  </Link>
                 </li>
               </>
             )}
