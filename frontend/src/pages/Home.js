@@ -5,6 +5,7 @@ import HotelSearchForm from '../components/HotelSearchForm';
 import RentalSearchForm from '../components/RentalSearchForm';
 import travelImage from '../assets/images/ladyonboat.jpg';
 import NotificationBanner from '../components/NotificationBanner';
+import Ad from '../components/Ad';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlane, faHotel, faCrown, faCheck, faStar, faShieldAlt, faHeadset, faMoneyBillWave, faUserShield, faCar } from '@fortawesome/free-solid-svg-icons';
 
@@ -19,6 +20,7 @@ function Home() {
     <div className="home">
       {/* Notification Banner */}
       <NotificationBanner user={user} />
+      <Ad /> 
 
       {/* Hero Section */}
       <div className="jumbotron container bg-light p-5 mt-5">  {/* Add margin-top to avoid overflow */}

@@ -1573,6 +1573,7 @@ def get_user_hotel_bookings(user_id):
     bookings = HotelBooking.query.filter_by(user_id=user_id).all()
     return jsonify([{
         'id': booking.id,
+        'hotel_id': booking.hotel_id,
         'hotel_name': booking.hotel.name,
         'check_in_date': booking.check_in_date.isoformat(),
         'check_out_date': booking.check_out_date.isoformat(),
