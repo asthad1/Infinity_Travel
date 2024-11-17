@@ -1,3 +1,5 @@
+// MyFlights.js
+
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -18,12 +20,12 @@ const airlineImages = {
   'American Airlines': require('../assets/images/airlines/american-airlines.png'),
   'British Airways': require('../assets/images/airlines/british.png'),
   'Cathay Pacific': require('../assets/images/airlines/cathay.jpg'),
-  'Delta': require('../assets/images/airlines/delta.png'),
+  'Delta Airlines': require('../assets/images/airlines/delta.png'),
   'Emirates': require('../assets/images/airlines/emirates.png'),
   'Lufthansa': require('../assets/images/airlines/lufthansa.png'),
   'Qatar Airways': require('../assets/images/airlines/qatar.jpg'),
   'Singapore Airlines': require('../assets/images/airlines/singapore.png'),
-  'United': require('../assets/images/airlines/united.png'),
+  'United Airlines': require('../assets/images/airlines/united.png'),
   'default': require('../assets/images/airlines/default-logo.png')
 };
 
@@ -152,61 +154,79 @@ function MyFlights() {
           <Notifications flights={flights} />
           <h2 className="page-title">My Booked Flights</h2>
           <div className="flights-grid">
-            {flights.map((flight, index) => (
-              <div key={index} className="flight-card">
-                <div className="airline-header">
-                  <img
-                    src={getAirlineLogo(flight.airline)}
-                    alt={flight.airline}
-                    className="airline-logo"
-                  />
-                  <div className="flight-number">Flight {flight.flight_number}</div>
-                </div>
+            {flights.map((flight, index) => {
+              // Calculate whether the flight has already departed
+              const now = new Date();
+              const departureTime = new Date(flight.departure_time);
+              const hasDeparted = departureTime <= now;
 
-                <div className="flight-details">
-                  <div className="route-info">
-                    <div className="departure">
-                      <FontAwesomeIcon icon={faPlaneDeparture} className="icon" />
-                      <div className="location">
-                        <h3>{flight.departure_airport}</h3>
-                        <p>{formatDateTime(flight.departure_time)}</p>
+              return (
+                <div key={index} className="flight-card">
+                  <div className="airline-header">
+                    <img
+                      src={getAirlineLogo(flight.airline)}
+                      alt={flight.airline}
+                      className="airline-logo"
+                    />
+                    <div className="flight-number">Flight {flight.flight_number}</div>
+                  </div>
+
+                  <div className="flight-details">
+                    <div className="route-info">
+                      <div className="departure">
+                        <FontAwesomeIcon icon={faPlaneDeparture} className="icon" />
+                        <div className="location">
+                          <h3>{flight.departure_airport}</h3>
+                          <p>{formatDateTime(flight.departure_time)}</p>
+                        </div>
+                      </div>
+
+                      <div className="duration">
+                        <div className="duration-line"></div>
+                        <span>{flight.duration}</span>
+                      </div>
+
+                      <div className="arrival">
+                        <FontAwesomeIcon icon={faPlaneArrival} className="icon" />
+                        <div className="location">
+                          <h3>{flight.destination_airport}</h3>
+                          <p>{formatDateTime(flight.arrival_time)}</p>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="duration">
-                      <div className="duration-line"></div>
-                      <span>{flight.duration}</span>
-                    </div>
-
-                    <div className="arrival">
-                      <FontAwesomeIcon icon={faPlaneArrival} className="icon" />
-                      <div className="location">
-                        <h3>{flight.destination_airport}</h3>
-                        <p>{formatDateTime(flight.arrival_time)}</p>
+                    <div className="flight-info">
+                      <div className="info-item">
+                        <FontAwesomeIcon icon={faUsers} className="icon" />
+                        <span>{flight.travelers} Travelers</span>
+                      </div>
+                      <div className="info-item">
+                        <FontAwesomeIcon icon={faDollarSign} className="icon" />
+                        <span>${flight.total_price}</span>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flight-info">
-                    <div className="info-item">
-                      <FontAwesomeIcon icon={faUsers} className="icon" />
-                      <span>{flight.travelers} Travelers</span>
-                    </div>
-                    <div className="info-item">
-                      <FontAwesomeIcon icon={faDollarSign} className="icon" />
-                      <span>${flight.total_price}</span>
-                    </div>
+                    {/* Conditionally render the cancel button */}
+                    {hasDeparted ? (
+                      <button
+                        className="cancel-flight-button disabled"
+                        disabled
+                        title="Flight has already departed, cancellation not available"
+                      >
+                        Cancel Flight
+                      </button>
+                    ) : (
+                      <button
+                        className="cancel-flight-button"
+                        onClick={() => handleCancelFlight(flight)}
+                      >
+                        Cancel Flight
+                      </button>
+                    )}
                   </div>
-
-                  <button
-                    className="cancel-flight-button"
-                    onClick={() => handleCancelFlight(flight)}
-                  >
-                    Cancel Flight
-                  </button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </>
       )}

@@ -6,18 +6,17 @@ import { useNavigate } from 'react-router-dom';
 import { FaPlane, FaHeart, FaShareAlt, FaClock, FaExchangeAlt } from 'react-icons/fa';
 import './FlightSearchResults.css';
 
-// Import airline images
 const airlineImages = {
   'Air France': require('../assets/images/airlines/air-france.jpg'),
   'American Airlines': require('../assets/images/airlines/american-airlines.png'),
   'British Airways': require('../assets/images/airlines/british.png'),
   'Cathay Pacific': require('../assets/images/airlines/cathay.jpg'),
-  'Delta': require('../assets/images/airlines/delta.png'),
+  'Delta Airlines': require('../assets/images/airlines/delta.png'),
   'Emirates': require('../assets/images/airlines/emirates.png'),
   'Lufthansa': require('../assets/images/airlines/lufthansa.png'),
   'Qatar Airways': require('../assets/images/airlines/qatar.jpg'),
   'Singapore Airlines': require('../assets/images/airlines/singapore.png'),
-  'United': require('../assets/images/airlines/united.png'),
+  'United Airlines': require('../assets/images/airlines/united.png'),
   'default': require('../assets/images/airlines/default-logo.png')
 };
 
