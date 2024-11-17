@@ -47,48 +47,58 @@ function App() {
   return (
     <FlightProvider>
       <HotelProvider>
-      <Router>
-        <Navbar />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login setCurrentUser={setCurrentUser} />} />
-          <Route path="/my-flights" element={currentUser ? <MyFlights /> : <Navigate to="/login" />} />
-          <Route path="/my-hotels" element={currentUser ? <MyHotels /> : <Navigate to="/login" />} />
-          <Route path="/profile" element={currentUser ? <Profile /> : <Navigate to="/login" />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/support" element={<Support />} />
-          <Route path="/addemails" element={<AddEmails />} />
-          <Route
-            path="/my-favorites"
-            element={user?.user_id ? <MyFavorites /> : <Navigate to="/login" />}
-          />
-          <Route path="/savedflights" element={<SavedFlights />} />
-          <Route path="/shared-flights/:flightId" element={<SharedFlightDetails />} />
-          <Route path="/flightsearchresults" element={<FlightSearchResults />} />
-          <Route path="/saved-searches" element={<SavedSearches />} />
-          <Route path="/flights" element={<FlightSearchForm />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/payment-gateway" element={<PaymentGateway />} />
-          <Route path="/my-rentals" element={<MyRentals />} />
-          <Route path="/things-to-do" element={<ThingsToDo />} />
-          <Route path="/my-bookings" element={<MyBookings />} />
+        <Router>
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/my-flights"
+              element={user?.user_id ? <MyFlights /> : <Navigate to="/login" />}
+            />
+            <Route
+              path="/my-hotels"
+              element={user?.user_id ? <MyHotels /> : <Navigate to="/login" />}
+            />
+            <Route
+              path="/profile"
+              element={user?.user_id ? <Profile /> : <Navigate to="/login" />}
+            />
+            <Route path="/register" element={<Register />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="/addemails" element={<AddEmails />} />
+            <Route
+              path="/my-favorites"
+              element={user?.user_id ? <MyFavorites /> : <Navigate to="/login" />}
+            />
+            <Route path="/savedflights" element={<SavedFlights />} />
+            <Route path="/shared-flights/:flightId" element={<SharedFlightDetails />} />
+            <Route path="/flightsearchresults" element={<FlightSearchResults />} />
+            <Route path="/saved-searches" element={<SavedSearches />} />
+            <Route path="/flights" element={<FlightSearchForm />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/payment-gateway" element={<PaymentGateway />} />
+            <Route path="/my-rentals" element={<MyRentals />} />
+            <Route path="/things-to-do" element={<ThingsToDo />} />
+            <Route path="/my-bookings" element={<MyBookings />} />
 
-          {/* Admin-only routes */}
-          <Route
-            path="/coupons"
-            element={user?.role === 'admin' ? <CouponsPage /> : <Navigate to="/" />}
-          />
-          <Route
-            path="/metrics"
-            element={user?.role === 'admin' ? <MetricsPage /> : <Navigate to="/" />}
-          />
+            {/* Admin-only routes */}
+            <Route
+              path="/coupons"
+              element={user?.role === 'admin' ? <CouponsPage /> : <Navigate to="/" />}
+            />
+            <Route
+              path="/metrics"
+              element={user?.role === 'admin' ? <MetricsPage /> : <Navigate to="/" />}
+            />
 
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </Router>
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </Router>
       </HotelProvider>
     </FlightProvider>
   );
 }
 
 export default App;
+
