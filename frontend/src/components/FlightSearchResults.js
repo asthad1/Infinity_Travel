@@ -124,6 +124,9 @@ const FlightSearchResults = ({ flights, travelers }) => {
               />
               <span>{flight.airline} - Flight {flight.flight_number}</span>
             </div>
+            {index === 0 && (
+              <span className="sponsored-tag">Sponsored</span>
+            )}
           </div>
 
           <div className="flight-main-content">
