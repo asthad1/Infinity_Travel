@@ -4,16 +4,17 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../store/userSlice';
+import { setTravelCredit } from '../store/travelCreditSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faEnvelope, 
-  faLock, 
+import {
+  faEnvelope,
+  faLock,
   faSignInAlt,
-  faExclamationTriangle
+  faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons';
 import './Login.css';
 
-function Login({ setCurrentUser }) {
+function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
@@ -39,10 +40,24 @@ function Login({ setCurrentUser }) {
 
       if (data.user_id) {
         // Updated userData to include 'role'
-        const userData = { user_id: data.user_id, email: data.email, role: data.role };
+        const userData = {
+          user_id: data.user_id,
+          email: data.email,
+          role: data.role,
+        };
         localStorage.setItem('user', JSON.stringify(userData));
         dispatch(setUser(userData));
-        setCurrentUser(userData);
+
+        // Fetch and store travel credit
+        const creditResponse = await fetch(`http://localhost:9001/api/travel_credits/${data.user_id}`);
+        if (creditResponse.ok) {
+          const creditData = await creditResponse.json();
+          dispatch(setTravelCredit(creditData.balance));
+        } else {
+          // Handle error, e.g., set travel credit to 0
+          dispatch(setTravelCredit(0));
+        }
+
         navigate('/');
       } else {
         setMessage('Invalid email or password. Please try again.');
@@ -100,14 +115,18 @@ function Login({ setCurrentUser }) {
             </div>
           )}
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className={`btn btn-primary login-button ${loading ? 'loading' : ''}`}
             disabled={loading}
           >
             {loading ? (
               <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                <span
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
                 Signing in...
               </>
             ) : (

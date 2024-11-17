@@ -1,7 +1,10 @@
-import React, { useEffect, useState } from 'react';
+// App.js
+
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { setUser } from './store/userSlice';
 import Navbar from './components/Navbar';
-import Footer from './components/Footer';
 import Login from './components/Login';
 import Register from './components/Register';
 import Home from './pages/Home';
@@ -25,44 +28,36 @@ import MyBookings from './components/MyBookings';
 import AddEmails from './components/AddEmails';
 
 function App() {
-  const [currentUser, setCurrentUser] = useState(() => {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
-  });
+  const dispatch = useDispatch();
 
-  const [notificationCount, setNotificationCount] = useState(() => {
-    const count = localStorage.getItem('notificationCount');
-    return count ? JSON.parse(count) : 0;
-  });
-
+  // Load user from localStorage into Redux store
   useEffect(() => {
-    const handleStorageChange = (event) => {
-      if (event.key === 'user') {
-        setCurrentUser(event.newValue ? JSON.parse(event.newValue) : null);
-      } else if (event.key === 'notificationCount') {
-        setNotificationCount(event.newValue ? JSON.parse(event.newValue) : 0);
-      }
-    };
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      dispatch(setUser(parsedUser));
+    }
+  }, [dispatch]);
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
+  // Retrieve user data from Redux store
+  const user = useSelector((state) => state.user);
 
   return (
     <FlightProvider>
       <Router>
-        <Navbar user={currentUser} notificationCount={notificationCount} />
+        <Navbar />
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login setCurrentUser={setCurrentUser} />} />
-          <Route path="/my-flights" element={currentUser ? <MyFlights /> : <Navigate to="/login" />} />
-          <Route path="/profile" element={currentUser ? <Profile /> : <Navigate to="/login" />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/my-flights" element={user?.user_id ? <MyFlights /> : <Navigate to="/login" />} />
+          <Route path="/profile" element={user?.user_id ? <Profile /> : <Navigate to="/login" />} />
           <Route path="/register" element={<Register />} />
           <Route path="/support" element={<Support />} />
           <Route path="/addemails" element={<AddEmails />} />
-          <Route path="/my-favorites" element={currentUser ? <MyFavorites /> : <Navigate to="/login" />} />
+          <Route
+            path="/my-favorites"
+            element={user?.user_id ? <MyFavorites /> : <Navigate to="/login" />}
+          />
           <Route path="/savedflights" element={<SavedFlights />} />
           <Route path="/shared-flights/:flightId" element={<SharedFlightDetails />} />
           <Route path="/flightsearchresults" element={<FlightSearchResults />} />
@@ -72,10 +67,18 @@ function App() {
           <Route path="/payment-gateway" element={<PaymentGateway />} />
           <Route path="/my-rentals" element={<MyRentals />} />
           <Route path="/things-to-do" element={<ThingsToDo />} />
-          {/* Admin-only routes */}
-          <Route path="/coupons" element={currentUser?.role === 'admin' ? <CouponsPage /> : <Navigate to="/" />} />
-          <Route path="/metrics" element={currentUser?.role === 'admin' ? <MetricsPage /> : <Navigate to="/" />} />
           <Route path="/my-bookings" element={<MyBookings />} />
+
+          {/* Admin-only routes */}
+          <Route
+            path="/coupons"
+            element={user?.role === 'admin' ? <CouponsPage /> : <Navigate to="/" />}
+          />
+          <Route
+            path="/metrics"
+            element={user?.role === 'admin' ? <MetricsPage /> : <Navigate to="/" />}
+          />
+
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>

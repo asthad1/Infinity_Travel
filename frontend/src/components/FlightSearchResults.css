@@ -194,3 +194,19 @@
   background-color: #f8f9fa;
   border-top: 1px solid #e9ecef;
 }
+
+.sponsored-tag {
+  color: #2c3e50;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px; /* Makes it fully rounded */
+  border: 2px solid #2c3e50;
+  animation: flashSponsored 2s ease-in-out 3;
+}
+
+@keyframes flashSponsored {
+  0% { color: #2c3e50; border-color: #2c3e50; }
+  50% { color: #e74c3c; border-color: #e74c3c; }
+  100% { color: #2c3e50; border-color: #2c3e50; }
+}

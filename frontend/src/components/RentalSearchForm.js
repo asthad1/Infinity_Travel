@@ -236,7 +236,7 @@ const RentalSearchForm = () => {
                 <div className="mt-4">
                     <h3>Available Rentals</h3>
                     <div className="row">
-                        {searchResults.map((rental) => (
+                        {searchResults.map((rental, index) => (
                             <div key={rental.id} className="col-md-4">
                                 <div className="card rental-card shadow-sm">
                                     <img
@@ -246,7 +246,12 @@ const RentalSearchForm = () => {
                                         style={{ height: '200px', objectFit: 'cover' }}
                                     />
                                     <div className="card-body">
-                                        <h5 className="card-title">{rental.name}</h5>
+                                        <div className="d-flex justify-content-between align-items-start mb-2">
+                                            <h5 className="card-title mb-0">{rental.name}</h5>
+                                            {index === 0 && (
+                                                <span className="badge bg-warning text-dark">Sponsored</span>
+                                            )}
+                                        </div>
                                         <p>Pickup City: {rental.pickup_city}</p>
                                         <p>Drop-off City: {rental.drop_off_city}</p>
                                         <p>Price per Day: ${rental.price_per_day}</p>
