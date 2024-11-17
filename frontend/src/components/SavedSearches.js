@@ -22,6 +22,7 @@ const airlineImages = {
   'Lufthansa': require('../assets/images/airlines/lufthansa.png'),
   'Qatar Airways': require('../assets/images/airlines/qatar.jpg'),
   'Singapore Airlines': require('../assets/images/airlines/singapore.png'),
+  'KLM': require('../assets/images/airlines/klm.jpg'),
   'United Airlines': require('../assets/images/airlines/united.png'),
   'default': require('../assets/images/airlines/default-logo.png')
 };
