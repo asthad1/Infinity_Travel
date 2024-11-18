@@ -8,7 +8,7 @@ from sqlalchemy import text, cast, Date, or_
 from sqlalchemy.orm import aliased
 import random
 import string
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 import os
 import re
 import uuid
@@ -28,7 +28,7 @@ import psycopg2
 import select
 
 # Load environment variables
-# load_dotenv()
+load_dotenv()
 
 # Near the top of your file, after the Flask app initialization
 app = Flask(__name__)
@@ -2061,6 +2061,7 @@ def send_reminder_emails():
                     )
 
                     try:
+                        print(os.environ.get('SENDGRID_API_KEY'))
                         sg = SendGridAPIClient(
                             os.environ.get('SENDGRID_API_KEY'))
                         response = sg.send(message)
@@ -2110,56 +2111,48 @@ def send_booking_update_notifications(payload):
             return jsonify({"message": "Failed to retrieve user emails"}), 400
         
         # Prepare the email content based on the booking type
-        subject = f"Your {booking_type.capitalize()} Booking has been Updated!"
-        email_content = f"Dear User,\n\nYour {booking_type.capitalize()} booking (ID: {booking_id}) has been updated. Below are the details of the changes:\n\n"
+        subject = f"Your {booking_type.capitalize()} Booking Has Been Updated"
+        email_content = f"Dear User,<br><br>Your {booking_type.capitalize()} booking with ID: <strong>{booking_id}</strong> has been updated. Here are the details of the changes:<br><br>"
         
-        # Get changes based on booking type (flight, rental, hotel)
+        # Collect changes based on booking type (flight, rental, hotel)
         changes = []
         
+        def extract_changes(field_name, field_label):
+            if field_name in notification:
+                change_detail = notification[field_name]
+                old_value = change_detail.get('old_value', 'N/A')
+                new_value = change_detail.get('new_value', 'N/A')
+                changes.append(
+                    f"<li>{field_label}: <del>{old_value}</del> → {new_value}</li>"
+                )
+
         if booking_type == "flight":
-            flight = BookedFlight.query.get(booking_id)
-            if flight:
-                if 'departure_date' in notification and notification['departure_date'] != flight.departure_date:
-                    changes.append(f"Departure Date: {notification['departure_date']}")
-                if 'arrival_date' in notification and notification['arrival_date'] != flight.arrival_date:
-                    changes.append(f"Arrival Date: {notification['arrival_date']}")
-                if 'airline' in notification and notification['airline'] != flight.airline:
-                    changes.append(f"Airline: {notification['airline']}")
-                if 'flight_number' in notification and notification['flight_number'] != flight.flight_number:
-                    changes.append(f"Flight Number: {notification['flight_number']}")
-                if 'from_airport' in notification and notification['from_airport'] != flight.from_airport:
-                    changes.append(f"From Airport: {notification['from_airport']}")
-                if 'to_airport' in notification and notification['to_airport'] != flight.to_airport:
-                    changes.append(f"To Airport: {notification['to_airport']}")
-                if 'price' in notification and notification['price'] != flight.price:
-                    changes.append(f"Price: {notification['price']}")
-        
+            extract_changes('departure_date', 'Departure Date')
+            extract_changes('arrival_date', 'Arrival Date')
+            extract_changes('airline', 'Airline')
+            extract_changes('flight_number', 'Flight Number')
+            extract_changes('from_airport', 'From Airport')
+            extract_changes('to_airport', 'To Airport')
+            extract_changes('price', 'Price')
+    
         elif booking_type == "rental":
-            rental = BookedRental.query.get(booking_id)
-            if rental:
-                if 'pickup_date' in notification and notification['pickup_date'] != rental.pickup_date:
-                    changes.append(f"Pickup Date: {notification['pickup_date']}")
-                if 'drop_off_date' in notification and notification['drop_off_date'] != rental.drop_off_date:
-                    changes.append(f"Drop-off Date: {notification['drop_off_date']}")
-                if 'total_price' in notification and notification['total_price'] != rental.total_price:
-                    changes.append(f"Total Price: {notification['total_price']}")
+            extract_changes('pickup_date', 'Pickup Date')
+            extract_changes('drop_off_date', 'Drop-off Date')
+            extract_changes('total_price', 'Total Price')
         
         elif booking_type == "hotel":
-            hotel = HotelBooking.query.get(booking_id)
-            if hotel:
-                if 'check_in_date' in notification and notification['check_in_date'] != hotel.check_in_date:
-                    changes.append(f"Check-in Date: {notification['check_in_date']}")
-                if 'check_out_date' in notification and notification['check_out_date'] != hotel.check_out_date:
-                    changes.append(f"Check-out Date: {notification['check_out_date']}")
-                if 'total_price' in notification and notification['total_price'] != hotel.total_price:
-                    changes.append(f"Total Price: {notification['total_price']}")
+            extract_changes('check_in_date', 'Check-in Date')
+            extract_changes('check_out_date', 'Check-out Date')
+            extract_changes('total_price', 'Total Price')
 
         if not changes:
             print(f"No changes detected for {booking_type} booking ID: {booking_id}.")
             return jsonify({"message": "No changes detected"}), 200
 
         # Construct the email content
-        email_content += "\n".join(changes) + "\n\nIf you have any questions or need further assistance, please contact us."
+        email_content += "<ul>" + "".join(changes) + "</ul>"
+        email_content += "<br>If you have any questions or need further assistance, feel free to reach out to our support team.<br><br>"
+        email_content += "Best regards,<br>Infinity Travel Team"
 
         # Send the email to all user emails
         for email in user_emails:
@@ -2167,7 +2160,7 @@ def send_booking_update_notifications(payload):
                 from_email='adityars@vt.edu',
                 to_emails=email,
                 subject=subject,
-                html_content=f"<strong>{email_content.replace('\n', '<br>')}</strong>"
+                html_content=email_content
             )
 
             try:
@@ -2178,7 +2171,7 @@ def send_booking_update_notifications(payload):
                 print(f"Failed to send email to {email}: {e}")
 
         return jsonify({"message": "Booking update emails sent successfully"}), 200
-            
+    
 def listen_to_notifications():
     # Set up the PostgreSQL connection
     conn = psycopg2.connect("dbname=infinity_travel user=infinity_travel_owner password=q9urkfXI7nGg host=ep-spring-frost-a4siuz5k.us-east-1.aws.neon.tech")
@@ -2190,9 +2183,6 @@ def listen_to_notifications():
     
     print("Waiting for notifications on 'booking_update_channel'...")
     
-    # Set to keep track of seen notifications and avoid duplicates
-    seen_notifications = set()
-
     # Continuously listen for new notifications
     while True:
         if select.select([conn], [], [], 5) == ([], [], []):
@@ -2206,18 +2196,14 @@ def listen_to_notifications():
                 notify = conn.notifies.pop(0)
                 payload = notify.payload
                 
-                # Avoid processing the same notification twice (based on payload)
-                if payload not in seen_notifications:
-                    seen_notifications.add(payload)
-                    print(f"Received notification: {payload}")
+                print(f"Received notification: {payload}")
 
-                    try:
-                        # Call the function to send the booking update notifications
-                        send_booking_update_notifications(payload)
-                    except Exception as e:
-                        print(f"Error sending booking update notification: {str(e)}")
-                else:
-                    print(f"Duplicate notification ignored: {payload}")
+                try:
+                    # Call the function to send the booking update notifications
+                    send_booking_update_notifications(payload)
+                except Exception as e:
+                    print(f"Error sending booking update notification: {str(e)}")
+            
 
 def start_post_startup_task():
     # Give the server time to fully start up (adjust the sleep time if necessary)
