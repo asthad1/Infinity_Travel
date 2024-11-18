@@ -3,7 +3,7 @@ import time
 from flask import Flask, jsonify, request, redirect, current_app
 from flask_sqlalchemy import SQLAlchemy
 # Import the text, cast function and Date attribute
-from sqlalchemy import text, cast, Date, or_
+from sqlalchemy import text, cast, Date, or_, func
 from sqlalchemy.orm import aliased
 import random
 import string
@@ -18,6 +18,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import logging
 from datetime import datetime, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
+import math
 
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
@@ -1618,7 +1619,7 @@ def get_hotel_reviews(hotel_id):
         'created': review.created.isoformat()
     } for review in reviews]), 200
 
-
+#===================Rentals endpoints ========================
 @app.route('/api/rentals/search', methods=['POST'])
 def search_rentals():
     data = request.get_json()
@@ -1728,7 +1729,7 @@ def get_user_rentals(user_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-
+#===================Bookings endpoints ========================
 @app.route('/api/combined-bookings/<int:user_id>', methods=['GET'])
 def get_combined_bookings(user_id):
     try:
@@ -2080,11 +2081,76 @@ def send_reminder_emails():
             return jsonify({"error": str(e)}), 500
 
 
+
 def start_post_startup_task():
     # Give the server time to fully start up (adjust the sleep time if necessary)
     time.sleep(5)  # Wait 5 seconds after the server starts
     send_reminder_emails()  # Invoke your function
 
+#===================Revenue endpoints ========================    
+@app.route('/api/revenue', methods=['GET'])
+def get_revenue():
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    return calculate_revenue(start_date, end_date)  # Directly return the JSON response
+
+def safe_sum(value):
+    """Returns 0 if value is None or NaN, otherwise returns the value."""
+    if value is None or (isinstance(value, float) and math.isnan(value)):
+        return 0
+    return value
+
+def calculate_revenue(start_date, end_date):
+    # Convert date strings to datetime objects
+    if isinstance(start_date, str):
+        start_date = datetime.strptime(start_date, '%Y-%m-%d')
+    if isinstance(end_date, str):
+        end_date = datetime.strptime(end_date, '%Y-%m-%d')
+
+    revenue_data = {
+        "airline": [],
+        "car_rental": [],
+        "hotel": []
+    }
+
+    # Query flight revenue
+    flight_revenue = (
+        db.session.query(BookedFlight.to_airport, func.sum(BookedFlight.total_price).label("total_revenue"))
+        .filter(BookedFlight.departure_date >= start_date, BookedFlight.departure_date <= end_date)
+        .group_by(BookedFlight.to_airport)
+        .all()
+    )
+    revenue_data["airline"] = [
+        {"destination": destination, "revenue": safe_sum(total_revenue)} for destination, total_revenue in flight_revenue
+    ]
+
+    # Query car rental revenue
+    rental_revenue = (
+        db.session.query(City.city_name, func.sum(BookedRental.total_price).label("total_revenue"))
+        .join(Rental, Rental.id == BookedRental.rental_id)  # Join Rental to access drop_off_city_id
+        .join(City, City.id == Rental.drop_off_city_id)      # Join City via Rental's drop_off_city_id
+        .filter(BookedRental.pickup_date >= start_date, BookedRental.drop_off_date <= end_date)
+        .group_by(City.city_name)
+        .all()
+    )
+    revenue_data["car_rental"] = [
+        {"destination": destination, "revenue": safe_sum(total_revenue)} for destination, total_revenue in rental_revenue
+    ]
+
+    # Query hotel revenue
+    hotel_revenue = (
+        db.session.query(City.city_name, func.sum(HotelBooking.total_price).label("total_revenue"))
+        .join(Hotel, Hotel.id == HotelBooking.hotel_id)  # Join HotelBooking to Hotel to access city_id
+        .join(City, City.id == Hotel.city_id)            # Join City via Hotel's city_id
+        .filter(HotelBooking.check_in_date >= start_date, HotelBooking.check_out_date <= end_date)
+        .group_by(City.city_name)
+        .all()
+    )
+    revenue_data["hotel"] = [
+        {"destination": city, "revenue": safe_sum(total_revenue)} for city, total_revenue in hotel_revenue
+    ]
+
+    return jsonify(revenue_data)  # Return directly with jsonify
 # =================== Travel Credit ========================
 
 

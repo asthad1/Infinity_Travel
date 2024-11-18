@@ -88,6 +88,9 @@ function Navbar() {
                     Metrics
                   </Link>
                 </li>
+                <li className="nav-item">
+                  <Link className="nav-link" to="/revenue">Revenue</Link>
+                </li>
               </>
             )}
             <li className="nav-item">

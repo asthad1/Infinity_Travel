@@ -28,6 +28,7 @@ import MyRentals from './components/MyRentals';
 import ThingsToDo from './components/ThingsToDo';
 import MyBookings from './components/MyBookings';
 import AddEmails from './components/AddEmails';
+import AdminRevenue from './pages/AdminRevenue';
 
 function App() {
   const dispatch = useDispatch();
@@ -91,7 +92,10 @@ function App() {
               path="/metrics"
               element={user?.role === 'admin' ? <MetricsPage /> : <Navigate to="/" />}
             />
-
+            <Route
+              path="/revenue"
+              element={user?.role === 'admin' ? <AdminRevenue /> : <Navigate to="/" />}
+            />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </Router>
