@@ -310,7 +310,7 @@ const HotelSearchForm = () => {
             <h3 className="mb-3">Available Hotels in {getDisplayLocation()}</h3>
             <div className="row g-4">
               {searchResults.length > 0 ? (
-                searchResults.map((hotel) => (
+                searchResults.map((hotel, index) => (
                   <div key={hotel.id} className="col-md-6 col-lg-4">
                     <Card className="h-100 hotel-card shadow-sm">
                       <Card.Img 
@@ -322,10 +322,15 @@ const HotelSearchForm = () => {
                       <Card.Body className="d-flex flex-column">
                         <Card.Title className="d-flex justify-content-between align-items-start">
                           <span>{hotel.name}</span>
-                          <span className="badge bg-primary">
-                            <FontAwesomeIcon icon={faStar} className="me-1" />
-                            {hotel.rating}
-                          </span>
+                          <div className="d-flex align-items-center">
+                            {index === 0 && (
+                              <span className="badge bg-warning text-dark me-2">Sponsored</span>
+                            )}
+                            <span className="badge bg-primary">
+                              <FontAwesomeIcon icon={faStar} className="me-1" />
+                              {hotel.rating}
+                            </span>
+                          </div>
                         </Card.Title>
                         <p className="text-muted small mb-2">
                           <FontAwesomeIcon icon={faMapMarkerAlt} className="me-1" />

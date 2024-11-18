@@ -6,18 +6,18 @@ import { useNavigate } from 'react-router-dom';
 import { FaPlane, FaHeart, FaShareAlt, FaClock, FaExchangeAlt } from 'react-icons/fa';
 import './FlightSearchResults.css';
 
-// Import airline images
 const airlineImages = {
   'Air France': require('../assets/images/airlines/air-france.jpg'),
   'American Airlines': require('../assets/images/airlines/american-airlines.png'),
   'British Airways': require('../assets/images/airlines/british.png'),
   'Cathay Pacific': require('../assets/images/airlines/cathay.jpg'),
-  'Delta': require('../assets/images/airlines/delta.png'),
+  'Delta Airlines': require('../assets/images/airlines/delta.png'),
   'Emirates': require('../assets/images/airlines/emirates.png'),
   'Lufthansa': require('../assets/images/airlines/lufthansa.png'),
   'Qatar Airways': require('../assets/images/airlines/qatar.jpg'),
   'Singapore Airlines': require('../assets/images/airlines/singapore.png'),
-  'United': require('../assets/images/airlines/united.png'),
+  'KLM': require('../assets/images/airlines/klm.jpg'),
+  'United Airlines': require('../assets/images/airlines/united.png'),
   'default': require('../assets/images/airlines/default-logo.png')
 };
 
@@ -125,13 +125,16 @@ const FlightSearchResults = ({ flights, travelers }) => {
               />
               <span>{flight.airline} - Flight {flight.flight_number}</span>
             </div>
+            {index === 0 && (
+              <span className="sponsored-tag">Sponsored</span>
+            )}
           </div>
 
           <div className="flight-main-content">
             <div className="departure-info">
-              <div className="flight-time">{new Date(flight.departure_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+              <div className="flight-time">{flight.departure_time.split(' ')[1]}</div> {/* Extract time */}
               <div className="flight-location">{flight.departure_airport}</div>
-              <div className="flight-date">{new Date(flight.departure_time).toLocaleDateString()}</div>
+              <div className="flight-date">{flight.departure_time.split(' ')[0]}</div> {/* Extract date */}
             </div>
 
             <div className="flight-duration">
@@ -141,9 +144,9 @@ const FlightSearchResults = ({ flights, travelers }) => {
             </div>
 
             <div className="arrival-info">
-              <div className="flight-time">{new Date(flight.arrival_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+              <div className="flight-time">{flight.arrival_time.split(' ')[1]}</div> {/* Extract time */}
               <div className="flight-location">{flight.destination_airport}</div>
-              <div className="flight-date">{new Date(flight.arrival_time).toLocaleDateString()}</div>
+              <div className="flight-date">{flight.arrival_time.split(' ')[0]}</div> {/* Extract date */}
             </div>
           </div>
 

@@ -1,9 +1,11 @@
+// userSlice.js
+
 import { createSlice } from '@reduxjs/toolkit';
 
-// Initial state
 const initialState = {
-  email: null,  // Use 'email' instead of 'username'
-  user_id: null,  
+  email: null,
+  user_id: null,
+  role: null,
 };
 
 const userSlice = createSlice({
@@ -12,15 +14,17 @@ const userSlice = createSlice({
   reducers: {
     setUser: (state, action) => {
       if (action.payload && action.payload.email && action.payload.user_id) {
-        state.email = action.payload.email;  // Store email
-        state.user_id = action.payload.user_id;  // Store user_id
+        state.email = action.payload.email;
+        state.user_id = action.payload.user_id;
+        state.role = action.payload.role || null;
       } else {
-        console.error("Invalid payload for setUser:", action.payload);
+        console.error('Invalid payload for setUser:', action.payload);
       }
     },
     clearUser: (state) => {
       state.email = null;
       state.user_id = null;
+      state.role = null;
     },
   },
 });

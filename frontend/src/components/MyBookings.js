@@ -22,10 +22,14 @@ const MyBookings = () => {
 
         // Filter bookings from yesterday to the future
         const today = new Date();
-        today.setUTCHours(0, 0, 0, 0); 
-        const recentBookings = response.data.filter(booking =>
-          new Date(booking.start_date) >= today
-        );
+        today.setUTCHours(0, 0, 0, 0);
+        const recentBookings = response.data.filter(booking => {
+          // Only include confirmed flights
+          if (booking.type === 'flight' && booking.details.status !== 'confirmed') {
+            return false;
+          }
+          return new Date(booking.start_date) >= today;
+        });
 
         // Sort bookings by date in ascending order
         const sortedBookings = recentBookings.sort(
@@ -43,6 +47,7 @@ const MyBookings = () => {
 
     fetchBookings();
   }, []);
+
 
   const handleShare = () => {
     const selectedItems = bookings.filter(booking =>
