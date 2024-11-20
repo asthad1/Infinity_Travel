@@ -5,7 +5,7 @@ import Select from 'react-select';
 import { Button, Modal, Spinner } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './RentalSearchForm.css';
 
 import bmwImage from '../assets/images/rentals/BMW.jpg';
@@ -32,6 +32,7 @@ const imageMap = {
 
 const RentalSearchForm = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const user = useSelector((state) => state.user);
     const [cities, setCities] = useState([]);
     const [pickupCity, setPickupCity] = useState(null);
@@ -64,6 +65,29 @@ const RentalSearchForm = () => {
         };
         fetchCities();
     }, []);
+
+    useEffect(() => {
+        if (location.state?.rentalSearch) {
+            const params = location.state.rentalSearch;
+            
+            // Find the city objects for pickup and dropoff
+            const pickupCityObj = cities.find(city => city.value === params.pickupLocation);
+            const dropOffCityObj = cities.find(city => city.value === params.dropOffLocation);
+            
+            setPickupCity(pickupCityObj);
+            setDropOffCity(dropOffCityObj);
+            setPickupDate(params.pickupDate);
+            setDropOffDate(params.dropOffDate);
+            setPickupTime(params.pickupTime);
+            setDropOffTime(params.dropOffTime);
+            setDriverAge(params.driverAge);
+
+            // Optionally, trigger the search automatically
+            if (pickupCityObj && dropOffCityObj) {
+                handleSearch({ preventDefault: () => {} });
+            }
+        }
+    }, [location.state, cities]);
 
     const handleSearch = async (e) => {
         e.preventDefault();

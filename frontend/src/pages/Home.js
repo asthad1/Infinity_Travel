@@ -1,16 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import './Home.css';
 import FlightSearchForm from '../components/FlightSearchForm';
 import HotelSearchForm from '../components/HotelSearchForm';
 import RentalSearchForm from '../components/RentalSearchForm';
 import travelImage from '../assets/images/ladyonboat.jpg';
 import NotificationBanner from '../components/NotificationBanner';
+import Ad from '../components/Ad';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlane, faHotel, faCrown, faCheck, faStar, faShieldAlt, faHeadset, faMoneyBillWave, faUserShield, faCar } from '@fortawesome/free-solid-svg-icons';
 
+const Home = () => {
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState('flights');
+  const searchFormRef = useRef(null);
 
-function Home() {
-  const [searchType, setSearchType] = useState('flights'); // 'flights' or 'hotels'
+  useEffect(() => {
+    // If we have state from navigation and it includes activeTab
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+    }
+
+    // If we should auto-scroll to search section
+    const shouldScroll = location.state?.rentalSearch?.autoScroll || 
+                        location.state?.hotelSearch?.autoScroll ||
+                        location.state?.flightSearch?.autoScroll;
+
+    if (shouldScroll && searchFormRef.current) {
+      searchFormRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [location.state]);
 
   // Retrieve user information from localStorage
   const user = JSON.parse(localStorage.getItem('user'));
@@ -19,6 +38,7 @@ function Home() {
     <div className="home">
       {/* Notification Banner */}
       <NotificationBanner user={user} />
+      <Ad /> 
 
       {/* Hero Section */}
       <div className="jumbotron container bg-light p-5 mt-5">  {/* Add margin-top to avoid overflow */}
@@ -48,24 +68,24 @@ function Home() {
           <div className="btn-group" role="group" aria-label="Search type toggle">
             <button
               type="button"
-              className={`btn ${searchType === 'flights' ? 'btn-primary' : 'btn-outline-primary'}`}
-              onClick={() => setSearchType('flights')}
+              className={`btn ${activeTab === 'flights' ? 'btn-primary' : 'btn-outline-primary'}`}
+              onClick={() => setActiveTab('flights')}
             >
               <FontAwesomeIcon icon={faPlane} className="me-2" />
               Flights
             </button>
             <button
               type="button"
-              className={`btn ${searchType === 'hotels' ? 'btn-primary' : 'btn-outline-primary'}`}
-              onClick={() => setSearchType('hotels')}
+              className={`btn ${activeTab === 'hotels' ? 'btn-primary' : 'btn-outline-primary'}`}
+              onClick={() => setActiveTab('hotels')}
             >
               <FontAwesomeIcon icon={faHotel} className="me-2" />
               Hotels
             </button>
             <button
               type="button"
-              className={`btn ${searchType === 'rentals' ? 'btn-primary' : 'btn-outline-primary'}`}
-              onClick={() => setSearchType('rentals')}
+              className={`btn ${activeTab === 'rentals' ? 'btn-primary' : 'btn-outline-primary'}`}
+              onClick={() => setActiveTab('rentals')}
             >
               <FontAwesomeIcon icon={faCar} className="me-2" />
               Rentals
@@ -75,14 +95,10 @@ function Home() {
       </div>
 
       {/* Search Section */}
-      <div className="container my-4">
-        {searchType === 'flights' ? (
-          <FlightSearchForm />
-        ) : searchType === 'hotels' ? (
-          <HotelSearchForm />
-        ) : (
-          <RentalSearchForm />
-        )}
+      <div className="container my-4" ref={searchFormRef}>
+        {activeTab === 'flights' && <FlightSearchForm />}
+        {activeTab === 'hotels' && <HotelSearchForm />}
+        {activeTab === 'rentals' && <RentalSearchForm />}
       </div>
 
 

@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { createEmailContent } from './emailTemplate';
+import { useNavigate } from 'react-router-dom';
 import './MyBookings.css'; 
 
 const MyBookings = () => {
+  const navigate = useNavigate();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -84,6 +86,74 @@ const MyBookings = () => {
       minute: '2-digit',
       timeZone: 'UTC'
     });
+  };
+
+  const getRandomFutureDate = () => {
+    const today = new Date();
+    // Get a random number of days between 1 and 180 (6 months)
+    const randomDays = Math.floor(Math.random() * 180) + 1;
+    const futureDate = new Date(today.setDate(today.getDate() + randomDays));
+    return futureDate.toISOString().split('T')[0];
+  };
+
+  const handleSearchAgain = (booking) => {
+    if (booking.type === 'rental') {
+      // Calculate random future date for pickup (1-30 days from now)
+      const pickupDate = new Date();
+      pickupDate.setDate(pickupDate.getDate() + Math.floor(Math.random() * 30) + 1);
+      
+      // Set dropoff date to 3 days after pickup
+      const dropOffDate = new Date(pickupDate);
+      dropOffDate.setDate(dropOffDate.getDate() + 3);
+
+      const searchParams = {
+        pickupLocation: 15, // Hardcoded ID for Lake Thomasfort
+        dropOffLocation: 42, // Hardcoded ID for Jamesmouth
+        pickupDate: pickupDate.toISOString().split('T')[0],
+        dropOffDate: dropOffDate.toISOString().split('T')[0],
+        pickupTime: "10:00",
+        dropOffTime: "16:00",
+        driverAge: 25,
+        autoScroll: true
+      };
+      navigate('/', { state: { rentalSearch: searchParams, activeTab: 'rentals' } });
+    }
+    else if (booking.type === 'hotel') {
+      // Calculate the num_guests from the original booking
+      const guests = booking.details.num_guests || 1;
+      
+      // Calculate dates for new search (2 weeks from today)
+      const checkIn = new Date();
+      checkIn.setDate(checkIn.getDate() + 14);
+      const checkOut = new Date(checkIn);
+      checkOut.setDate(checkIn.getDate() + 3); // 3 nights stay
+      
+      const searchParams = {
+        stateId: 29, // Hardcoded ID for Missouri
+        stateName: 'Missouri',
+        destination: {
+          value: 42, // Hardcoded ID for Jamesmouth
+          label: 'Jamesmouth',
+          state_id: 29 // Must match stateId above
+        },
+        checkIn: checkIn.toISOString().split('T')[0],
+        checkOut: checkOut.toISOString().split('T')[0],
+        guests: guests,
+        autoSearch: true
+      };
+      
+      navigate('/', { state: { hotelSearch: searchParams, activeTab: 'hotels' } });
+    }
+    else if (booking.type === 'flight') {
+      const searchParams = {
+        departureAirport: booking.details.from,
+        destinationAirport: booking.details.to,
+        departureDate: getRandomFutureDate(), // Use random future date
+        travelers: booking.details.travelers,
+        autoScroll: true
+      };
+      navigate('/', { state: { flightSearch: searchParams, activeTab: 'flights' } });
+    }
   };
 
   if (loading) return <div className="text-center p-4">Loading...</div>;
@@ -171,6 +241,14 @@ const MyBookings = () => {
                     </>
                   )}
                 </div>
+
+                <button
+                  onClick={() => handleSearchAgain(booking)}
+                  className="mt-2 text-blue-500 hover:text-blue-700 text-sm font-medium"
+                >
+                  Search Similar {booking.type === 'flight' ? 'Flights' : 
+                                booking.type === 'hotel' ? 'Hotels' : 'Rentals'}
+                </button>
               </div>
             ))}
           </div>

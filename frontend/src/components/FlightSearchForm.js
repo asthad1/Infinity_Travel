@@ -4,7 +4,7 @@ import './FlightSearchForm.css';
 import FlightFilter from './FlightFilter';
 import FlightSearchResults from './FlightSearchResults';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { setFilteredFlights, setErrorMessage } from '../store/flightsSlice';
 import { setDepartureAirport, setDestinationAirport, setDepartureDate, setTravelers } from '../store/searchSlice';
 // import { saveSearch } from '../store/savedSearchesSlice';
@@ -16,6 +16,7 @@ import { faPlaneDeparture, faPlaneArrival, faCalendarAlt, faUser } from '@fortaw
 function FlightSearchForm() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Redux state
   const departureAirport = useSelector((state) => state.search.departureAirport);
@@ -58,6 +59,27 @@ function FlightSearchForm() {
     const dd = String(today.getDate()).padStart(2, '0');
     setMinDate(`${yyyy}-${mm}-${dd}`);
   }, [dispatch]);
+
+  // Add effect to handle pre-populated search
+  useEffect(() => {
+    if (location.state?.flightSearch) {
+      const params = location.state.flightSearch;
+      
+      // Find the airport objects for departure and destination
+      const departureObj = airports.find(airport => airport.value === params.departureAirport);
+      const destinationObj = airports.find(airport => airport.value === params.destinationAirport);
+      
+      if (departureObj) dispatch(setDepartureAirport(departureObj));
+      if (destinationObj) dispatch(setDestinationAirport(destinationObj));
+      if (params.departureDate) dispatch(setDepartureDate(params.departureDate));
+      if (params.travelers) dispatch(setTravelers(params.travelers));
+
+      // Optionally trigger search automatically if we have both airports
+      if (departureObj && destinationObj) {
+        handleSearch({ preventDefault: () => {} });
+      }
+    }
+  }, [location.state, airports, dispatch]);
 
   const handleSaveSearch = async () => {
     if (!departureAirport || !destinationAirport || !departureDate || travelers < 1) {
