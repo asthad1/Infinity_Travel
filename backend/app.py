@@ -1,3 +1,4 @@
+import json
 import threading
 import time
 from flask import Flask, jsonify, request, redirect, current_app
@@ -7,7 +8,7 @@ from sqlalchemy import text, cast, Date, or_, func
 from sqlalchemy.orm import aliased
 import random
 import string
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 import os
 import re
 import uuid
@@ -24,9 +25,11 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 from operator import itemgetter
 from flask import jsonify
+import psycopg2
+import select
 
 # Load environment variables
-# load_dotenv()
+load_dotenv()
 
 # Near the top of your file, after the Flask app initialization
 app = Flask(__name__)
@@ -2019,8 +2022,6 @@ def send_reminder_emails():
         reminder_date_end = reminder_date.replace(
             hour=23, minute=59, second=59, microsecond=999999)
 
-        print("Sending the remainders from " +
-              str(reminder_date_start) + " to " + str(reminder_date_end))
         # Query for all booked flights departing two days from now
         try:
 
@@ -2073,11 +2074,12 @@ def send_reminder_emails():
                             Duration: {flight.duration}<br>
                             Travelers: {flight.travelers}<br>
                             <br>Safe travels!<br>
-                            Best regards,<br> Your Booking Team
+                            Best regards,<br> Infinity Travel
                         """
                     )
 
                     try:
+                        print(os.environ.get('SENDGRID_API_KEY'))
                         sg = SendGridAPIClient(
                             os.environ.get('SENDGRID_API_KEY'))
                         response = sg.send(message)
@@ -2096,12 +2098,137 @@ def send_reminder_emails():
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
+def send_booking_update_notifications(payload):
+    with app.app_context():
+        print("Running send_booking_update_notifications....")
+        
+        # Parse the incoming JSON payload for booking updates
+        notification = json.loads(payload)
+        
+        booking_type = notification.get('booking_type')  # flight, rental, hotel
+        user_id = notification.get('user_id')
+        booking_id = notification.get('booking_id')
+
+        # Retrieve email notifications for the user
+        try:
+            with app.test_request_context(f'/api/email_notifications?user_id={user_id}', method='GET'):
+                response = get_email_notifications()  # Call the endpoint to get email notifications
+                if isinstance(response, tuple):
+                    email_notifications_response, status_code = response
+                else:
+                    status_code = 200
+
+                if status_code != 200:
+                    print(f"Failed to retrieve emails for user {user_id}")
+                    return jsonify({"message": "User emails not found"}), 400
+
+                emails = email_notifications_response.get_json()
+                user_emails = [email['email'] for email in emails]
+        except Exception as e:
+            print(f"Error retrieving emails for user {user_id}: {e}")
+            return jsonify({"message": "Failed to retrieve user emails"}), 400
+        
+        # Prepare the email content based on the booking type
+        subject = f"Your {booking_type.capitalize()} Booking Has Been Updated"
+        email_content = f"Dear User,<br><br>Your {booking_type.capitalize()} booking with ID: <strong>{booking_id}</strong> has been updated. Here are the details of the changes:<br><br>"
+        
+        # Collect changes based on booking type (flight, rental, hotel)
+        changes = []
+        
+        def extract_changes(field_name, field_label):
+            if field_name in notification:
+                change_detail = notification[field_name]
+                old_value = change_detail.get('old_value', 'N/A')
+                new_value = change_detail.get('new_value', 'N/A')
+                changes.append(
+                    f"<li>{field_label}: <del>{old_value}</del> → {new_value}</li>"
+                )
+
+        if booking_type == "flight":
+            extract_changes('departure_date', 'Departure Date')
+            extract_changes('arrival_date', 'Arrival Date')
+            extract_changes('airline', 'Airline')
+            extract_changes('flight_number', 'Flight Number')
+            extract_changes('from_airport', 'From Airport')
+            extract_changes('to_airport', 'To Airport')
+            extract_changes('price', 'Price')
+    
+        elif booking_type == "rental":
+            extract_changes('pickup_date', 'Pickup Date')
+            extract_changes('drop_off_date', 'Drop-off Date')
+            extract_changes('total_price', 'Total Price')
+        
+        elif booking_type == "hotel":
+            extract_changes('check_in_date', 'Check-in Date')
+            extract_changes('check_out_date', 'Check-out Date')
+            extract_changes('total_price', 'Total Price')
+
+        if not changes:
+            print(f"No changes detected for {booking_type} booking ID: {booking_id}.")
+            return jsonify({"message": "No changes detected"}), 200
+
+        # Construct the email content
+        email_content += "<ul>" + "".join(changes) + "</ul>"
+        email_content += "<br>If you have any questions or need further assistance, feel free to reach out to our support team.<br><br>"
+        email_content += "Best regards,<br>Infinity Travel Team"
+
+        # Send the email to all user emails
+        for email in user_emails:
+            message = Mail(
+                from_email='adityars@vt.edu',
+                to_emails=email,
+                subject=subject,
+                html_content=email_content
+            )
+
+            try:
+                sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+                response = sg.send(message)
+                print(f"Booking update email sent to {email} - Status: {response.status_code}")
+            except Exception as e:
+                print(f"Failed to send email to {email}: {e}")
+
+        return jsonify({"message": "Booking update emails sent successfully"}), 200
+    
+def listen_to_notifications():
+    # Set up the PostgreSQL connection
+    conn = psycopg2.connect("dbname=infinity_travel user=infinity_travel_owner password=q9urkfXI7nGg host=ep-spring-frost-a4siuz5k.us-east-1.aws.neon.tech")
+    conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+    cur = conn.cursor()
+
+    # Start listening to the channel
+    cur.execute("LISTEN booking_update_channel;")
+    
+    print("Waiting for notifications on 'booking_update_channel'...")
+    
+    # Continuously listen for new notifications
+    while True:
+        if select.select([conn], [], [], 5) == ([], [], []):
+            pass
+        else:
+            # Poll the connection for notifications
+            conn.poll()
+
+            while conn.notifies:
+                # Extract the payload of the notification
+                notify = conn.notifies.pop(0)
+                payload = notify.payload
+                
+                print(f"Received notification: {payload}")
+
+                try:
+                    # Call the function to send the booking update notifications
+                    send_booking_update_notifications(payload)
+                except Exception as e:
+                    print(f"Error sending booking update notification: {str(e)}")
+            
 
 
 def start_post_startup_task():
     # Give the server time to fully start up (adjust the sleep time if necessary)
     time.sleep(5)  # Wait 5 seconds after the server starts
     send_reminder_emails()  # Invoke your function
+    listen_to_notifications()
 
 #===================Revenue endpoints ========================    
 @app.route('/api/revenue', methods=['GET'])
