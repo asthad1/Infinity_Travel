@@ -132,6 +132,7 @@ function Navbar() {
                     )}
                   </a>
                   <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                    <li><Link className="dropdown-item" to="/addemails">Add Emails</Link></li>
                     <li><Link className="dropdown-item" to="/profile">Change Password</Link></li>
                     <li><Link className="dropdown-item" to="/my-favorites">My Favorites</Link></li>
                     <li><Link className="dropdown-item" to="/my-hotels">My Hotels</Link></li>
