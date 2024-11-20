@@ -4,7 +4,7 @@ import { faHotel, faCalendarAlt, faUser, faStar, faMapMarkerAlt } from '@fortawe
 import Select from 'react-select';
 import { Card, Modal, Button, Spinner } from 'react-bootstrap';
 import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import './HotelSearchForm.css';
 import hotel1 from '../assets/images/hotels/hotel-1.webp';
@@ -16,6 +16,7 @@ const hotelImages = [hotel1, hotel2, hotel3, hotel4];
 
 const HotelSearchForm = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const user = useSelector((state) => state.user);
 
   // State management
@@ -131,12 +132,19 @@ const HotelSearchForm = () => {
 
     try {
       setIsLoading(true);
-      const response = await axios.post('http://localhost:9001/api/hotels/search', {
+      const searchData = {
         city_id: destination.value,
         check_in: checkIn,
         check_out: checkOut,
         guests: parseInt(guests)
-      });
+      };
+
+      // Add price range if it exists in location state
+      if (location.state?.hotelSearch?.priceRange) {
+        searchData.priceRange = location.state.hotelSearch.priceRange;
+      }
+
+      const response = await axios.post('http://localhost:9001/api/hotels/search', searchData);
 
       const hotels = response.data.map((hotel, index) => ({
         ...hotel,
@@ -197,6 +205,68 @@ const HotelSearchForm = () => {
       setErrorMessage('Error booking hotel. Please try again.');
     }
   };
+
+  // Add function to generate random future dates
+  const getRandomFutureDates = () => {
+    const today = new Date();
+    // Random start date between tomorrow and 3 months from now
+    const startDays = Math.floor(Math.random() * 90) + 1;
+    const checkInDate = new Date(today.setDate(today.getDate() + startDays));
+    
+    // Random length of stay between 1 and 14 days
+    const stayLength = Math.floor(Math.random() * 14) + 1;
+    const checkOutDate = new Date(checkInDate);
+    checkOutDate.setDate(checkOutDate.getDate() + stayLength);
+
+    return {
+      checkIn: checkInDate.toISOString().split('T')[0],
+      checkOut: checkOutDate.toISOString().split('T')[0]
+    };
+  };
+
+  // Add effect to handle pre-populated search
+  useEffect(() => {
+    const handlePrePopulatedSearch = async () => {
+      if (!location.state?.hotelSearch) return;
+      
+      const params = location.state.hotelSearch;
+      console.log('Processing hotel search params:', params);
+
+      // Wait for states and cities to be loaded before setting values
+      if (states.length > 0 && cities.length > 0) {
+        try {
+          // Find Missouri state object
+          const missouriState = states.find(state => state.label === "Missouri") || 
+                                {value: params.stateId, label: "Missouri"};
+          setSelectedState(missouriState);
+
+          // Then set the destination (city)
+          setDestination({
+            value: params.destination.value,
+            label: params.destination.label,
+            state_id: missouriState.value
+          });
+
+          setCheckIn(params.checkIn);
+          setCheckOut(params.checkOut);
+          setGuests(params.guests);
+
+          // If autoSearch flag is true, trigger search automatically
+          if (params.autoSearch) {
+            const searchEvent = { preventDefault: () => {} };
+            // Add slight delay to ensure state updates have processed
+            setTimeout(() => {
+              handleSearch(searchEvent);
+            }, 100);
+          }
+        } catch (error) {
+          console.error('Error setting up search parameters:', error);
+        }
+      }
+    };
+
+    handlePrePopulatedSearch();
+  }, [location.state, states, cities]); // Add handleSearch to dependency array if needed
 
   return (
     <div className="container mt-5">

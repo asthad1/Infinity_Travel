@@ -1476,9 +1476,25 @@ def search_hotels():
     check_in = data.get('check_in')
     check_out = data.get('check_out')
     guests = data.get('guests', 1)
+    price_range = data.get('priceRange')  # Add price range handling
 
-    if not all([city_id, check_in, check_out]):
-        return jsonify({'error': 'Missing required fields'}), 400
+    # ...existing validation code...
+
+    # Query hotels with availability and price range if specified
+    query = Hotel.query.filter(
+        Hotel.city_id == city_id,
+        Hotel.available_rooms >= guests,
+        Hotel.is_active == True
+    )
+
+    # Add price range filter if specified
+    if price_range:
+        query = query.filter(
+            Hotel.price_per_night >= price_range['min'],
+            Hotel.price_per_night <= price_range['max']
+        )
+
+    hotels = query.all()
 
     # Convert dates to datetime objects
     check_in_date = datetime.strptime(check_in, '%Y-%m-%d').date()
